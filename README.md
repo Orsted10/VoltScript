@@ -1,37 +1,40 @@
 ````markdown
 # VoltScript ⚡  
-*A modern programming language built from scratch in C++20*
+*A programming language built from scratch in modern C++*
 
-**Current version:** `0.3.0`  
-**Status:** Milestone 3 complete — Parser & AST finished
-
----
-
-## Why VoltScript exists
-
-VoltScript is an **educational, from-scratch programming language implementation** written in
-**modern C++ (C++20)**.
-
-The goal is not to clone an existing language, but to **understand how real programming languages are
-built internally** — step by step — while keeping the design clean, readable, and extendable.
-
-This project focuses on:
-- correctness over shortcuts  
-- clarity over cleverness  
-- learning how real compilers and interpreters work  
-
-VoltScript is being developed in **milestones**, each adding a core piece of a real language pipeline.
+**Version:** `0.4.0`  
+**Status:** Milestone 4 complete — Interpreter working 🎉
 
 ---
 
-## What’s implemented so far (Milestones 1–3)
+## About VoltScript
 
-### ✅ Lexer (Tokenizer)
-- Numbers (`42`, `3.14`)
+VoltScript is an **educational programming language implementation** written entirely from scratch in **C++20**.
+
+This project exists for one reason:  
+to **deeply understand how real programming languages work internally** — not by reading theory alone, but by *building every layer yourself*.
+
+VoltScript is **not** a clone of any existing language.  
+Instead, it is a clean, minimal, well-structured language designed to teach:
+
+- how lexers tokenize source code  
+- how parsers build syntax trees  
+- how interpreters execute programs  
+- how runtime environments store and resolve values  
+
+The project grows **milestone by milestone**, each one adding a real subsystem used in production languages.
+
+---
+
+## Current capabilities (Milestones 1–4)
+
+### ✅ Lexical Analysis (Lexer)
+VoltScript can tokenize:
+- Numbers (`42`, `3.14`, `-5`)
 - Strings (`"hello world"`)
 - Booleans (`true`, `false`)
 - `nil`
-- Identifiers (`x`, `myVar`, `_test123`)
+- Identifiers (`x`, `total_sum`, `_value123`)
 - Keywords:  
   `let`, `if`, `else`, `while`, `for`, `fn`, `return`
 - Operators:
@@ -40,65 +43,86 @@ VoltScript is being developed in **milestones**, each adding a core piece of a r
   - Logical: `&& || !`
   - Assignment: `=`
 - Punctuation: `() {} ; ,`
-- Line comments (`//`)
-- Precise error reporting with line numbers
+- Line comments (`// comment`)
+- Accurate error reporting with line numbers
 
 ---
 
-### ✅ Parser (Recursive Descent)
-- Fully recursive descent parser
+### ✅ Syntax Analysis (Parser)
+- Hand-written **recursive descent parser**
 - Correct operator precedence and associativity
 - Unary, binary, grouping, and assignment expressions
-- Function calls with arguments
-- Meaningful syntax errors and recovery
-- Outputs a **clean Abstract Syntax Tree (AST)**
+- Function call syntax (evaluation coming later)
+- Helpful syntax errors with recovery
+- Produces a **well-structured Abstract Syntax Tree (AST)**
 
 ---
 
 ### ✅ Abstract Syntax Tree (AST)
 - Strongly typed AST node hierarchy
-- Represents program structure explicitly
-- Designed to be consumed by an interpreter or VM later
+- Explicit representation of program structure
 - Easy to debug and visualize
+- Designed to support interpretation now and compilation later
 
 ---
 
-## Project layout
+### ✅ Interpreter (Tree-Walk Evaluator) — *Milestone 4*
+VoltScript can now **execute code**, not just parse it.
 
-```
+Supported at runtime:
+- Arithmetic evaluation with precedence
+- Comparison operators returning booleans
+- Logical operators with **short-circuit evaluation**
+- Variables with assignment and lookup
+- String concatenation
+- Runtime type checking
+- Runtime error handling:
+  - Division by zero
+  - Undefined variables
+  - Type mismatches
+- Multiple expressions using `;`
+- Persistent runtime environment
+
+---
+
+## Project structure
+
+```text
 VoltScript/
-├── CMakeLists.txt          # Build configuration
-├── README.md               # Project documentation
+├── CMakeLists.txt
+├── README.md
 ├── src/
-│   ├── token.h / token.cpp     # Token definitions
-│   ├── lexer.h / lexer.cpp     # Lexical analyzer
-│   ├── ast.h / ast.cpp         # AST node definitions
-│   ├── parser.h / parser.cpp   # Recursive descent parser
-│   └── main.cpp                # Entry point
+│   ├── token.h / token.cpp          # Token definitions
+│   ├── lexer.h / lexer.cpp          # Lexical analyzer
+│   ├── ast.h / ast.cpp              # AST node definitions
+│   ├── parser.h / parser.cpp        # Recursive descent parser
+│   ├── value.h / value.cpp          # Runtime value system
+│   ├── environment.h / environment.cpp
+│   ├── evaluator.h / evaluator.cpp  # Tree-walk interpreter
+│   └── main.cpp                     # Entry point
 ├── tests/
-│   ├── test_lexer.cpp          # Lexer unit tests
-│   └── test_parser.cpp         # Parser unit tests
-└── build/                      # Build output (generated)
+│   ├── test_lexer.cpp
+│   ├── test_parser.cpp
+│   └── test_evaluator.cpp
+└── build/                           # Generated build output
     └── bin/
-        ├── volt                # Language executable
-        └── volt_tests          # Test suite
+        ├── volt
+        └── volt_tests
 ````
-
----
-
-## Build requirements
-
-* **C++ compiler**
-  GCC 10+, Clang 12+, or MSVC 2019+ (C++20 required)
-* **CMake** ≥ 3.20
-* **Google Test**
-  Automatically fetched via CMake (no manual install needed)
 
 ---
 
 ## Building VoltScript
 
-### Windows (Visual Studio / MSVC)
+### Requirements
+
+* **C++ compiler**: GCC 10+, Clang 12+, or MSVC 2019+
+* **CMake** ≥ 3.20
+* **Google Test** (fetched automatically)
+
+---
+
+### Windows (MSVC / Visual Studio)
 
 ```powershell
 cmake -B build
@@ -118,154 +142,178 @@ Run:
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-```
-
-Run:
-
-```bash
 ./build/bin/volt "1 + 2 * 3"
 ```
 
 ---
 
-## Using VoltScript (current stage)
+## Using VoltScript
 
-VoltScript currently **parses expressions and prints their AST**.
+VoltScript now **executes expressions and prints results**.
 
-### Simple expressions
+### Arithmetic & precedence
 
 ```bash
 ./volt "1 + 2 * 3"
 ```
 
-AST output:
+Output:
 
 ```
-(+ 1.000000 (* 2.000000 3.000000))
+7
 ```
-
-Meaning:
-
-```
-1 + (2 * 3)
-```
-
----
-
-### Parentheses (grouping)
 
 ```bash
 ./volt "(1 + 2) * 3"
 ```
 
-AST:
+Output:
 
 ```
-(* (group (+ 1.000000 2.000000)) 3.000000)
+9
 ```
 
 ---
 
-### Variables and assignment
+### Variables
 
 ```bash
-./volt "x = (a + b) * c"
+./volt "x = 10; x * 2"
 ```
 
-AST:
+Output:
 
 ```
-(= x (* (group (+ a b)) c))
+20
 ```
-
----
-
-### Logical and comparison expressions
 
 ```bash
-./volt "x > 5 && y < 10"
+./volt "result = (10 + 5) * 2; result - 5"
 ```
 
-AST:
+Output:
 
 ```
-(&& (> x 5.000000) (< y 10.000000))
+25
 ```
 
 ---
 
-### Function calls
+### Logic & comparisons
 
 ```bash
-./volt "max(min(a, b), c)"
+./volt "(5 > 3) && (10 < 20)"
 ```
 
-AST:
+Output:
 
 ```
-(call max (call min a b) c)
+true
+```
+
+Short-circuit evaluation:
+
+```bash
+./volt "false && (10 / 0)"
+```
+
+Output:
+
+```
+false
+```
+
+(No runtime error — evaluation stops early.)
+
+---
+
+### Strings
+
+```bash
+./volt '"hello" + " world"'
+```
+
+Output:
+
+```
+hello world
 ```
 
 ---
 
-## Operator precedence (implemented)
+## Operator precedence
 
-| Level | Operators                       | Associativity |   |      |
-| ----: | ------------------------------- | ------------- | - | ---- |
-|     1 | Literals, identifiers, grouping | —             |   |      |
-|     2 | Unary `! -`                     | Right         |   |      |
-|     3 | `* / %`                         | Left          |   |      |
-|     4 | `+ -`                           | Left          |   |      |
-|     5 | `< > <= >=`                     | Left          |   |      |
-|     6 | `== !=`                         | Left          |   |      |
-|     7 | `&&`                            | Left          |   |      |
-|     8 | `                               | Left          |   |      |
-|     9 | `=`                             | Right         |   |      |
+| Level | Operators          | Associativity |   |      |
+| ----: | ------------------ | ------------- | - | ---- |
+|     1 | Literals, grouping | —             |   |      |
+|     2 | Unary `! -`        | Right         |   |      |
+|     3 | `* / %`            | Left          |   |      |
+|     4 | `+ -`              | Left          |   |      |
+|     5 | `< > <= >=`        | Left          |   |      |
+|     6 | `== !=`            | Left          |   |      |
+|     7 | `&&`               | Left          |   |      |
+|     8 | `=`                | Right         |   |      |
 
 ---
 
 ## Testing
 
-VoltScript uses **Google Test** and currently has **21 passing unit tests**.
-
-Run all tests:
+VoltScript uses **Google Test** and currently has **50 passing unit tests**.
 
 ```bash
 cd build
 ctest --output-on-failure
 ```
 
-Run specific tests:
+Test breakdown:
 
-```bash
-./bin/volt_tests --gtest_filter=Parser.*
-```
+* Lexer: 8 tests
+* Parser: 13 tests
+* Evaluator: 29 tests
 
 ---
 
 ## Error handling examples
 
-### Lexer errors
+```bash
+./volt "10 / 0"
+```
+
+```
+Runtime Error [Line 1]: Division by zero
+```
 
 ```bash
-./volt '"hello'
+./volt "x + 5"
 ```
 
 ```
-Error at line 1: Unterminated string
+Runtime Error [Line 1]: Undefined variable: x
+```
+
+```bash
+./volt '5 + "hello"'
+```
+
+```
+Runtime Error [Line 1]: Operands must be two numbers or two strings
 ```
 
 ---
 
-### Parser errors
+## How VoltScript works (high level)
 
-```bash
-./volt "(1 + 2"
+```text
+Source code
+   ↓
+ Lexer        → Tokens
+   ↓
+ Parser       → AST
+   ↓
+ Evaluator    → Runtime result
 ```
 
-```
-[Line 1] Error: Expected ')' after expression
-```
+Each step is implemented explicitly and kept readable for learning.
 
 ---
 
@@ -273,65 +321,48 @@ Error at line 1: Unterminated string
 
 ### Completed
 
-* [x] Tokenizer (Lexer)
-* [x] Keywords and operators
-* [x] Recursive descent parser
-* [x] AST generation
-* [x] Operator precedence
-* [x] Error reporting
+* Lexer
+* Parser
+* AST
+* Interpreter
+* Runtime environment
+* Type checking
+* Error handling
 
 ### Coming next
 
-* [ ] Tree-walk interpreter
-* [ ] Runtime environment
-* [ ] Variables and scopes
-* [ ] Control flow (`if`, `while`, `for`)
-* [ ] Functions and closures
-* [ ] Standard library
-* [ ] Bytecode compiler
-* [ ] Virtual machine
-
----
-
-## Architecture overview
-
-```text
-Input source code
-        ↓
-      Lexer
-        ↓
-     Tokens
-        ↓
-      Parser
-        ↓
-       AST
-        ↓
-  Interpreter (next milestone)
-```
+* Statements (`if`, `while`, `for`)
+* Functions & closures
+* Standard library
+* Classes & objects
+* Bytecode compiler
+* Virtual machine (VM)
 
 ---
 
 ## Contributing
 
-This is an **educational project**, but real and serious.
+VoltScript is an **educational but serious project**.
 
-If you want to:
+If you’re interested in:
 
-* explore language internals
-* improve error handling
-* add new syntax
-* help with the interpreter
+* language internals
+* interpreter design
+* runtime systems
+* compilers & VMs
 
-Feel free to open issues or submit PRs.
+feel free to open issues, suggest improvements, or submit PRs.
 
 ---
 
 ## License
 
-Free to learn from, fork, and build upon.
+MIT License — free to learn from, fork, and build upon.
 
 ---
 
-**VoltScript**
-Built with curiosity, frustration, and a lot of C++ ☕
-`v0.3.0 — Milestone 3 complete`
+**VoltScript ⚡**
+From tokens → trees → execution
+`v0.4.0 — Interpreter milestone complete`
+
+```

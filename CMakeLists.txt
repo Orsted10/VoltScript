@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(VoltScript VERSION 0.3.0 LANGUAGES CXX)
+project(VoltScript VERSION 0.4.0 LANGUAGES CXX)
 
 # C++20 Standard
 set(CMAKE_CXX_STANDARD 20)
@@ -24,6 +24,9 @@ set(VOLT_SOURCES
     src/lexer.cpp
     src/ast.cpp
     src/parser.cpp
+    src/value.cpp
+    src/environment.cpp
+    src/evaluator.cpp
 )
 
 # Main executable
@@ -61,6 +64,7 @@ if(VOLT_BUILD_TESTS)
     add_executable(volt_tests
         tests/test_lexer.cpp
         tests/test_parser.cpp
+        tests/test_evaluator.cpp
         ${VOLT_SOURCES}
     )
     
@@ -75,7 +79,7 @@ endif()
 
 message(STATUS "")
 message(STATUS "========================================")
-message(STATUS "VoltScript Milestone 3 - Parser")
+message(STATUS "VoltScript Milestone 4 - Evaluator")
 message(STATUS "========================================")
 message(STATUS "Version:        ${PROJECT_VERSION}")
 message(STATUS "Build type:     ${CMAKE_BUILD_TYPE}")
