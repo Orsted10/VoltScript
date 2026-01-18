@@ -6,10 +6,22 @@ namespace volt {
 
 enum class TokenType {
     // Literals
-    Number,
+    Number, String, Identifier,
+    
+    // Keywords
+    Let, If, Else, While, For, Fn, Return,
+    True, False, Nil,
     
     // Operators
-    Plus, Minus, Star, Slash,
+    Plus, Minus, Star, Slash, Percent,
+    Equal, EqualEqual, Bang, BangEqual,
+    Less, LessEqual, Greater, GreaterEqual,
+    And, Or,
+    
+    // Punctuation
+    LeftParen, RightParen,
+    LeftBrace, RightBrace,
+    Semicolon, Comma,
     
     // Special
     Eof, Error
