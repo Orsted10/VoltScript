@@ -7,7 +7,7 @@ void Environment::define(const std::string& name, Value value) {
     values_[name] = value;
 }
 
-Value Environment::get(const std::string& name) {
+Value Environment::get(const std::string& name) const {  // ← ADD const HERE!
     // Check current scope
     auto it = values_.find(name);
     if (it != values_.end()) {

@@ -10,7 +10,7 @@ enum class TokenType {
     
     // Keywords
     Let, If, Else, While, For, Fn, Return,
-    True, False, Nil,
+    True, False, Nil, Print,
     
     // Operators
     Plus, Minus, Star, Slash, Percent,

@@ -5,7 +5,23 @@ namespace volt {
 
 Parser::Parser(std::vector<Token> tokens) : tokens_(std::move(tokens)) {}
 
-ExprPtr Parser::parse() {
+// ========== PROGRAM PARSING ==========
+
+std::vector<StmtPtr> Parser::parseProgram() {
+    std::vector<StmtPtr> statements;
+    
+    while (!isAtEnd()) {
+        try {
+            statements.push_back(statement());
+        } catch (...) {
+            synchronize();
+        }
+    }
+    
+    return statements;
+}
+
+ExprPtr Parser::parseExpression() {
     try {
         return expression();
     } catch (...) {
@@ -13,12 +29,122 @@ ExprPtr Parser::parse() {
     }
 }
 
-// expression → assignment
+// ========== STATEMENT PARSING ==========
+
+StmtPtr Parser::statement() {
+    if (match(TokenType::Print)) return printStatement();
+    if (match(TokenType::Let)) return letStatement();
+    if (match(TokenType::If)) return ifStatement();
+    if (match(TokenType::While)) return whileStatement();
+    if (match(TokenType::For)) return forStatement();
+    if (match(TokenType::LeftBrace)) return blockStatement();
+    
+    return expressionStatement();
+}
+
+StmtPtr Parser::printStatement() {
+    ExprPtr expr = expression();
+    consume(TokenType::Semicolon, "Expected ';' after value");
+    return std::make_unique<PrintStmt>(std::move(expr));
+}
+
+StmtPtr Parser::letStatement() {
+    Token name = consume(TokenType::Identifier, "Expected variable name");
+    
+    ExprPtr initializer = nullptr;
+    if (match(TokenType::Equal)) {
+        initializer = expression();
+    }
+    
+    consume(TokenType::Semicolon, "Expected ';' after variable declaration");
+    return std::make_unique<LetStmt>(std::string(name.lexeme), std::move(initializer));
+}
+
+StmtPtr Parser::ifStatement() {
+    consume(TokenType::LeftParen, "Expected '(' after 'if'");
+    ExprPtr condition = expression();
+    consume(TokenType::RightParen, "Expected ')' after if condition");
+    
+    StmtPtr thenBranch = statement();
+    StmtPtr elseBranch = nullptr;
+    
+    if (match(TokenType::Else)) {
+        elseBranch = statement();
+    }
+    
+    return std::make_unique<IfStmt>(std::move(condition), 
+                                     std::move(thenBranch), 
+                                     std::move(elseBranch));
+}
+
+StmtPtr Parser::whileStatement() {
+    consume(TokenType::LeftParen, "Expected '(' after 'while'");
+    ExprPtr condition = expression();
+    consume(TokenType::RightParen, "Expected ')' after condition");
+    
+    StmtPtr body = statement();
+    
+    return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+}
+
+StmtPtr Parser::forStatement() {
+    consume(TokenType::LeftParen, "Expected '(' after 'for'");
+    
+    // Initializer
+    StmtPtr initializer;
+    if (match(TokenType::Semicolon)) {
+        initializer = nullptr;
+    } else if (match(TokenType::Let)) {
+        initializer = letStatement();
+    } else {
+        initializer = expressionStatement();
+    }
+    
+    // Condition
+    ExprPtr condition = nullptr;
+    if (!check(TokenType::Semicolon)) {
+        condition = expression();
+    }
+    consume(TokenType::Semicolon, "Expected ';' after loop condition");
+    
+    // Increment
+    ExprPtr increment = nullptr;
+    if (!check(TokenType::RightParen)) {
+        increment = expression();
+    }
+    consume(TokenType::RightParen, "Expected ')' after for clauses");
+    
+    StmtPtr body = statement();
+    
+    return std::make_unique<ForStmt>(std::move(initializer),
+                                      std::move(condition),
+                                      std::move(increment),
+                                      std::move(body));
+}
+
+StmtPtr Parser::blockStatement() {
+    std::vector<StmtPtr> statements;
+    
+    while (!check(TokenType::RightBrace) && !isAtEnd()) {
+        statements.push_back(statement());
+    }
+    
+    consume(TokenType::RightBrace, "Expected '}' after block");
+    return std::make_unique<BlockStmt>(std::move(statements));
+}
+
+StmtPtr Parser::expressionStatement() {
+    ExprPtr expr = expression();
+    consume(TokenType::Semicolon, "Expected ';' after expression");
+    return std::make_unique<ExprStmt>(std::move(expr));
+}
+
+// ========== EXPRESSION PARSING ==========
+
 ExprPtr Parser::expression() {
     return assignment();
 }
 
-// assignment → IDENTIFIER "=" assignment | logicalOr
 ExprPtr Parser::assignment() {
     ExprPtr expr = logicalOr();
     
@@ -36,7 +162,6 @@ ExprPtr Parser::assignment() {
     return expr;
 }
 
-// logicalOr → logicalAnd ( "||" logicalAnd )*
 ExprPtr Parser::logicalOr() {
     ExprPtr expr = logicalAnd();
     
@@ -49,7 +174,6 @@ ExprPtr Parser::logicalOr() {
     return expr;
 }
 
-// logicalAnd → equality ( "&&" equality )*
 ExprPtr Parser::logicalAnd() {
     ExprPtr expr = equality();
     
@@ -62,7 +186,6 @@ ExprPtr Parser::logicalAnd() {
     return expr;
 }
 
-// equality → comparison ( ( "==" | "!=" ) comparison )*
 ExprPtr Parser::equality() {
     ExprPtr expr = comparison();
     
@@ -75,7 +198,6 @@ ExprPtr Parser::equality() {
     return expr;
 }
 
-// comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
 ExprPtr Parser::comparison() {
     ExprPtr expr = term();
     
@@ -89,7 +211,6 @@ ExprPtr Parser::comparison() {
     return expr;
 }
 
-// term → factor ( ( "+" | "-" ) factor )*
 ExprPtr Parser::term() {
     ExprPtr expr = factor();
     
@@ -102,7 +223,6 @@ ExprPtr Parser::term() {
     return expr;
 }
 
-// factor → unary ( ( "*" | "/" | "%" ) unary )*
 ExprPtr Parser::factor() {
     ExprPtr expr = unary();
     
@@ -115,7 +235,6 @@ ExprPtr Parser::factor() {
     return expr;
 }
 
-// unary → ( "!" | "-" ) unary | call
 ExprPtr Parser::unary() {
     if (match({TokenType::Bang, TokenType::Minus})) {
         Token op = previous();
@@ -126,7 +245,6 @@ ExprPtr Parser::unary() {
     return call();
 }
 
-// call → primary ( "(" arguments? ")" )*
 ExprPtr Parser::call() {
     ExprPtr expr = primary();
     
@@ -146,14 +264,11 @@ ExprPtr Parser::finishCall(ExprPtr callee) {
         } while (match(TokenType::Comma));
     }
     
-    if (!match(TokenType::RightParen)) {
-        error("Expected ')' after arguments");
-    }
+    consume(TokenType::RightParen, "Expected ')' after arguments");
     
     return std::make_unique<CallExpr>(std::move(callee), std::move(arguments));
 }
 
-// primary → NUMBER | STRING | "true" | "false" | "nil" | IDENTIFIER | "(" expression ")"
 ExprPtr Parser::primary() {
     if (match(TokenType::Number)) {
         double value = std::stod(std::string(previous().lexeme));
@@ -182,15 +297,15 @@ ExprPtr Parser::primary() {
     
     if (match(TokenType::LeftParen)) {
         ExprPtr expr = expression();
-        if (!match(TokenType::RightParen)) {
-            error("Expected ')' after expression");
-        }
+        consume(TokenType::RightParen, "Expected ')' after expression");
         return std::make_unique<GroupingExpr>(std::move(expr));
     }
     
     error("Expected expression");
     return nullptr;
 }
+
+// ========== TOKEN HELPERS ==========
 
 Token Parser::advance() {
     if (!isAtEnd()) current_++;
@@ -228,16 +343,23 @@ bool Parser::match(std::initializer_list<TokenType> types) {
     return false;
 }
 
+Token Parser::consume(TokenType type, const std::string& message) {
+    if (check(type)) return advance();
+    error(message);
+    throw std::runtime_error(message);
+}
+
 bool Parser::isAtEnd() const {
     return peek().type == TokenType::Eof;
 }
+
+// ========== ERROR HANDLING ==========
 
 void Parser::error(const std::string& message) {
     std::ostringstream oss;
     oss << "[Line " << peek().line << "] Error: " << message;
     errors_.push_back(oss.str());
     hadError_ = true;
-    throw std::runtime_error(message);
 }
 
 void Parser::synchronize() {
@@ -253,6 +375,7 @@ void Parser::synchronize() {
             case TokenType::Fn:
             case TokenType::Return:
             case TokenType::Let:
+            case TokenType::Print:
                 return;
             default:
                 break;

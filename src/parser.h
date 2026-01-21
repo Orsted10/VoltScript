@@ -1,5 +1,6 @@
 #pragma once
 #include "ast.h"
+#include "stmt.h"
 #include "token.h"
 #include <vector>
 #include <string>
@@ -10,14 +11,27 @@ class Parser {
 public:
     explicit Parser(std::vector<Token> tokens);
     
-    // Parse an expression
-    ExprPtr parse();
+    // Parse program (list of statements)
+    std::vector<StmtPtr> parseProgram();
+    
+    // Parse single expression (for REPL/testing)
+    ExprPtr parseExpression();
     
     // Check for errors
     bool hadError() const { return hadError_; }
     const std::vector<std::string>& getErrors() const { return errors_; }
 
 private:
+    // Statement parsing
+    StmtPtr statement();
+    StmtPtr printStatement();
+    StmtPtr letStatement();
+    StmtPtr ifStatement();
+    StmtPtr whileStatement();
+    StmtPtr forStatement();
+    StmtPtr blockStatement();
+    StmtPtr expressionStatement();
+    
     // Expression parsing (by precedence level)
     ExprPtr expression();
     ExprPtr assignment();
@@ -41,6 +55,7 @@ private:
     bool check(TokenType type) const;
     bool match(TokenType type);
     bool match(std::initializer_list<TokenType> types);
+    Token consume(TokenType type, const std::string& message);
     bool isAtEnd() const;
     
     // Error handling

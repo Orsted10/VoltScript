@@ -18,6 +18,7 @@ const char* tokenName(TokenType type) {
         case TokenType::True: return "TRUE";
         case TokenType::False: return "FALSE";
         case TokenType::Nil: return "NIL";
+        case TokenType::Print: return "PRINT";
         
         case TokenType::Plus: return "PLUS";
         case TokenType::Minus: return "MINUS";

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(VoltScript VERSION 0.4.0 LANGUAGES CXX)
+project(VoltScript VERSION 0.5.0 LANGUAGES CXX)
 
 # C++20 Standard
 set(CMAKE_CXX_STANDARD 20)
@@ -26,7 +26,7 @@ set(VOLT_SOURCES
     src/parser.cpp
     src/value.cpp
     src/environment.cpp
-    src/evaluator.cpp
+    src/interpreter.cpp
 )
 
 # Main executable
@@ -61,25 +61,29 @@ if(VOLT_BUILD_TESTS)
     
     enable_testing()
     
+    # Create test executable
     add_executable(volt_tests
         tests/test_lexer.cpp
         tests/test_parser.cpp
         tests/test_evaluator.cpp
+        tests/test_interpreter.cpp
         ${VOLT_SOURCES}
     )
     
     target_include_directories(volt_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
     target_link_libraries(volt_tests GTest::gtest_main)
     
-    include(GoogleTest)
-    gtest_discover_tests(volt_tests)
+    # Add test manually (instead of gtest_discover_tests)
+    add_test(NAME AllTests COMMAND volt_tests)
     
     message(STATUS "✅ Tests enabled")
+else()
+    message(STATUS "⚠️  Tests disabled")
 endif()
 
 message(STATUS "")
 message(STATUS "========================================")
-message(STATUS "VoltScript Milestone 4 - Evaluator")
+message(STATUS "VoltScript Milestone 5 - Statements")
 message(STATUS "========================================")
 message(STATUS "Version:        ${PROJECT_VERSION}")
 message(STATUS "Build type:     ${CMAKE_BUILD_TYPE}")
