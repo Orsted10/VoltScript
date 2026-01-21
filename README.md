@@ -1,110 +1,154 @@
+
 ````markdown
 # VoltScript ⚡  
-*A programming language built from scratch in modern C++*
+**A programming language built from scratch in modern C++**
 
-**Version:** `0.4.0`  
-**Status:** Milestone 4 complete — Interpreter working 🎉
+**Version:** `0.5.0`  
+**Milestone:** 5 — Full interpreter with control flow  
+**Status:** Stable, feature-complete for core execution 🚀
 
 ---
 
-## About VoltScript
+## ✨ What is VoltScript?
 
 VoltScript is an **educational programming language implementation** written entirely from scratch in **C++20**.
 
-This project exists for one reason:  
-to **deeply understand how real programming languages work internally** — not by reading theory alone, but by *building every layer yourself*.
+This project is not about copying an existing language.  
+It exists to **understand how real languages work internally** — by building every layer by hand:
 
-VoltScript is **not** a clone of any existing language.  
-Instead, it is a clean, minimal, well-structured language designed to teach:
+- lexical analysis  
+- parsing and AST construction  
+- interpretation and runtime execution  
+- variable scoping and control flow  
 
-- how lexers tokenize source code  
-- how parsers build syntax trees  
-- how interpreters execute programs  
-- how runtime environments store and resolve values  
-
-The project grows **milestone by milestone**, each one adding a real subsystem used in production languages.
+VoltScript is developed **incrementally**, one milestone at a time, with each milestone introducing a real subsystem found in production language runtimes.
 
 ---
 
-## Current capabilities (Milestones 1–4)
+## 🎯 Design philosophy
 
-### ✅ Lexical Analysis (Lexer)
-VoltScript can tokenize:
-- Numbers (`42`, `3.14`, `-5`)
-- Strings (`"hello world"`)
-- Booleans (`true`, `false`)
-- `nil`
-- Identifiers (`x`, `total_sum`, `_value123`)
-- Keywords:  
-  `let`, `if`, `else`, `while`, `for`, `fn`, `return`
-- Operators:
+VoltScript is built with a few simple principles:
+
+- **Correctness over shortcuts**  
+- **Clarity over cleverness**  
+- **Explicit logic over magic**  
+
+Everything is written to be readable, debuggable, and educational — while still being *real*.
+
+---
+
+## ✅ Implemented features (Milestones 1–5)
+
+### 🧩 Lexical Analysis (Lexer)
+The lexer converts raw source code into tokens, supporting:
+
+- **Literals**
+  - Numbers: `42`, `3.14`
+  - Strings: `"hello world"`
+  - Booleans: `true`, `false`
+  - Nil: `nil`
+- **Identifiers**
+  - `x`, `total_sum`, `_temp123`
+- **Keywords**
+  - `let`, `if`, `else`, `while`, `for`, `fn`, `return`, `print`
+- **Operators**
   - Arithmetic: `+ - * / %`
   - Comparison: `== != < <= > >=`
   - Logical: `&& || !`
   - Assignment: `=`
-- Punctuation: `() {} ; ,`
-- Line comments (`// comment`)
-- Accurate error reporting with line numbers
+- **Punctuation**
+  - `(` `)` `{` `}` `;` `,`
+- Line comments: `// comment`
+- Accurate error messages with line numbers
 
 ---
 
-### ✅ Syntax Analysis (Parser)
-- Hand-written **recursive descent parser**
+### 🌳 Syntax Analysis (Parser)
+A hand-written **recursive descent parser** that supports:
+
+- Expressions:
+  - unary, binary, logical, grouping, assignment
+- Statements:
+  - `print`
+  - `let` declarations
+  - blocks `{ ... }`
+  - `if / else`
+  - `while`
+  - `for`
 - Correct operator precedence and associativity
-- Unary, binary, grouping, and assignment expressions
-- Function call syntax (evaluation coming later)
-- Helpful syntax errors with recovery
-- Produces a **well-structured Abstract Syntax Tree (AST)**
+- Graceful syntax error recovery
+- Clean **Abstract Syntax Tree (AST)** output
 
 ---
 
-### ✅ Abstract Syntax Tree (AST)
-- Strongly typed AST node hierarchy
+### 🧠 Abstract Syntax Tree (AST)
+- Separate **expression** and **statement** node hierarchies
 - Explicit representation of program structure
-- Easy to debug and visualize
-- Designed to support interpretation now and compilation later
+- Designed for interpretation now, compilation later
+- Easy to visualize and debug during development
 
 ---
 
-### ✅ Interpreter (Tree-Walk Evaluator) — *Milestone 4*
-VoltScript can now **execute code**, not just parse it.
+### ⚙️ Interpreter (Tree-Walk Execution)
+VoltScript now **executes real programs**.
 
-Supported at runtime:
-- Arithmetic evaluation with precedence
-- Comparison operators returning booleans
+The interpreter supports:
+
+- Arithmetic evaluation with correct precedence
+- Variable declaration and assignment
+- Block scoping with proper shadowing
+- Control flow:
+  - `if / else`
+  - `while` loops
+  - `for` loops
+- `print` statement
+- Comparison operators (`<`, `>`, `==`, etc.)
 - Logical operators with **short-circuit evaluation**
-- Variables with assignment and lookup
 - String concatenation
 - Runtime type checking
-- Runtime error handling:
-  - Division by zero
-  - Undefined variables
-  - Type mismatches
-- Multiple expressions using `;`
-- Persistent runtime environment
+- Clear runtime error messages:
+  - division by zero
+  - undefined variables
+  - type mismatches
 
 ---
 
-## Project structure
+### 🗂️ Environment & Scoping
+- Lexical scoping using nested environments
+- Parent scope lookups
+- Variable shadowing
+- Proper lifetime handling
+
+---
+
+## 🗃️ Project structure
 
 ```text
 VoltScript/
 ├── CMakeLists.txt
 ├── README.md
 ├── src/
-│   ├── token.h / token.cpp          # Token definitions
-│   ├── lexer.h / lexer.cpp          # Lexical analyzer
-│   ├── ast.h / ast.cpp              # AST node definitions
-│   ├── parser.h / parser.cpp        # Recursive descent parser
-│   ├── value.h / value.cpp          # Runtime value system
+│   ├── token.h / token.cpp
+│   ├── lexer.h / lexer.cpp
+│   ├── ast.h / ast.cpp
+│   ├── stmt.h
+│   ├── parser.h / parser.cpp
+│   ├── value.h / value.cpp
 │   ├── environment.h / environment.cpp
-│   ├── evaluator.h / evaluator.cpp  # Tree-walk interpreter
-│   └── main.cpp                     # Entry point
+│   ├── interpreter.h / interpreter.cpp
+│   └── main.cpp
 ├── tests/
 │   ├── test_lexer.cpp
 │   ├── test_parser.cpp
-│   └── test_evaluator.cpp
-└── build/                           # Generated build output
+│   ├── test_evaluator.cpp
+│   └── test_interpreter.cpp
+├── examples/
+│   ├── fibonacci.volt
+│   ├── factorial.volt
+│   ├── fizzbuzz.volt
+│   ├── nested_loops.volt
+│   └── scope_demo.volt
+└── build/
     └── bin/
         ├── volt
         └── volt_tests
@@ -112,27 +156,24 @@ VoltScript/
 
 ---
 
-## Building VoltScript
+## 🛠️ Building VoltScript
 
 ### Requirements
 
-* **C++ compiler**: GCC 10+, Clang 12+, or MSVC 2019+
-* **CMake** ≥ 3.20
-* **Google Test** (fetched automatically)
+* C++ compiler with **C++20 support**
+
+  * GCC 10+, Clang 12+, MSVC 2019+
+* CMake ≥ 3.20
+* Google Test (fetched automatically)
 
 ---
 
-### Windows (MSVC / Visual Studio)
+### Windows (MSVC)
 
 ```powershell
 cmake -B build
 cmake --build build --config Release
-```
-
-Run:
-
-```powershell
-.\build\bin\Release\volt.exe "1 + 2 * 3"
+.\build\bin\Release\volt.exe
 ```
 
 ---
@@ -142,182 +183,109 @@ Run:
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-./build/bin/volt "1 + 2 * 3"
+./build/bin/volt
 ```
 
 ---
 
-## Using VoltScript
+## 💻 Using VoltScript
 
-VoltScript now **executes expressions and prints results**.
+### Interactive REPL
 
-### Arithmetic & precedence
-
-```bash
-./volt "1 + 2 * 3"
-```
-
-Output:
-
-```
-7
-```
-
-```bash
-./volt "(1 + 2) * 3"
-```
-
-Output:
-
-```
-9
+```text
+> let x = 10;
+> print x;
+10
+> x = x + 5;
+> print x;
+15
+> if (x > 10) print "big";
+big
+> for (let i = 0; i < 3; i = i + 1) print i;
+0
+1
+2
 ```
 
 ---
 
-### Variables
+### Run a script file
 
 ```bash
-./volt "x = 10; x * 2"
-```
-
-Output:
-
-```
-20
-```
-
-```bash
-./volt "result = (10 + 5) * 2; result - 5"
-```
-
-Output:
-
-```
-25
+./volt examples/fibonacci.volt
 ```
 
 ---
 
-### Logic & comparisons
+## 📌 Language examples
 
-```bash
-./volt "(5 > 3) && (10 < 20)"
-```
+### Variables & arithmetic
 
-Output:
-
-```
-true
-```
-
-Short-circuit evaluation:
-
-```bash
-./volt "false && (10 / 0)"
-```
-
-Output:
-
-```
-false
-```
-
-(No runtime error — evaluation stops early.)
-
----
-
-### Strings
-
-```bash
-./volt '"hello" + " world"'
-```
-
-Output:
-
-```
-hello world
+```volt
+let x = 10;
+let y = 20;
+print x + y;     // 30
 ```
 
 ---
 
-## Operator precedence
+### Control flow
 
-| Level | Operators          | Associativity |   |      |
-| ----: | ------------------ | ------------- | - | ---- |
-|     1 | Literals, grouping | —             |   |      |
-|     2 | Unary `! -`        | Right         |   |      |
-|     3 | `* / %`            | Left          |   |      |
-|     4 | `+ -`              | Left          |   |      |
-|     5 | `< > <= >=`        | Left          |   |      |
-|     6 | `== !=`            | Left          |   |      |
-|     7 | `&&`               | Left          |   |      |
-|     8 | `=`                | Right         |   |      |
+```volt
+if (age >= 18) {
+    print "Adult";
+} else {
+    print "Minor";
+}
+```
 
 ---
 
-## Testing
+### Loops
 
-VoltScript uses **Google Test** and currently has **50 passing unit tests**.
+```volt
+for (let i = 0; i < 5; i = i + 1) {
+    print i;
+}
+```
+
+---
+
+### Scoping
+
+```volt
+let x = "global";
+
+{
+    let x = "local";
+    print x;
+}
+
+print x;
+```
+
+---
+
+## 🧪 Testing
+
+VoltScript has **134 unit tests**, with **132 passing**.
 
 ```bash
-cd build
 ctest --output-on-failure
 ```
 
-Test breakdown:
+Coverage:
 
-* Lexer: 8 tests
-* Parser: 13 tests
-* Evaluator: 29 tests
+* Lexer: 13 / 13
+* Parser: 28 / 28
+* Evaluator: 26 / 26
+* Interpreter: 65 / 67
 
----
-
-## Error handling examples
-
-```bash
-./volt "10 / 0"
-```
-
-```
-Runtime Error [Line 1]: Division by zero
-```
-
-```bash
-./volt "x + 5"
-```
-
-```
-Runtime Error [Line 1]: Undefined variable: x
-```
-
-```bash
-./volt '5 + "hello"'
-```
-
-```
-Runtime Error [Line 1]: Operands must be two numbers or two strings
-```
+**Overall:** 98.5% passing
 
 ---
 
-## How VoltScript works (high level)
-
-```text
-Source code
-   ↓
- Lexer        → Tokens
-   ↓
- Parser       → AST
-   ↓
- Evaluator    → Runtime result
-```
-
-Each step is implemented explicitly and kept readable for learning.
-
----
-
-## Roadmap
+## 🚧 Roadmap
 
 ### Completed
 
@@ -325,42 +293,88 @@ Each step is implemented explicitly and kept readable for learning.
 * Parser
 * AST
 * Interpreter
-* Runtime environment
-* Type checking
-* Error handling
+* Variables & scoping
+* Control flow
+* REPL & file execution
+* Comprehensive test suite
 
 ### Coming next
 
-* Statements (`if`, `while`, `for`)
 * Functions & closures
+* Arrays and maps
 * Standard library
-* Classes & objects
+* `return`, `break`, `continue`
 * Bytecode compiler
-* Virtual machine (VM)
+* Virtual machine
+* Garbage collection
+* Module system
 
 ---
 
-## Contributing
+## 🧠 What you’ll learn from this project
 
-VoltScript is an **educational but serious project**.
-
-If you’re interested in:
-
-* language internals
-* interpreter design
-* runtime systems
-* compilers & VMs
-
-feel free to open issues, suggest improvements, or submit PRs.
+* How lexers tokenize code
+* Recursive descent parsing
+* AST design
+* Tree-walk interpretation
+* Runtime environments & scoping
+* Control flow implementation
+* Error handling strategies
+* Test-driven development in C++
+* Writing clean, maintainable compiler code
 
 ---
 
-## License
+## 🤝 Contributing
 
-MIT License — free to learn from, fork, and build upon.
+This is an **educational but serious** project.
+
+Contributions are welcome — whether that’s:
+
+* improving diagnostics
+* adding language features
+* optimizing execution
+* expanding documentation
+
+---
+
+## 📄 License
+
+MIT — free to learn from, fork, and build upon.
+
+---
+
+## 🙏 Acknowledgments
+
+Inspired by:
+
+* *Crafting Interpreters* — Robert Nystrom
+* The Lox language architecture
+* Modern C++ best practices
 
 ---
 
 **VoltScript ⚡**
-From tokens → trees → execution
-`v0.4.0 — Interpreter milestone complete`
+`v0.5.0 — Milestone 5 complete`
+*From tokens to real programs*
+
+```
+
+---
+
+### Why this version works
+- Clear visual hierarchy
+- More breathing space
+- Strong human narrative
+- Still technically deep
+- Looks **professional on GitHub**
+- Feels like a real language project, not homework
+
+If you want next:
+- a **Milestone 6 design doc**
+- a **language spec (formal grammar)**
+- a **clean website / landing page README**
+- or a **devlog-style CHANGELOG**
+
+Just say the word — this project is legit 🔥
+```
