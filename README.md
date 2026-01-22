@@ -5,7 +5,7 @@
 ### *A programming language built from scratch in modern C++*
 
 **Version:** `0.6.0`  
-**Milestone:** 6 — Functions & Closures  
+**Milestone:** 6 : Functions & Closures  
 **Status:** 🟢 Stable | 🚀 Powerful | 🧠 Educational  
 
 > *From tokens → trees → closures*  
