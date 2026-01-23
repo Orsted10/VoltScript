@@ -61,6 +61,53 @@ std::string printAST(Expr* expr) {
         return "(= " + assign->name + " " + printAST(assign->value.get()) + ")";
     }
     
+    if (auto* compound = dynamic_cast<CompoundAssignExpr*>(expr)) {
+        return "(" + std::string(compound->op.lexeme) + " " + compound->name + " " + printAST(compound->value.get()) + ")";
+    }
+    
+    if (auto* update = dynamic_cast<UpdateExpr*>(expr)) {
+        std::string op = std::string(update->op.lexeme);
+        if (update->prefix) {
+            return "(" + op + " " + update->name + ")";
+        }
+        return "(" + update->name + " " + op + ")";
+    }
+    
+    if (auto* ternary = dynamic_cast<TernaryExpr*>(expr)) {
+        return "(?: " + printAST(ternary->condition.get()) + " " + 
+               printAST(ternary->thenBranch.get()) + " " + 
+               printAST(ternary->elseBranch.get()) + ")";
+    }
+    
+    // ========================================
+    // ARRAY EXPRESSIONS - NEW!
+    // ========================================
+    
+    if (auto* array = dynamic_cast<ArrayExpr*>(expr)) {
+        std::ostringstream oss;
+        oss << "[";
+        for (size_t i = 0; i < array->elements.size(); i++) {
+            if (i > 0) oss << ", ";
+            oss << printAST(array->elements[i].get());
+        }
+        oss << "]";
+        return oss.str();
+    }
+    
+    if (auto* index = dynamic_cast<IndexExpr*>(expr)) {
+        return printAST(index->object.get()) + "[" + printAST(index->index.get()) + "]";
+    }
+    
+    if (auto* indexAssign = dynamic_cast<IndexAssignExpr*>(expr)) {
+        return "([]= " + printAST(indexAssign->object.get()) + " " + 
+               printAST(indexAssign->index.get()) + " " + 
+               printAST(indexAssign->value.get()) + ")";
+    }
+    
+    if (auto* member = dynamic_cast<MemberExpr*>(expr)) {
+        return printAST(member->object.get()) + "." + member->member;
+    }
+    
     return "?";
 }
 

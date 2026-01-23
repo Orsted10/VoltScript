@@ -4,49 +4,57 @@ namespace volt {
 
 const char* tokenName(TokenType type) {
     switch (type) {
-        case TokenType::Number: return "NUMBER";
-        case TokenType::String: return "STRING";
-        case TokenType::Identifier: return "IDENTIFIER";
-        
-        case TokenType::Let: return "LET";
-        case TokenType::If: return "IF";
-        case TokenType::Else: return "ELSE";
-        case TokenType::While: return "WHILE";
-        case TokenType::For: return "FOR";
-        case TokenType::Fn: return "FN";
-        case TokenType::Return: return "RETURN";
-        case TokenType::True: return "TRUE";
-        case TokenType::False: return "FALSE";
-        case TokenType::Nil: return "NIL";
-        case TokenType::Print: return "PRINT";
-        
-        case TokenType::Plus: return "PLUS";
-        case TokenType::Minus: return "MINUS";
-        case TokenType::Star: return "STAR";
-        case TokenType::Slash: return "SLASH";
-        case TokenType::Percent: return "PERCENT";
-        case TokenType::Equal: return "EQUAL";
-        case TokenType::EqualEqual: return "EQUAL_EQUAL";
-        case TokenType::Bang: return "BANG";
-        case TokenType::BangEqual: return "BANG_EQUAL";
-        case TokenType::Less: return "LESS";
-        case TokenType::LessEqual: return "LESS_EQUAL";
-        case TokenType::Greater: return "GREATER";
-        case TokenType::GreaterEqual: return "GREATER_EQUAL";
-        case TokenType::And: return "AND";
-        case TokenType::Or: return "OR";
-        
-        case TokenType::LeftParen: return "LEFT_PAREN";
-        case TokenType::RightParen: return "RIGHT_PAREN";
-        case TokenType::LeftBrace: return "LEFT_BRACE";
-        case TokenType::RightBrace: return "RIGHT_BRACE";
-        case TokenType::Semicolon: return "SEMICOLON";
-        case TokenType::Comma: return "COMMA";
-        
-        case TokenType::Eof: return "EOF";
-        case TokenType::Error: return "ERROR";
-        
-        default: return "UNKNOWN";
+        case TokenType::Number: return "Number";
+        case TokenType::String: return "String";
+        case TokenType::Identifier: return "Identifier";
+        case TokenType::Let: return "Let";
+        case TokenType::If: return "If";
+        case TokenType::Else: return "Else";
+        case TokenType::While: return "While";
+        case TokenType::For: return "For";
+        case TokenType::Fn: return "Fn";
+        case TokenType::Return: return "Return";
+        case TokenType::Print: return "Print";
+        case TokenType::True: return "True";
+        case TokenType::False: return "False";
+        case TokenType::Nil: return "Nil";
+        case TokenType::Break: return "Break";
+        case TokenType::Continue: return "Continue";
+        case TokenType::Plus: return "Plus";
+        case TokenType::Minus: return "Minus";
+        case TokenType::Star: return "Star";
+        case TokenType::Slash: return "Slash";
+        case TokenType::Percent: return "Percent";
+        case TokenType::Equal: return "Equal";
+        case TokenType::EqualEqual: return "EqualEqual";
+        case TokenType::Bang: return "Bang";
+        case TokenType::BangEqual: return "BangEqual";
+        case TokenType::Less: return "Less";
+        case TokenType::LessEqual: return "LessEqual";
+        case TokenType::Greater: return "Greater";
+        case TokenType::GreaterEqual: return "GreaterEqual";
+        case TokenType::And: return "And";
+        case TokenType::Or: return "Or";
+        case TokenType::PlusEqual: return "PlusEqual";
+        case TokenType::MinusEqual: return "MinusEqual";
+        case TokenType::StarEqual: return "StarEqual";
+        case TokenType::SlashEqual: return "SlashEqual";
+        case TokenType::PlusPlus: return "PlusPlus";
+        case TokenType::MinusMinus: return "MinusMinus";
+        case TokenType::Question: return "Question";
+        case TokenType::Colon: return "Colon";
+        case TokenType::LeftParen: return "LeftParen";
+        case TokenType::RightParen: return "RightParen";
+        case TokenType::LeftBrace: return "LeftBrace";
+        case TokenType::RightBrace: return "RightBrace";
+        case TokenType::LeftBracket: return "LeftBracket";   // NEW!
+        case TokenType::RightBracket: return "RightBracket"; // NEW!
+        case TokenType::Semicolon: return "Semicolon";
+        case TokenType::Comma: return "Comma";
+        case TokenType::Dot: return "Dot";  // NEW!
+        case TokenType::Eof: return "Eof";
+        case TokenType::Error: return "Error";
+        default: return "Unknown";
     }
 }
 

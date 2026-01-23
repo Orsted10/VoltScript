@@ -26,8 +26,10 @@ private:
     StmtPtr statement();
     StmtPtr printStatement();
     StmtPtr letStatement();
-    StmtPtr fnStatement();       // NEW!
-    StmtPtr returnStatement();   // NEW!
+    StmtPtr fnStatement();
+    StmtPtr returnStatement();
+    StmtPtr breakStatement();
+    StmtPtr continueStatement();
     StmtPtr ifStatement();
     StmtPtr whileStatement();
     StmtPtr forStatement();
@@ -37,6 +39,7 @@ private:
     // Expression parsing (by precedence level)
     ExprPtr expression();
     ExprPtr assignment();
+    ExprPtr ternary();
     ExprPtr logicalOr();
     ExprPtr logicalAnd();
     ExprPtr equality();
@@ -44,8 +47,13 @@ private:
     ExprPtr term();
     ExprPtr factor();
     ExprPtr unary();
+    ExprPtr postfix();
     ExprPtr call();
     ExprPtr primary();
+    
+    // Array parsing - NEW!
+    ExprPtr arrayLiteral();
+    ExprPtr finishIndexOrMember(ExprPtr object);
     
     // Helper to finish call expressions
     ExprPtr finishCall(ExprPtr callee);

@@ -1,12 +1,15 @@
 #include "interpreter.h"
 #include "callable.h"
-#include <cmath>
+#include "array.h"  // NEW!
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <chrono>
+#include <cmath>
 
 namespace volt {
 
-Interpreter::Interpreter() 
+Interpreter::Interpreter()
     : environment_(std::make_shared<Environment>()),
       globals_(environment_) {
     // Register built-in functions
@@ -31,6 +34,129 @@ void Interpreter::defineNatives() {
             return static_cast<double>(millis) / 1000.0;
         },
         "clock"
+    ));
+    
+    // len(value) - returns length of string or array  // UPDATED!
+    globals_->define("len", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (isString(args[0])) {
+                return static_cast<double>(asString(args[0]).length());
+            }
+            if (isArray(args[0])) {  // NEW!
+                return static_cast<double>(asArray(args[0])->length());
+            }
+            throw std::runtime_error("len() requires a string or array argument");
+        },
+        "len"
+    ));
+    
+    // str(value) - convert to string
+    globals_->define("str", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            return valueToString(args[0]);
+        },
+        "str"
+    ));
+    
+    // num(value) - convert to number
+    globals_->define("num", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (isNumber(args[0])) return args[0];
+            if (isString(args[0])) {
+                try {
+                    return std::stod(asString(args[0]));
+                } catch (...) {
+                    throw std::runtime_error("Cannot convert string to number: " + asString(args[0]));
+                }
+            }
+            if (isBool(args[0])) {
+                return asBool(args[0]) ? 1.0 : 0.0;
+            }
+            throw std::runtime_error("Cannot convert to number");
+        },
+        "num"
+    ));
+    
+    // input(prompt) - read line from stdin
+    globals_->define("input", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (isString(args[0])) {
+                std::cout << asString(args[0]);
+            }
+            std::string line;
+            std::getline(std::cin, line);
+            return line;
+        },
+        "input"
+    ));
+    
+    // readFile(path) - read entire file as string
+    globals_->define("readFile", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) {
+                throw std::runtime_error("readFile() requires a string path");
+            }
+            std::ifstream file(asString(args[0]));
+            if (!file) {
+                throw std::runtime_error("Could not open file: " + asString(args[0]));
+            }
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            return buffer.str();
+        },
+        "readFile"
+    ));
+    
+    // writeFile(path, content) - write string to file (overwrites)
+    globals_->define("writeFile", std::make_shared<NativeFunction>(
+        2,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0]) || !isString(args[1])) {
+                throw std::runtime_error("writeFile() requires string path and content");
+            }
+            std::ofstream file(asString(args[0]));
+            if (!file) {
+                throw std::runtime_error("Could not open file for writing: " + asString(args[0]));
+            }
+            file << asString(args[1]);
+            return true;
+        },
+        "writeFile"
+    ));
+    
+    // appendFile(path, content) - append string to file
+    globals_->define("appendFile", std::make_shared<NativeFunction>(
+        2,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0]) || !isString(args[1])) {
+                throw std::runtime_error("appendFile() requires string path and content");
+            }
+            std::ofstream file(asString(args[0]), std::ios::app);
+            if (!file) {
+                throw std::runtime_error("Could not open file for appending: " + asString(args[0]));
+            }
+            file << asString(args[1]);
+            return true;
+        },
+        "appendFile"
+    ));
+    
+    // fileExists(path) - check if file exists
+    globals_->define("fileExists", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) {
+                throw std::runtime_error("fileExists() requires a string path");
+            }
+            std::ifstream file(asString(args[0]));
+            return file.good();
+        },
+        "fileExists"
     ));
 }
 
@@ -57,6 +183,10 @@ void Interpreter::execute(Stmt* stmt) {
         executeFnStmt(fnStmt);
     } else if (auto* returnStmt = dynamic_cast<ReturnStmt*>(stmt)) {
         executeReturnStmt(returnStmt);
+    } else if (auto* breakStmt = dynamic_cast<BreakStmt*>(stmt)) {
+        executeBreakStmt(breakStmt);
+    } else if (auto* continueStmt = dynamic_cast<ContinueStmt*>(stmt)) {
+        executeContinueStmt(continueStmt);
     } else {
         throw std::runtime_error("Unknown statement type");
     }
@@ -79,30 +209,25 @@ void Interpreter::executePrintStmt(PrintStmt* stmt) {
 
 void Interpreter::executeLetStmt(LetStmt* stmt) {
     Value value = nullptr;
-    
     if (stmt->initializer) {
         value = evaluate(stmt->initializer.get());
     }
-    
     environment_->define(stmt->name, value);
 }
 
 void Interpreter::executeBlockStmt(BlockStmt* stmt) {
-    executeBlock(stmt->statements, 
+    executeBlock(stmt->statements,
                  std::make_shared<Environment>(environment_));
 }
 
 void Interpreter::executeBlock(const std::vector<StmtPtr>& statements,
-                               std::shared_ptr<Environment> environment) {
+                                std::shared_ptr<Environment> environment) {
     std::shared_ptr<Environment> previous = environment_;
-    
     try {
         environment_ = environment;
-        
         for (const auto& stmt : statements) {
             execute(stmt.get());
         }
-        
         environment_ = previous;
     } catch (...) {
         environment_ = previous;
@@ -112,7 +237,6 @@ void Interpreter::executeBlock(const std::vector<StmtPtr>& statements,
 
 void Interpreter::executeIfStmt(IfStmt* stmt) {
     Value condition = evaluate(stmt->condition.get());
-    
     if (isTruthy(condition)) {
         execute(stmt->thenBranch.get());
     } else if (stmt->elseBranch) {
@@ -122,7 +246,13 @@ void Interpreter::executeIfStmt(IfStmt* stmt) {
 
 void Interpreter::executeWhileStmt(WhileStmt* stmt) {
     while (isTruthy(evaluate(stmt->condition.get()))) {
-        execute(stmt->body.get());
+        try {
+            execute(stmt->body.get());
+        } catch (const ContinueException&) {
+            continue; // Continue to next iteration
+        } catch (const BreakException&) {
+            break; // Exit the loop
+        }
     }
 }
 
@@ -130,7 +260,6 @@ void Interpreter::executeForStmt(ForStmt* stmt) {
     // Create new scope for loop
     auto loopEnv = std::make_shared<Environment>(environment_);
     auto previous = environment_;
-    
     try {
         environment_ = loopEnv;
         
@@ -147,9 +276,15 @@ void Interpreter::executeForStmt(ForStmt* stmt) {
             return true;
         };
         
-        // Loop
+        // Loop with break/continue support
         while (checkCondition()) {
-            execute(stmt->body.get());
+            try {
+                execute(stmt->body.get());
+            } catch (const ContinueException&) {
+                // Continue - execute increment and check condition
+            } catch (const BreakException&) {
+                break; // Exit the loop
+            }
             
             // Execute increment
             if (stmt->increment) {
@@ -178,7 +313,6 @@ void Interpreter::executeFnStmt(FnStmt* stmt) {
 
 void Interpreter::executeReturnStmt(ReturnStmt* stmt) {
     Value value = nullptr;
-    
     if (stmt->value) {
         value = evaluate(stmt->value.get());
     }
@@ -187,7 +321,6 @@ void Interpreter::executeReturnStmt(ReturnStmt* stmt) {
     // This is caught in VoltFunction::call()
     throw ReturnValue(value);
 }
-
 // ========================================
 // EXPRESSION EVALUATION
 // ========================================
@@ -225,6 +358,38 @@ Value Interpreter::evaluate(Expr* expr) {
         return evaluateAssign(assign);
     }
     
+    if (auto* compound = dynamic_cast<CompoundAssignExpr*>(expr)) {
+        return evaluateCompoundAssign(compound);
+    }
+    
+    if (auto* update = dynamic_cast<UpdateExpr*>(expr)) {
+        return evaluateUpdate(update);
+    }
+    
+    if (auto* ternary = dynamic_cast<TernaryExpr*>(expr)) {
+        return evaluateTernary(ternary);
+    }
+    
+    // ========================================
+    // ARRAY EXPRESSIONS - NEW!
+    // ========================================
+    
+    if (auto* array = dynamic_cast<ArrayExpr*>(expr)) {
+        return evaluateArray(array);
+    }
+    
+    if (auto* index = dynamic_cast<IndexExpr*>(expr)) {
+        return evaluateIndex(index);
+    }
+    
+    if (auto* indexAssign = dynamic_cast<IndexAssignExpr*>(expr)) {
+        return evaluateIndexAssign(indexAssign);
+    }
+    
+    if (auto* member = dynamic_cast<MemberExpr*>(expr)) {
+        return evaluateMember(member);
+    }
+    
     throw std::runtime_error("Unknown expression type");
 }
 
@@ -246,7 +411,7 @@ Value Interpreter::evaluateVariable(VariableExpr* expr) {
     try {
         return environment_->get(expr->name);
     } catch (const std::runtime_error& e) {
-        throw RuntimeError(Token(TokenType::Identifier, expr->name, 0), e.what());
+        throw RuntimeError(Token(TokenType::Identifier, expr->name, 0, 0), e.what());
     }
 }
 
@@ -257,10 +422,8 @@ Value Interpreter::evaluateUnary(UnaryExpr* expr) {
         case TokenType::Minus:
             checkNumberOperand(expr->op, right);
             return -asNumber(right);
-        
         case TokenType::Bang:
             return !isTruthy(right);
-        
         default:
             throw RuntimeError(expr->op, "Unknown unary operator");
     }
@@ -278,49 +441,49 @@ Value Interpreter::evaluateBinary(BinaryExpr* expr) {
             if (isString(left) && isString(right)) {
                 return asString(left) + asString(right);
             }
+            // Type coercion: string + number or number + string
+            if (isString(left) && isNumber(right)) {
+                return asString(left) + valueToString(right);
+            }
+            if (isNumber(left) && isString(right)) {
+                return valueToString(left) + asString(right);
+            }
             throw RuntimeError(expr->op, "Operands must be two numbers or two strings");
-        
+            
         case TokenType::Minus:
             checkNumberOperands(expr->op, left, right);
             return asNumber(left) - asNumber(right);
-        
         case TokenType::Star:
             checkNumberOperands(expr->op, left, right);
             return asNumber(left) * asNumber(right);
-        
         case TokenType::Slash:
             checkNumberOperands(expr->op, left, right);
             if (asNumber(right) == 0.0) {
                 throw RuntimeError(expr->op, "Division by zero");
             }
             return asNumber(left) / asNumber(right);
-        
         case TokenType::Percent:
             checkNumberOperands(expr->op, left, right);
             return std::fmod(asNumber(left), asNumber(right));
-        
+            
         case TokenType::Greater:
             checkNumberOperands(expr->op, left, right);
             return asNumber(left) > asNumber(right);
-        
         case TokenType::GreaterEqual:
             checkNumberOperands(expr->op, left, right);
             return asNumber(left) >= asNumber(right);
-        
         case TokenType::Less:
             checkNumberOperands(expr->op, left, right);
             return asNumber(left) < asNumber(right);
-        
         case TokenType::LessEqual:
             checkNumberOperands(expr->op, left, right);
             return asNumber(left) <= asNumber(right);
-        
+            
         case TokenType::EqualEqual:
             return isEqual(left, right);
-        
         case TokenType::BangEqual:
             return !isEqual(left, right);
-        
+            
         default:
             throw RuntimeError(expr->op, "Unknown binary operator");
     }
@@ -356,7 +519,7 @@ Value Interpreter::evaluateCall(CallExpr* expr) {
     // Make sure it's actually a function
     if (!isCallable(callee)) {
         throw RuntimeError(
-            Token(TokenType::LeftParen, "(", 0),
+            Token(TokenType::LeftParen, "(", 0, 0),
             "Can only call functions and classes"
         );
     }
@@ -366,8 +529,8 @@ Value Interpreter::evaluateCall(CallExpr* expr) {
     // Check arity (number of arguments)
     if (static_cast<int>(arguments.size()) != function->arity()) {
         throw RuntimeError(
-            Token(TokenType::LeftParen, "(", 0),
-            "Expected " + std::to_string(function->arity()) + 
+            Token(TokenType::LeftParen, "(", 0, 0),
+            "Expected " + std::to_string(function->arity()) +
             " arguments but got " + std::to_string(arguments.size())
         );
     }
@@ -378,15 +541,197 @@ Value Interpreter::evaluateCall(CallExpr* expr) {
 
 Value Interpreter::evaluateAssign(AssignExpr* expr) {
     Value value = evaluate(expr->value.get());
-    
     try {
         environment_->assign(expr->name, value);
     } catch (const std::runtime_error&) {
         // If variable doesn't exist, create it (implicit declaration)
         environment_->define(expr->name, value);
     }
-    
     return value;
+}
+
+Value Interpreter::evaluateCompoundAssign(CompoundAssignExpr* expr) {
+    Value current = environment_->get(expr->name);
+    Value operand = evaluate(expr->value.get());
+    Value result;
+    
+    switch (expr->op.type) {
+        case TokenType::PlusEqual:
+            if (isNumber(current) && isNumber(operand)) {
+                result = asNumber(current) + asNumber(operand);
+            } else if (isString(current) && isString(operand)) {
+                result = asString(current) + asString(operand);
+            } else if (isString(current) && isNumber(operand)) {
+                result = asString(current) + valueToString(operand);
+            } else {
+                throw RuntimeError(expr->op, "Operands must be compatible for +=");
+            }
+            break;
+        case TokenType::MinusEqual:
+            checkNumberOperands(expr->op, current, operand);
+            result = asNumber(current) - asNumber(operand);
+            break;
+        case TokenType::StarEqual:
+            checkNumberOperands(expr->op, current, operand);
+            result = asNumber(current) * asNumber(operand);
+            break;
+        case TokenType::SlashEqual:
+            checkNumberOperands(expr->op, current, operand);
+            if (asNumber(operand) == 0.0) {
+                throw RuntimeError(expr->op, "Division by zero");
+            }
+            result = asNumber(current) / asNumber(operand);
+            break;
+        default:
+            throw RuntimeError(expr->op, "Unknown compound assignment operator");
+    }
+    
+    environment_->assign(expr->name, result);
+    return result;
+}
+
+Value Interpreter::evaluateUpdate(UpdateExpr* expr) {
+    Value current = environment_->get(expr->name);
+    if (!isNumber(current)) {
+        throw RuntimeError(expr->op, "Operand must be a number for increment/decrement");
+    }
+    
+    double oldValue = asNumber(current);
+    double newValue;
+    if (expr->op.type == TokenType::PlusPlus) {
+        newValue = oldValue + 1;
+    } else {
+        newValue = oldValue - 1;
+    }
+    
+    environment_->assign(expr->name, newValue);
+    
+    // Return old value for postfix, new value for prefix
+    return expr->prefix ? newValue : oldValue;
+}
+
+Value Interpreter::evaluateTernary(TernaryExpr* expr) {
+    if (isTruthy(evaluate(expr->condition.get()))) {
+        return evaluate(expr->thenBranch.get());
+    }
+    return evaluate(expr->elseBranch.get());
+}
+
+// ========================================
+// ARRAY EVALUATION - NEW METHODS!
+// ========================================
+
+Value Interpreter::evaluateArray(ArrayExpr* expr) {
+    std::vector<Value> elements;
+    
+    // Evaluate all element expressions
+    for (const auto& elem : expr->elements) {
+        elements.push_back(evaluate(elem.get()));
+    }
+    
+    // Create and return array
+    return std::make_shared<VoltArray>(elements);
+}
+
+Value Interpreter::evaluateIndex(IndexExpr* expr) {
+    Value object = evaluate(expr->object.get());
+    Value index = evaluate(expr->index.get());
+    
+    // Must be an array
+    if (!isArray(object)) {
+        throw std::runtime_error("Can only index arrays");
+    }
+    
+    // Index must be a number
+    if (!isNumber(index)) {
+        throw std::runtime_error("Array index must be a number");
+    }
+    
+    auto array = asArray(object);
+    int idx = static_cast<int>(asNumber(index));
+    
+    // Check bounds
+    if (idx < 0 || idx >= array->length()) {
+        throw std::runtime_error("Array index out of bounds: " + std::to_string(idx));
+    }
+    
+    return array->get(idx);
+}
+
+Value Interpreter::evaluateIndexAssign(IndexAssignExpr* expr) {
+    Value object = evaluate(expr->object.get());
+    Value index = evaluate(expr->index.get());
+    Value value = evaluate(expr->value.get());
+    
+    // Must be an array
+    if (!isArray(object)) {
+        throw std::runtime_error("Can only index arrays");
+    }
+    
+    // Index must be a number
+    if (!isNumber(index)) {
+        throw std::runtime_error("Array index must be a number");
+    }
+    
+    auto array = asArray(object);
+    int idx = static_cast<int>(asNumber(index));
+    
+    // Check bounds
+    if (idx < 0 || idx >= array->length()) {
+        throw std::runtime_error("Array index out of bounds: " + std::to_string(idx));
+    }
+    
+    array->set(idx, value);
+    return value;
+}
+
+Value Interpreter::evaluateMember(MemberExpr* expr) {
+    Value object = evaluate(expr->object.get());
+    
+    // Must be an array
+    if (!isArray(object)) {
+        throw std::runtime_error("Only arrays have members");
+    }
+    
+    auto array = asArray(object);
+    
+    // Handle array.length
+    if (expr->member == "length") {
+        return static_cast<double>(array->length());
+    }
+    
+    // Handle array.push - return a callable
+    if (expr->member == "push") {
+        return std::make_shared<NativeFunction>(
+            1,
+            [array](const std::vector<Value>& args) -> Value {
+                array->push(args[0]);
+                return nullptr; // returns nil
+            },
+            "push"
+        );
+    }
+    
+    // Handle array.pop
+    if (expr->member == "pop") {
+        return std::make_shared<NativeFunction>(
+            0,
+            [array](const std::vector<Value>&) -> Value {
+                return array->pop();
+            },
+            "pop"
+        );
+    }
+    
+    throw std::runtime_error("Unknown array member: " + expr->member);
+}
+
+void Interpreter::executeBreakStmt(BreakStmt*) {
+    throw BreakException();
+}
+
+void Interpreter::executeContinueStmt(ContinueStmt*) {
+    throw ContinueException();
 }
 
 void Interpreter::checkNumberOperand(const Token& op, const Value& operand) {

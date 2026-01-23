@@ -102,6 +102,13 @@ Value Evaluator::evaluateBinary(BinaryExpr* expr) {
             if (isString(left) && isString(right)) {
                 return asString(left) + asString(right);
             }
+            // Type coercion: string + number or number + string
+            if (isString(left) && isNumber(right)) {
+                return asString(left) + valueToString(right);
+            }
+            if (isNumber(left) && isString(right)) {
+                return valueToString(left) + asString(right);
+            }
             throw RuntimeError(expr->op, "Operands must be two numbers or two strings");
         
         case TokenType::Minus:

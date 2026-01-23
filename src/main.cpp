@@ -1,12 +1,73 @@
 #include "lexer.h"
 #include "parser.h"
 #include "interpreter.h"
+#include "ast.h"
+#include "stmt.h"
+#include "token.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
 
-void runFile(const std::string& path, volt::Interpreter& interpreter) {
+// Helper to print tokens for debug mode
+void dumpTokens(const std::vector<volt::Token>& tokens) {
+    std::cout << "\n=== TOKENS ===\n";
+    for (const auto& tok : tokens) {
+        std::cout << "[" << tok.line << ":" << tok.column << "] "
+                  << volt::tokenName(tok.type) << " '" << tok.lexeme << "'";
+        if (tok.type == volt::TokenType::String && !tok.stringValue.empty()) {
+            std::cout << " -> \"" << tok.stringValue << "\"";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "==============\n\n";
+}
+
+// Helper to print statements for debug mode
+void dumpStatements(const std::vector<volt::StmtPtr>& statements) {
+    std::cout << "\n=== AST ===\n";
+    for (size_t i = 0; i < statements.size(); i++) {
+        std::cout << i + 1 << ": ";
+        if (auto* exprStmt = dynamic_cast<volt::ExprStmt*>(statements[i].get())) {
+            std::cout << "ExprStmt: " << volt::printAST(exprStmt->expr.get());
+        } else if (auto* printStmt = dynamic_cast<volt::PrintStmt*>(statements[i].get())) {
+            std::cout << "PrintStmt: " << volt::printAST(printStmt->expr.get());
+        } else if (auto* letStmt = dynamic_cast<volt::LetStmt*>(statements[i].get())) {
+            std::cout << "LetStmt: " << letStmt->name;
+            if (letStmt->initializer) {
+                std::cout << " = " << volt::printAST(letStmt->initializer.get());
+            }
+        } else if (dynamic_cast<volt::IfStmt*>(statements[i].get())) {
+            std::cout << "IfStmt";
+        } else if (dynamic_cast<volt::WhileStmt*>(statements[i].get())) {
+            std::cout << "WhileStmt";
+        } else if (dynamic_cast<volt::ForStmt*>(statements[i].get())) {
+            std::cout << "ForStmt";
+        } else if (auto* fnStmt = dynamic_cast<volt::FnStmt*>(statements[i].get())) {
+            std::cout << "FnStmt: " << fnStmt->name << "(";
+            for (size_t j = 0; j < fnStmt->parameters.size(); j++) {
+                if (j > 0) std::cout << ", ";
+                std::cout << fnStmt->parameters[j];
+            }
+            std::cout << ")";
+        } else if (dynamic_cast<volt::ReturnStmt*>(statements[i].get())) {
+            std::cout << "ReturnStmt";
+        } else if (dynamic_cast<volt::BreakStmt*>(statements[i].get())) {
+            std::cout << "BreakStmt";
+        } else if (dynamic_cast<volt::ContinueStmt*>(statements[i].get())) {
+            std::cout << "ContinueStmt";
+        } else if (dynamic_cast<volt::BlockStmt*>(statements[i].get())) {
+            std::cout << "BlockStmt";
+        } else {
+            std::cout << "Unknown";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "===========\n\n";
+}
+
+void runFile(const std::string& path, volt::Interpreter& interpreter, bool debugMode = false) {
     std::ifstream file(path);
     if (!file) {
         std::cerr << "Could not open file: " << path << "\n";
@@ -21,6 +82,11 @@ void runFile(const std::string& path, volt::Interpreter& interpreter) {
     volt::Lexer lexer(source);
     auto tokens = lexer.tokenize();
     
+    // Debug: print tokens
+    if (debugMode) {
+        dumpTokens(tokens);
+    }
+    
     // Parse
     volt::Parser parser(tokens);
     auto statements = parser.parseProgram();
@@ -32,33 +98,97 @@ void runFile(const std::string& path, volt::Interpreter& interpreter) {
         exit(65);
     }
     
+    // Debug: print AST
+    if (debugMode) {
+        dumpStatements(statements);
+    }
+    
     // Execute
     try {
         interpreter.execute(statements);
     } catch (const volt::RuntimeError& e) {
-        std::cerr << "Runtime Error [Line " << e.token.line << "]: " 
+        std::cerr << "Runtime Error [Line " << e.token.line 
+                  << ", Col " << e.token.column << "]: " 
                   << e.what() << "\n";
         exit(70);
     }
 }
 
+// Check if input is incomplete (unbalanced braces/parens/strings)
+bool isIncomplete(const std::string& input) {
+    int braces = 0, parens = 0;
+    bool inString = false;
+    
+    for (size_t i = 0; i < input.size(); i++) {
+        char c = input[i];
+        
+        // Handle string state (with escape handling)
+        if (c == '"' && (i == 0 || input[i - 1] != '\\')) {
+            inString = !inString;
+            continue;
+        }
+        
+        if (!inString) {
+            if (c == '{') braces++;
+            else if (c == '}') braces--;
+            else if (c == '(') parens++;
+            else if (c == ')') parens--;
+        }
+    }
+    
+    return braces > 0 || parens > 0 || inString;
+}
+
 void runPrompt() {
     volt::Interpreter interpreter;
-    std::string line;
+    std::vector<std::string> history;
+    std::string buffer;
     
-    std::cout << "VoltScript v0.5.0 REPL\n";
-    std::cout << "Type 'exit' to quit\n\n";
+    std::cout << "VoltScript v0.7.0 REPL\n";
+    std::cout << "Type 'exit' to quit, 'history' to show command history\n\n";
     
     while (true) {
-        std::cout << "> ";
+        // Show different prompt for continuation lines
+        std::cout << (buffer.empty() ? "> " : ". ");
+        
+        std::string line;
         if (!std::getline(std::cin, line)) break;
         
-        if (line == "exit" || line == "quit") break;
-        if (line.empty()) continue;
+        // Handle special commands only on fresh input
+        if (buffer.empty()) {
+            if (line == "exit" || line == "quit") break;
+            if (line == "history") {
+                std::cout << "--- Command History ---\n";
+                for (size_t i = 0; i < history.size(); i++) {
+                    std::cout << i + 1 << ": " << history[i] << "\n";
+                }
+                std::cout << "-----------------------\n";
+                continue;
+            }
+            if (line == "clear") {
+                interpreter.reset();
+                std::cout << "Environment cleared.\n";
+                continue;
+            }
+            if (line.empty()) continue;
+        }
+        
+        // Accumulate input
+        buffer += (buffer.empty() ? "" : "\n") + line;
+        
+        // Check if input is complete
+        if (isIncomplete(buffer)) {
+            continue;  // Wait for more input
+        }
+        
+        // Add to history before processing
+        if (!buffer.empty()) {
+            history.push_back(buffer);
+        }
         
         try {
             // Tokenize
-            volt::Lexer lexer(line);
+            volt::Lexer lexer(buffer);
             auto tokens = lexer.tokenize();
             
             // Parse
@@ -69,6 +199,7 @@ void runPrompt() {
                 for (const auto& error : parser.getErrors()) {
                     std::cerr << error << "\n";
                 }
+                buffer.clear();
                 continue;
             }
             
@@ -76,24 +207,50 @@ void runPrompt() {
             interpreter.execute(statements);
             
         } catch (const volt::RuntimeError& e) {
-            std::cerr << "Runtime Error: " << e.what() << "\n";
+            std::cerr << "Runtime Error [Line " << e.token.line 
+                      << ", Col " << e.token.column << "]: " 
+                      << e.what() << "\n";
         } catch (const std::exception& e) {
             std::cerr << "Error: " << e.what() << "\n";
         }
+        
+        buffer.clear();
     }
 }
 
 int main(int argc, char** argv) {
-    if (argc > 2) {
-        std::cout << "Usage: volt [script]\n";
-        return 64;
+    bool debugMode = false;
+    std::string scriptPath;
+    
+    // Parse command-line arguments
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--debug" || arg == "-d") {
+            debugMode = true;
+        } else if (arg == "--help" || arg == "-h") {
+            std::cout << "VoltScript v0.7.0\n";
+            std::cout << "Usage: volt [options] [script]\n\n";
+            std::cout << "Options:\n";
+            std::cout << "  --debug, -d    Print tokens and AST before execution\n";
+            std::cout << "  --help, -h     Show this help message\n";
+            return 0;
+        } else if (arg[0] == '-') {
+            std::cerr << "Unknown option: " << arg << "\n";
+            return 64;
+        } else {
+            if (!scriptPath.empty()) {
+                std::cerr << "Only one script file can be specified\n";
+                return 64;
+            }
+            scriptPath = arg;
+        }
     }
     
     volt::Interpreter interpreter;
     
-    if (argc == 2) {
+    if (!scriptPath.empty()) {
         // Run file
-        runFile(argv[1], interpreter);
+        runFile(scriptPath, interpreter, debugMode);
     } else {
         // Interactive REPL
         runPrompt();

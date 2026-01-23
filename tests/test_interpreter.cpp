@@ -241,9 +241,17 @@ TEST(Interpreter, NestedIf) {
 }
 
 TEST(Interpreter, IfTruthiness) {
-    EXPECT_EQ(runCode("if (0) print \"yes\";"), "yes\n");  // 0 is truthy
-    EXPECT_EQ(runCode("if (nil) print \"yes\";"), "");     // nil is falsy
-    EXPECT_EQ(runCode("if (\"\") print \"yes\";"), "yes\n");  // empty string is truthy
+    // Numbers: non-zero is truthy, 0 is falsy
+    EXPECT_EQ(runCode("if (1) print \"yes\";"), "yes\n");
+    EXPECT_EQ(runCode("if (0) print \"yes\";"), "");           // 0 is FALSY - no output
+    // Strings: non-empty is truthy, empty is falsy
+    EXPECT_EQ(runCode("if (\"\") print \"yes\";"), "");        // "" is FALSY - no output
+    EXPECT_EQ(runCode("if (\"hello\") print \"yes\";"), "yes\n");
+    // nil is always falsy
+    EXPECT_EQ(runCode("if (nil) print \"yes\";"), "");
+    // Booleans
+    EXPECT_EQ(runCode("if (true) print \"yes\";"), "yes\n");
+    EXPECT_EQ(runCode("if (false) print \"yes\";"), "");
 }
 
 // ========================================
@@ -650,9 +658,10 @@ TEST(Interpreter, DivisionByZero) {
     EXPECT_EQ(output, "RUNTIME_ERROR");
 }
 
-TEST(Interpreter, TypeMismatchAddition) {
+TEST(Interpreter, TypeCoercionAddition) {
+    // number + string now coerces to string concatenation
     std::string output = runCode("print 5 + \"hello\";");
-    EXPECT_EQ(output, "RUNTIME_ERROR");
+    EXPECT_EQ(output, "5hello\n");
 }
 
 TEST(Interpreter, TypeMismatchComparison) {

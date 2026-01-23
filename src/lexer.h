@@ -33,6 +33,8 @@ private:
     size_t current_ = 0;
     size_t start_ = 0;
     int line_ = 1;
+    int column_ = 1;
+    int startColumn_ = 1;
     
     static const std::unordered_map<std::string_view, TokenType> keywords_;
 };

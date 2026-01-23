@@ -102,4 +102,10 @@ struct ReturnStmt : Stmt {
     explicit ReturnStmt(ExprPtr v) : value(std::move(v)) {}
 };
 
+// Break statement: break;
+struct BreakStmt : Stmt {};
+
+// Continue statement: continue;
+struct ContinueStmt : Stmt {};
+
 } // namespace volt

@@ -49,8 +49,13 @@ TEST(Lexer, Strings) {
     
     ASSERT_EQ(tokens.size(), 3);
     EXPECT_EQ(tokens[0].type, volt::TokenType::String);
-    EXPECT_EQ(tokens[0].lexeme, "hello");
-    EXPECT_EQ(tokens[1].lexeme, "world");
+    // Lexeme now includes quotes
+    EXPECT_EQ(tokens[0].lexeme, "\"hello\"");
+    // stringValue holds processed content
+    EXPECT_EQ(tokens[0].stringValue, "hello");
+    
+    EXPECT_EQ(tokens[1].lexeme, "\"world\"");
+    EXPECT_EQ(tokens[1].stringValue, "world");
 }
 
 TEST(Lexer, Comparisons) {

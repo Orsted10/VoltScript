@@ -1,11 +1,13 @@
 #pragma once
+
 #include "stmt.h"
 #include "ast.h"
 #include "value.h"
 #include "environment.h"
 #include <memory>
-#include <string>
 #include <vector>
+#include <string>
+#include <exception>
 #include <stdexcept>
 
 namespace volt {
@@ -20,9 +22,18 @@ namespace volt {
 class ReturnValue : public std::exception {
 public:
     Value value;
-    
     explicit ReturnValue(Value val) : value(val) {}
 };
+
+/**
+ * BreakException - Exception thrown when break statement is executed
+ */
+class BreakException : public std::exception {};
+
+/**
+ * ContinueException - Exception thrown when continue statement is executed
+ */
+class ContinueException : public std::exception {};
 
 /**
  * Interpreter - Executes statements and evaluates expressions
@@ -51,7 +62,7 @@ public:
     
     // Reset interpreter state
     void reset();
-
+    
 private:
     // Statement execution
     void executeExprStmt(ExprStmt* stmt);
@@ -63,6 +74,8 @@ private:
     void executeForStmt(ForStmt* stmt);
     void executeFnStmt(FnStmt* stmt);
     void executeReturnStmt(ReturnStmt* stmt);
+    void executeBreakStmt(BreakStmt* stmt);
+    void executeContinueStmt(ContinueStmt* stmt);
     
     // Expression evaluation
     Value evaluateLiteral(LiteralExpr* expr);
@@ -73,6 +86,15 @@ private:
     Value evaluateGrouping(GroupingExpr* expr);
     Value evaluateCall(CallExpr* expr);
     Value evaluateAssign(AssignExpr* expr);
+    Value evaluateCompoundAssign(CompoundAssignExpr* expr);
+    Value evaluateUpdate(UpdateExpr* expr);
+    Value evaluateTernary(TernaryExpr* expr);
+    
+    // ARRAY EVALUATION - NEW!
+    Value evaluateArray(ArrayExpr* expr);
+    Value evaluateIndex(IndexExpr* expr);
+    Value evaluateIndexAssign(IndexAssignExpr* expr);
+    Value evaluateMember(MemberExpr* expr);
     
     // Helper methods
     void checkNumberOperand(const Token& op, const Value& operand);
@@ -89,7 +111,6 @@ private:
 class RuntimeError : public std::runtime_error {
 public:
     Token token;
-    
     RuntimeError(Token tok, const std::string& message)
         : std::runtime_error(message), token(tok) {}
 };

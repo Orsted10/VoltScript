@@ -25,7 +25,7 @@ std::string evalExpr(const std::string& source) {
 // ===== LITERALS =====
 TEST(Evaluator, Numbers) {
     EXPECT_EQ(evalExpr("42"), "42");
-    EXPECT_EQ(evalExpr("3.14"), "3.140000");
+    EXPECT_EQ(evalExpr("3.14"), "3.14");
 }
 
 TEST(Evaluator, Strings) {
@@ -161,7 +161,10 @@ TEST(Evaluator, DivisionByZero) {
     EXPECT_EQ(evalExpr("10 / 0"), "ERROR");
 }
 
-TEST(Evaluator, TypeMismatch) {
-    EXPECT_EQ(evalExpr("5 + \"hello\""), "ERROR");
+TEST(Evaluator, TypeCoercion) {
+    // string + number now coerces to string
+    EXPECT_EQ(evalExpr("5 + \"hello\""), "5hello");
+    EXPECT_EQ(evalExpr("\"value: \" + 42"), "value: 42");
+    // subtraction still requires numbers
     EXPECT_EQ(evalExpr("\"hello\" - 5"), "ERROR");
 }
