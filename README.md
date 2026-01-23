@@ -3,7 +3,7 @@
 # ⚡ VoltScript ⚡  
 ### *A programming language built from scratch in modern C++*
 
-**Version:** `6.5.0`  
+**Version:** `0.6.5`  
 **Milestone:** Arrays & Enhanced Features  
 **Status:** 🟢 Production-Ready | 🚀 Feature-Rich | 🧠 Educational  
 
@@ -60,7 +60,7 @@ Every subsystem is written to be:
 
 ---
 
-## ✨ Features (v6.5)
+## ✨ Features (v0.6.5)
 
 ### 🧩 Lexer — *Characters → Tokens*
 
@@ -282,7 +282,7 @@ ctest --output-on-failure --test-dir build
 ### Interactive REPL
 
 ```text
-⚡ VoltScript v6.5.0 - Interactive REPL
+⚡ VoltScript v0.6.5 - Interactive REPL
 Type 'exit' or 'quit' to leave, 'clear' to reset
 
 > let arr = ;
