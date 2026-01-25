@@ -69,6 +69,16 @@ struct WhileStmt : Stmt {
         : Stmt(whileTok), condition(std::move(cond)), body(std::move(b)) {}
 };
 
+// Run-Until statement: run { body } until (condition);
+// Executes body at least once, then continues until condition becomes true
+struct RunUntilStmt : Stmt {
+    StmtPtr body;
+    ExprPtr condition;
+    
+    RunUntilStmt(Token runTok, StmtPtr b, ExprPtr cond)
+        : Stmt(runTok), body(std::move(b)), condition(std::move(cond)) {}
+};
+
 // For statement: for (init; condition; increment) body
 struct ForStmt : Stmt {
     StmtPtr initializer;  // can be null

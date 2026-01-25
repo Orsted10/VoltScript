@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(VoltScript VERSION 0.6.8 LANGUAGES CXX)
+project(VoltScript VERSION 0.6.9 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -83,6 +83,7 @@ if(BUILD_TESTS)
         tests/test_enhanced_features.cpp
         tests/test_arrays.cpp
         tests/test_error_reporting.cpp
+        tests/test_run_until.cpp
     )
     
     # Test executable
@@ -103,7 +104,7 @@ if(BUILD_TESTS)
     include(GoogleTest)
     gtest_discover_tests(volt_tests)
     
-    message(STATUS "✅ Tests enabled (261 tests)")
+    message(STATUS "✅ Tests enabled (296 tests)")
 endif()
 
 # ========================================
@@ -114,7 +115,7 @@ message(STATUS "")
 message(STATUS "========================================")
 message(STATUS "⚡ VoltScript v${PROJECT_VERSION}")
 message(STATUS "========================================")
-message(STATUS "Milestone:      Arrays & Enhanced Features")
+message(STATUS "Milestone:      Run-Until Loops & Control Flow")
 message(STATUS "Build type:     ${CMAKE_BUILD_TYPE}")
 message(STATUS "Compiler:       ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "C++ Standard:   C++${CMAKE_CXX_STANDARD}")

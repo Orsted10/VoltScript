@@ -71,6 +71,7 @@ private:
     void executeBlockStmt(BlockStmt* stmt);
     void executeIfStmt(IfStmt* stmt);
     void executeWhileStmt(WhileStmt* stmt);
+    void executeRunUntilStmt(RunUntilStmt* stmt);
     void executeForStmt(ForStmt* stmt);
     void executeFnStmt(FnStmt* stmt);
     void executeReturnStmt(ReturnStmt* stmt);

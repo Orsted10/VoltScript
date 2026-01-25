@@ -3,13 +3,13 @@
 # ⚡ VoltScript ⚡  
 ### *A programming language built from scratch in modern C++*
 
-**Version:** `0.6.8`  
-**Milestone:** Arrays & Enhanced Error Reporting
+**Version:** `0.6.9`  
+**Milestone:** Run-Until Loops & Enhanced Error Reporting
 **Status:** 🟢 Production-Ready | 🚀 Feature-Rich | 🧠 Educational  
 
 > *From tokens → trees → closures → arrays*  
 
-[![Tests](https://img.shields.io/badge/tests-270%2F270-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-294%2F294-brightgreen)]()
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
@@ -61,13 +61,13 @@ Every subsystem is written to be:
 
 ---
 
-## ✨ Features (v0.6.8)
+## ✨ Features (v0.6.9)
 
 ### 🧩 Lexer — *Characters → Tokens*
 
 - **Literals**: Numbers (`42`, `3.14`), Strings (`"hello"`), Booleans (`true`, `false`), `nil`
 - **Identifiers**: `x`, `totalSum`, `_temp123`
-- **Keywords**: `let`, `if`, `else`, `while`, `for`, `fn`, `return`, `print`, `break`, `continue`
+- **Keywords**: `let`, `if`, `else`, `while`, `for`, `run`, `until`, `fn`, `return`, `print`, `break`, `continue`
 - **Operators**:
   - Arithmetic: `+`, `-`, `*`, `/`, `%`
   - Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`
@@ -100,7 +100,7 @@ Hand-written **recursive descent parser**:
   - `print`, `let` declarations
   - Blocks `{ ... }`
   - `if` / `else`
-  - `while`, `for`
+  - `while`, `for`, `run-until`
   - `break`, `continue`
   - `fn` function declarations
   - `return`
@@ -127,7 +127,7 @@ VoltScript runs **real programs** with:
 - ✅ Arithmetic with correct precedence
 - ✅ Variables with `let` + reassignment
 - ✅ Block scoping & shadowing
-- ✅ Control flow: `if`/`else`, `while`, `for`
+- ✅ Control flow: `if`/`else`, `while`, `for`, `run-until`
 - ✅ **Loop control**: `break` and `continue`
 - ✅ `print` statement
 - ✅ Comparison & logical operators
@@ -280,7 +280,7 @@ cmake --build build --config Release
 ctest --output-on-failure --test-dir build
 ```
 
-**Result:** 🟢 **270 / 270 tests passing (100%)**
+**Result:** 🟢 **294 / 294 tests passing (100%)**
 
 ---
 
@@ -289,7 +289,7 @@ ctest --output-on-failure --test-dir build
 ### Interactive REPL
 
 ```text
-⚡ VoltScript v0.6.8 - Interactive REPL
+⚡ VoltScript v0.6.9 - Interactive REPL
 Type 'exit' or 'quit' to leave, 'clear' to reset
 
 > let arr = ;
@@ -405,6 +405,14 @@ x /= 3;   // x = 10
 // Ternary operator
 let max = (a > b) ? a : b;
 let status = (score >= 60) ? "Pass" : "Fail";
+
+// Run-until loop (executes at least once, until condition is true)
+let countdown = 5;
+run {
+    print countdown;
+    countdown--;
+} until (countdown <= 0);
+print "Liftoff!";
 ```
 
 ---
@@ -463,9 +471,9 @@ print max();  // 9
 
 ---
 
-## 🧪 Testing (270 Tests!)
+## 🧪 Testing (294 Tests!)
 
-VoltScript has **comprehensive test coverage** with 270 unit tests:
+VoltScript has **comprehensive test coverage** with 294 unit tests:
 
 | Test Suite | Tests | Description |
 |-----------|-------|-------------|
@@ -477,6 +485,7 @@ VoltScript has **comprehensive test coverage** with 270 unit tests:
 | **Enhanced Features** | 35 | `break`, `continue`, `+=`, `++`, `type()`, etc. |
 | **Arrays** | 71 | Creation, access, methods, `.reverse()` |
 | **Error Reporting** | 5 | Precise line/column tracking tests |
+| **Run-Until Loops** | 24 | Do-until style loops with break/continue |
 
 ```bash
 # Run all tests
@@ -486,7 +495,7 @@ VoltScript has **comprehensive test coverage** with 270 unit tests:
 ctest --test-dir build --output-on-failure
 ```
 
-**Result:** ✅ **100% Pass Rate** (270/270)
+**Result:** ✅ **100% Pass Rate** (294/294)
 
 ---
 
@@ -527,7 +536,7 @@ By studying VoltScript, you'll understand:
 ✅ Closure implementation  
 ✅ Function objects & first-class functions  
 ✅ Dynamic arrays with reference semantics  
-✅ Control flow implementation (break/continue)  
+✅ Control flow implementation (break/continue, run-until)  
 ✅ Operator precedence & associativity  
 ✅ Runtime error handling  
 ✅ Test-driven language development  
@@ -571,7 +580,7 @@ Inspired by:
 
 <div align="center">
 
-### ⚡ VoltScript v0.6.8 ⚡
+### ⚡ VoltScript v0.6.9 ⚡
 
 **Functions. Closures. Arrays. Power.**  
 *This is where languages get real.*

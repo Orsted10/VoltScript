@@ -217,6 +217,8 @@ void Interpreter::execute(Stmt* stmt) {
         executeIfStmt(ifStmt);
     } else if (auto* whileStmt = dynamic_cast<WhileStmt*>(stmt)) {
         executeWhileStmt(whileStmt);
+    } else if (auto* runUntilStmt = dynamic_cast<RunUntilStmt*>(stmt)) {
+        executeRunUntilStmt(runUntilStmt);
     } else if (auto* forStmt = dynamic_cast<ForStmt*>(stmt)) {
         executeForStmt(forStmt);
     } else if (auto* fnStmt = dynamic_cast<FnStmt*>(stmt)) {
@@ -294,6 +296,20 @@ void Interpreter::executeWhileStmt(WhileStmt* stmt) {
             break; // Exit the loop
         }
     }
+}
+
+void Interpreter::executeRunUntilStmt(RunUntilStmt* stmt) {
+    // Run-until: executes body at least once, then continues until condition becomes TRUE
+    // This is different from do-while which continues while condition is true
+    do {
+        try {
+            execute(stmt->body.get());
+        } catch (const ContinueException&) {
+            continue; // Continue to next iteration
+        } catch (const BreakException&) {
+            break; // Exit the loop
+        }
+    } while (!isTruthy(evaluate(stmt->condition.get())));
 }
 
 void Interpreter::executeForStmt(ForStmt* stmt) {
