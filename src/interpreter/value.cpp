@@ -1,6 +1,7 @@
 #include "value.h"
 #include "callable.h"
 #include "array.h"
+#include "features/hashmap.h"  // NEW!
 #include <sstream>
 #include <iomanip>
 #include <cmath>
@@ -13,6 +14,7 @@ bool isTruthy(const Value& v) {
     if (isNumber(v)) return asNumber(v) != 0.0;
     if (isString(v)) return !asString(v).empty();
     if (isArray(v)) return asArray(v)->length() > 0;
+    if (isHashMap(v)) return asHashMap(v)->size() > 0;  // NEW!
     return true;
 }
 
@@ -36,6 +38,10 @@ bool isEqual(const Value& a, const Value& b) {
     // Arrays compare by reference
     if (isArray(a) && isArray(b)) {
         return asArray(a) == asArray(b);
+    }
+    // Hash maps compare by reference  // NEW!
+    if (isHashMap(a) && isHashMap(b)) {
+        return asHashMap(a) == asHashMap(b);
     }
     
     return false;
@@ -67,6 +73,18 @@ std::string valueToString(const Value& v) {
         return func->toString();
     } else if (isArray(v)) {
         return asArray(v)->toString();
+    } else if (isHashMap(v)) {  // NEW!
+        auto map = asHashMap(v);
+        std::ostringstream oss;
+        oss << "{";
+        bool first = true;
+        for (const auto& [key, value] : map->data) {
+            if (!first) oss << ", ";
+            oss << "\"" << key << "\": " << valueToString(value);
+            first = false;
+        }
+        oss << "}";
+        return oss.str();
     }
     return "unknown";
 }

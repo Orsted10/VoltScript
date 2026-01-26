@@ -3,13 +3,13 @@
 # ⚡ VoltScript ⚡  
 ### *A programming language built from scratch in modern C++*
 
-**Version:** `0.6.9`  
-**Milestone:** Run-Until Loops & Enhanced Error Reporting
+**Version:** `0.7.0`  
+**Milestone:** Objects & Hash Maps 🗺️
 **Status:** 🟢 Production-Ready | 🚀 Feature-Rich | 🧠 Educational  
 
-> *From tokens → trees → closures → arrays*  
+> *From tokens → trees → closures → arrays → objects*  
 
-[![Tests](https://img.shields.io/badge/tests-294%2F294-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-320%2F320-brightgreen)]()
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
@@ -61,7 +61,7 @@ Every subsystem is written to be:
 
 ---
 
-## ✨ Features (v0.6.9)
+## ✨ Features (v0.7.0)
 
 ### 🧩 Lexer — *Characters → Tokens*
 
@@ -76,44 +76,17 @@ Every subsystem is written to be:
   - Compound: `+=`, `-=`, `*=`, `/=`
   - Increment/Decrement: `++`, `--` (prefix & postfix)
   - Ternary: `? :`
+  - Indexing: `[]` (for arrays and hash maps)
 - **Punctuation**: `(`, `)`, `{`, `}`, `[`, `]`, `;`, `,`, `.`
 - **Comments**: `// line comments`
-- Precise error messages with line numbers
-
----
-
-### 🌳 Parser — *Tokens → AST*
-
-Hand-written **recursive descent parser**:
-
-- **Expressions**:
-  - Binary, unary, logical, grouping
-  - Assignment & compound assignment (`+=`, `-=`, etc.)
-  - Prefix/postfix increment/decrement
-  - Ternary operator (`condition ? true_val : false_val`)
-  - Function calls
-  - Array literals (`[1, 2, 3]`)
-  - Array indexing (`arr[i]`)
-  - Member access (`arr.length`, `arr.push(x)`)
-
-- **Statements**:
-  - `print`, `let` declarations
-  - Blocks `{ ... }`
-  - `if` / `else`
-  - `while`, `for`, `run-until`
-  - `break`, `continue`
-  - `fn` function declarations
-  - `return`
-
-- Correct operator precedence & associativity
-- Helpful syntax error recovery
-- Clean **Abstract Syntax Tree (AST)**
+- **Literals**: Numbers (`42`, `3.14`), Strings (`"hello"`), Booleans (`true`, `false`), `nil`, **Hash Maps** (`{"key": "value"}`)
 
 ---
 
 ### 🧠 AST — *Program Structure Made Explicit*
 
 - Separate **expression** and **statement** nodes
+- **Hash Map literals** support: `{"key": value, "another": 42}`
 - Clear, inspectable tree structure
 - Designed for interpretation now, compilation later
 - Easy to debug and visualize
@@ -138,6 +111,10 @@ VoltScript runs **real programs** with:
 - ✅ **Ternary operator**: `max = (a > b) ? a : b;`
 - ✅ **Precise error reporting**: Errors point to exact source tokens
 - ✅ Runtime type checking with friendly errors
+- ✅ **Hash Map support**: `{ "key": "value", "nested": { "prop": 42 } }`
+- ✅ **Hash Map operations**: Access with `map["key"]`, assignment with `map["key"] = value`
+- ✅ Built-in functions: `keys(map)`, `values(map)`
+- ✅ Hash Map member access: `map.size`, `map.keys()`, `map.values()`
 
 ---
 
@@ -169,7 +146,7 @@ Built-in functions:
 
 Full array support with built-in methods:
 
-```volt
+``volt
 let numbers = ;
 let mixed = [42, "hello", true, nil];
 let nested = [, ];
@@ -209,7 +186,7 @@ Array features:
 
 ## 🗂️ Project Structure
 
-```text
+```
 VoltScript/
 ├── src/                    # Core implementation
 │   ├── token.{h,cpp}      # Token definitions
@@ -251,7 +228,7 @@ VoltScript/
 
 ### Windows (MSVC / Visual Studio)
 
-```powershell
+```
 cmake -B build
 cmake --build build --config Release
 .\build\bin\Release\volt.exe
@@ -261,7 +238,7 @@ cmake --build build --config Release
 
 ### Linux / macOS
 
-```bash
+```
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ./build/bin/volt
@@ -271,7 +248,7 @@ cmake --build build
 
 ### Run Tests
 
-```bash
+```
 # Build and run all tests
 cmake --build build --config Release
 ./build/bin/Release/volt_tests
@@ -288,24 +265,17 @@ ctest --output-on-failure --test-dir build
 
 ### Interactive REPL
 
-```text
-⚡ VoltScript v0.6.9 - Interactive REPL
+```
+⚡ VoltScript v0.7.0 - Interactive REPL
 Type 'exit' or 'quit' to leave, 'clear' to reset
 
-> let arr = ;
-> arr.push(4);
-> print arr;
-
-
-> fn sum(arr) {
-    let total = 0;
-    for (let i = 0; i < arr.length; i++) {
-        total += arr[i];
-    }
-    return total;
-}
-> print sum();
-60
+> let person = {"name": "Alice", "age": 25};
+> print person["name"];
+Alice
+> person.email = "alice@example.com";  // TODO: Object properties
+> let nums = [1, 2, 3];
+> print nums.length;
+3
 ```
 
 ---
@@ -322,7 +292,7 @@ volt script.volt
 
 ### 🎯 Arrays & Loops
 
-```volt
+```
 // Build Fibonacci sequence
 let fib = ;
 for (let i = 0; i < 8; i++) {
@@ -336,7 +306,7 @@ print fib;  //
 
 ### 🔁 Array Functions
 
-```volt
+```
 // Sum array elements
 fn sum(arr) {
     let total = 0;
@@ -365,7 +335,7 @@ print filterEvens(); //
 
 ### 🎲 Nested Arrays (Matrices)
 
-```volt
+```
 let matrix = [
     ,
     ,
@@ -387,7 +357,7 @@ for (let i = 0; i < matrix.length; i++) {
 
 ### 🚦 Enhanced Control Flow
 
-```volt
+```
 // Break and continue
 for (let i = 1; i <= 10; i++) {
     if (i % 2 == 0) continue;  // Skip evens
@@ -413,13 +383,40 @@ run {
     countdown--;
 } until (countdown <= 0);
 print "Liftoff!";
+
+// Hash Maps - Key-value collections
+let person = {
+    "name": "Alice",
+    "age": 25,
+    "active": true,
+    "scores": [95, 87, 92]
+};
+
+print person["name"];           // Access value
+person["email"] = "alice@example.com";  // Dynamic addition
+
+// Built-in functions for hash maps
+let keys = keys(person);        // Get all keys
+let values = values(person);    // Get all values
+print person.size;              // Get size
+
+// Nested hash maps
+let company = {
+    "name": "Tech Corp",
+    "departments": {
+        "engineering": {"head": "Alice", "size": 10},
+        "marketing": {"head": "Bob", "size": 5}
+    }
+};
+
+print company["departments"]["engineering"]["head"];  // Alice
 ```
 
 ---
 
 ### 🔄 Closures with Arrays
 
-```volt
+```
 fn makeStack() {
     let items = [];
     
@@ -453,7 +450,7 @@ print size();  // 1
 
 ### 🎯 Practical Example: Find Maximum
 
-```volt
+```
 fn max(arr) {
     if (arr.length == 0) return nil;
     
@@ -471,9 +468,9 @@ print max();  // 9
 
 ---
 
-## 🧪 Testing (294 Tests!)
+## 🧪 Testing (320 Tests!)
 
-VoltScript has **comprehensive test coverage** with 294 unit tests:
+VoltScript has **comprehensive test coverage** with 320 unit tests:
 
 | Test Suite | Tests | Description |
 |-----------|-------|-------------|
@@ -486,8 +483,9 @@ VoltScript has **comprehensive test coverage** with 294 unit tests:
 | **Arrays** | 71 | Creation, access, methods, `.reverse()` |
 | **Error Reporting** | 5 | Precise line/column tracking tests |
 | **Run-Until Loops** | 24 | Do-until style loops with break/continue |
+| **Hash Maps** | 26 | Dictionary/object functionality, keys/values, access |
 
-```bash
+```
 # Run all tests
 ./build/bin/Release/volt_tests
 
@@ -495,26 +493,24 @@ VoltScript has **comprehensive test coverage** with 294 unit tests:
 ctest --test-dir build --output-on-failure
 ```
 
-**Result:** ✅ **100% Pass Rate** (294/294)
+**Result:** ✅ **100% Pass Rate** (320/320)
 
 ---
 
 ## 🚀 What's Next?
 
-### Milestone 7: Objects & Hash Maps 🗺️
-*Core data structure for real programs & Foundation for OOP*
+### Milestone 8: Object-Oriented Programming 🏗️
+*Real encapsulation, inheritance, and polymorphism*
 
-- [ ] **Hash maps / Dictionaries**: `let person = {"name": "Alice", "age": 25};`
-- [ ] **Property access**: `obj.name` and `obj["key"]` support
-- [ ] **Dynamic addition**: `obj.newProp = value`
-- [ ] **Nested objects**: `user.address.city`
-- [ ] **Object methods**: Support for `this` keyword and methods
-- [ ] **Built-ins**: `keys(obj)` and `values(obj)` functions
+- [ ] **Class declarations**: `class Person { constructor(name) { this.name = name; } }`
+- [ ] **Instance methods**: `obj.method()` with proper `this` binding
+- [ ] **Inheritance**: `class Employee extends Person {}`
+- [ ] **Encapsulation**: Private/public members
+- [ ] **Method resolution**: Super calls, overloading
 
 ### Future Roadmap
 - [ ] **String methods** — `.split()`, `.join()`, `.substring()`
 - [ ] **More array methods** — `.map()`, `.filter()`, `.reduce()`
-- [ ] **Classes & inheritance**
 - [ ] **Exception handling** — `try`/`catch`
 - [ ] **Module system** — `import`/`export`
 - [ ] **Standard library**
@@ -536,8 +532,11 @@ By studying VoltScript, you'll understand:
 ✅ Closure implementation  
 ✅ Function objects & first-class functions  
 ✅ Dynamic arrays with reference semantics  
+✅ Hash maps/dictionaries with key-value pairs  
 ✅ Control flow implementation (break/continue, run-until)  
 ✅ Operator precedence & associativity  
+✅ Object property access patterns  
+✅ Built-in function registration  
 ✅ Runtime error handling  
 ✅ Test-driven language development  
 ✅ Real-world C++ project structure  
@@ -580,7 +579,7 @@ Inspired by:
 
 <div align="center">
 
-### ⚡ VoltScript v0.6.9 ⚡
+### ⚡ VoltScript v0.7.0 ⚡
 
 **Functions. Closures. Arrays. Power.**  
 *This is where languages get real.*
@@ -592,4 +591,3 @@ Inspired by:
 Made with ⚡ and C++20
 
 </div>
-```

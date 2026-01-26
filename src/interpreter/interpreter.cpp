@@ -1,11 +1,18 @@
 #include "interpreter.h"
 #include "callable.h"
-#include "array.h"  // NEW!
-#include <iostream>
+#include "stmt.h"
+#include "ast.h"
+#include "value.h"
+#include "environment.h"
+#include "features/array.h"  // NEW!
+#include "features/hashmap.h"  // NEW!
+#include <memory>
 #include <sstream>
 #include <fstream>
-#include <chrono>
+#include <iomanip>
 #include <cmath>
+#include <iostream>  // NEW! For std::cout, std::cin
+#include <chrono>    // NEW! For clock() function
 
 namespace volt {
 
@@ -194,9 +201,54 @@ void Interpreter::defineNatives() {
             if (isString(v)) return "string";
             if (isCallable(v)) return "function";
             if (isArray(v)) return "array";
+            if (isHashMap(v)) return "hashmap";  // NEW!
             return "unknown";
         },
         "type"
+    ));
+    
+    // keys(hashmap) - get all keys from a hash map  // NEW!
+    globals_->define("keys", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isHashMap(args[0])) {
+                throw std::runtime_error("keys() requires a hashmap argument");
+            }
+            
+            auto map = asHashMap(args[0]);
+            auto keysVec = map->getKeys();
+            
+            // Create an array with the keys
+            auto resultArray = std::make_shared<VoltArray>();
+            for (const auto& key : keysVec) {
+                resultArray->push(key);
+            }
+            
+            return resultArray;
+        },
+        "keys"
+    ));
+    
+    // values(hashmap) - get all values from a hash map  // NEW!
+    globals_->define("values", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isHashMap(args[0])) {
+                throw std::runtime_error("values() requires a hashmap argument");
+            }
+            
+            auto map = asHashMap(args[0]);
+            auto valuesVec = map->getValues();
+            
+            // Create an array with the values
+            auto resultArray = std::make_shared<VoltArray>();
+            for (const auto& value : valuesVec) {
+                resultArray->push(value);
+            }
+            
+            return resultArray;
+        },
+        "values"
     ));
 }
 
@@ -444,6 +496,14 @@ Value Interpreter::evaluate(Expr* expr) {
     
     if (auto* member = dynamic_cast<MemberExpr*>(expr)) {
         return evaluateMember(member);
+    }
+    
+    // ========================================
+    // HASH MAP EXPRESSIONS - NEW!
+    // ========================================
+    
+    if (auto* hashMap = dynamic_cast<HashMapExpr*>(expr)) {
+        return evaluateHashMap(hashMap);
     }
     
     throw std::runtime_error("Unknown expression type");
@@ -713,25 +773,56 @@ Value Interpreter::evaluateIndex(IndexExpr* expr) {
     Value object = evaluate(expr->object.get());
     Value index = evaluate(expr->index.get());
     
-    // Must be an array
-    if (!isArray(object)) {
-        throw RuntimeError(expr->token, "Can only index arrays");
+    // Handle arrays
+    if (isArray(object)) {
+        auto array = asArray(object);
+        
+        // Index must be a number
+        if (!isNumber(index)) {
+            throw RuntimeError(expr->token, "Array index must be a number");
+        }
+        
+        int idx = static_cast<int>(asNumber(index));
+        
+        // Check bounds
+        if (idx < 0 || idx >= array->length()) {
+            throw RuntimeError(expr->token, "Array index out of bounds: " + std::to_string(idx));
+        }
+        
+        return array->get(idx);
     }
     
-    // Index must be a number
-    if (!isNumber(index)) {
-        throw RuntimeError(expr->token, "Array index must be a number");
+    // Handle hash maps
+    if (isHashMap(object)) {
+        auto map = asHashMap(object);
+        
+        // Convert index to string key
+        std::string key;
+        if (isString(index)) {
+            key = asString(index);
+        } else if (isNumber(index)) {
+            // Convert number to string representation
+            double num = asNumber(index);
+            if (num == static_cast<long long>(num)) {
+                key = std::to_string(static_cast<long long>(num));
+            } else {
+                key = std::to_string(num);
+                // Remove trailing zeros after decimal point
+                key.erase(key.find_last_not_of('0') + 1, std::string::npos);
+                key.erase(key.find_last_not_of('.') + 1, std::string::npos);
+            }
+        } else if (isNil(index)) {
+            key = "nil";
+        } else if (isBool(index)) {
+            key = asBool(index) ? "true" : "false";
+        } else {
+            throw RuntimeError(expr->token, "Hash map index must be a string, number, boolean, or nil");
+        }
+        
+        return map->get(key);
     }
     
-    auto array = asArray(object);
-    int idx = static_cast<int>(asNumber(index));
-    
-    // Check bounds
-    if (idx < 0 || idx >= array->length()) {
-        throw RuntimeError(expr->token, "Array index out of bounds: " + std::to_string(idx));
-    }
-    
-    return array->get(idx);
+    throw RuntimeError(expr->token, "Can only index arrays and hash maps");
 }
 
 Value Interpreter::evaluateIndexAssign(IndexAssignExpr* expr) {
@@ -739,79 +830,172 @@ Value Interpreter::evaluateIndexAssign(IndexAssignExpr* expr) {
     Value index = evaluate(expr->index.get());
     Value value = evaluate(expr->value.get());
     
-    // Must be an array
-    if (!isArray(object)) {
-        throw RuntimeError(expr->token, "Can only index arrays");
+    // Handle arrays
+    if (isArray(object)) {
+        auto array = asArray(object);
+        
+        // Index must be a number
+        if (!isNumber(index)) {
+            throw RuntimeError(expr->token, "Array index must be a number");
+        }
+        
+        int idx = static_cast<int>(asNumber(index));
+        
+        // Check bounds
+        if (idx < 0 || idx >= array->length()) {
+            throw RuntimeError(expr->token, "Array index out of bounds: " + std::to_string(idx));
+        }
+        
+        array->set(idx, value);
+        return value;
     }
     
-    // Index must be a number
-    if (!isNumber(index)) {
-        throw RuntimeError(expr->token, "Array index must be a number");
+    // Handle hash maps
+    if (isHashMap(object)) {
+        auto map = asHashMap(object);
+        
+        // Convert index to string key
+        std::string key;
+        if (isString(index)) {
+            key = asString(index);
+        } else if (isNumber(index)) {
+            // Convert number to string representation
+            if (asNumber(index) == static_cast<long long>(asNumber(index))) {
+                key = std::to_string(static_cast<long long>(asNumber(index)));
+            } else {
+                key = std::to_string(asNumber(index));
+            }
+        } else if (isNil(index)) {
+            key = "nil";
+        } else if (isBool(index)) {
+            key = asBool(index) ? "true" : "false";
+        } else {
+            throw RuntimeError(expr->token, "Hash map index must be a string, number, boolean, or nil");
+        }
+        
+        map->set(key, value);
+        return value;
     }
     
-    auto array = asArray(object);
-    int idx = static_cast<int>(asNumber(index));
-    
-    // Check bounds
-    if (idx < 0 || idx >= array->length()) {
-        throw RuntimeError(expr->token, "Array index out of bounds: " + std::to_string(idx));
-    }
-    
-    array->set(idx, value);
-    return value;
+    throw RuntimeError(expr->token, "Can only index arrays and hash maps");
 }
 
 Value Interpreter::evaluateMember(MemberExpr* expr) {
     Value object = evaluate(expr->object.get());
     
-    // Must be an array
-    if (!isArray(object)) {
-        throw RuntimeError(expr->token, "Only arrays have members");
+    // Handle arrays
+    if (isArray(object)) {
+        auto array = asArray(object);
+        
+        // Handle array.length
+        if (expr->member == "length") {
+            return static_cast<double>(array->length());
+        }
+        
+        // Handle array.push - return a callable
+        if (expr->member == "push") {
+            return std::make_shared<NativeFunction>(
+                1,
+                [array](const std::vector<Value>& args) -> Value {
+                    array->push(args[0]);
+                    return nullptr; // returns nil
+                },
+                "push"
+            );
+        }
+        
+        // Handle array.pop
+        if (expr->member == "pop") {
+            return std::make_shared<NativeFunction>(
+                0,
+                [array](const std::vector<Value>&) -> Value {
+                    return array->pop();
+                },
+                "pop"
+            );
+        }
+        
+        // Handle array.reverse
+        if (expr->member == "reverse") {
+            return std::make_shared<NativeFunction>(
+                0,
+                [array](const std::vector<Value>&) -> Value {
+                    array->reverse();
+                    return nullptr;
+                },
+                "reverse"
+            );
+        }
+        
+        throw RuntimeError(expr->token, "Unknown array member: " + expr->member);
     }
     
-    auto array = asArray(object);
-    
-    // Handle array.length
-    if (expr->member == "length") {
-        return static_cast<double>(array->length());
+    // Handle hash maps
+    if (isHashMap(object)) {
+        auto map = asHashMap(object);
+        
+        // Handle hash map properties/methods
+        if (expr->member == "size") {
+            return static_cast<double>(map->size());
+        }
+        
+        if (expr->member == "keys") {
+            return std::make_shared<NativeFunction>(
+                0,
+                [map](const std::vector<Value>&) -> Value {
+                    auto keysVec = map->getKeys();
+                    
+                    // Create an array with the keys
+                    auto resultArray = std::make_shared<VoltArray>();
+                    for (const auto& key : keysVec) {
+                        resultArray->push(key);
+                    }
+                    
+                    return resultArray;
+                },
+                "hashmap.keys"
+            );
+        }
+        
+        if (expr->member == "values") {
+            return std::make_shared<NativeFunction>(
+                0,
+                [map](const std::vector<Value>&) -> Value {
+                    auto valuesVec = map->getValues();
+                    
+                    // Create an array with the values
+                    auto resultArray = std::make_shared<VoltArray>();
+                    for (const auto& value : valuesVec) {
+                        resultArray->push(value);
+                    }
+                    
+                    return resultArray;
+                },
+                "hashmap.values"
+            );
+        }
+        
+        throw RuntimeError(expr->token, "Unknown hash map member: " + expr->member);
     }
     
-    // Handle array.push - return a callable
-    if (expr->member == "push") {
-        return std::make_shared<NativeFunction>(
-            1,
-            [array](const std::vector<Value>& args) -> Value {
-                array->push(args[0]);
-                return nullptr; // returns nil
-            },
-            "push"
-        );
+    throw RuntimeError(expr->token, "Only arrays and hash maps have members");
+}
+
+// Evaluate hash map literal expression  // NEW!
+Value Interpreter::evaluateHashMap(HashMapExpr* expr) {
+    auto hashMap = std::make_shared<VoltHashMap>();
+    
+    for (const auto& [keyExpr, valueExpr] : expr->keyValuePairs) {
+        Value key = evaluate(keyExpr.get());
+        Value value = evaluate(valueExpr.get());
+        
+        // Convert key to string representation (for storage in hash map)
+        std::string keyStr = valueToString(key);  // Use the same string representation as valueToString
+        
+        hashMap->set(keyStr, value);
     }
     
-    // Handle array.pop
-    if (expr->member == "pop") {
-        return std::make_shared<NativeFunction>(
-            0,
-            [array](const std::vector<Value>&) -> Value {
-                return array->pop();
-            },
-            "pop"
-        );
-    }
-    
-    // Handle array.reverse
-    if (expr->member == "reverse") {
-        return std::make_shared<NativeFunction>(
-            0,
-            [array](const std::vector<Value>&) -> Value {
-                array->reverse();
-                return nullptr;
-            },
-            "reverse"
-        );
-    }
-    
-    throw RuntimeError(expr->token, "Unknown array member: " + expr->member);
+    return hashMap;
 }
 
 void Interpreter::executeBreakStmt(BreakStmt*) {

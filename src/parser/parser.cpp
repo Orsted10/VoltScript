@@ -465,6 +465,60 @@ ExprPtr Parser::arrayLiteral() {
     return std::make_unique<ArrayExpr>(bracket, std::move(elements));
 }
 
+// Hash map literal: {"key": "value", "age": 25}  // NEW!
+ExprPtr Parser::hashMapLiteral() {
+    Token brace = previous(); // This is the '{'
+    std::vector<std::pair<ExprPtr, ExprPtr>> keyValuePairs;
+    
+    // Empty hash map: {}
+    if (check(TokenType::RightBrace)) {
+        advance();
+        return std::make_unique<HashMapExpr>(brace, std::move(keyValuePairs));
+    }
+    
+    // Parse key-value pairs: {"key": value, "another": value2}
+    do {
+        // Allow trailing comma
+        if (check(TokenType::RightBrace)) break;
+        
+        // Parse key (must be string, number, or identifier that resolves to string)
+        ExprPtr key;
+        if (match(TokenType::String)) {
+            Token tok = previous();
+            key = std::make_unique<LiteralExpr>(tok, tok.stringValue);
+        } else if (match(TokenType::Number)) {
+            Token tok = previous();
+            double value = std::stod(std::string(tok.lexeme));
+            key = std::make_unique<LiteralExpr>(tok, value);
+        } else if (match(TokenType::True)) {
+            Token tok = previous();
+            key = std::make_unique<LiteralExpr>(tok, true);
+        } else if (match(TokenType::False)) {
+            Token tok = previous();
+            key = std::make_unique<LiteralExpr>(tok, false);
+        } else if (match(TokenType::Nil)) {
+            Token tok = previous();
+            key = LiteralExpr::nil(tok);
+        } else {
+            Token tok = consume(TokenType::Identifier, "Expected string, number, or identifier as key");
+            key = std::make_unique<LiteralExpr>(tok, std::string(tok.lexeme)); // Treat identifier as string key
+        }
+        
+        // Expect colon separator
+        consume(TokenType::Colon, "Expected ':' after key");
+        
+        // Parse value
+        ExprPtr value = expression();
+        
+        // Add key-value pair
+        keyValuePairs.emplace_back(std::move(key), std::move(value));
+    } while (match(TokenType::Comma));
+    
+    consume(TokenType::RightBrace, "Expected '}' after hash map elements");
+    
+    return std::make_unique<HashMapExpr>(brace, std::move(keyValuePairs));
+}
+
 
 ExprPtr Parser::finishIndexOrMember(ExprPtr object) {
     Token bracket = previous(); // This is the '['
@@ -515,7 +569,12 @@ ExprPtr Parser::primary() {
     if (match(TokenType::LeftBracket)) {
         return arrayLiteral();
     }
-    
+
+    // Hash map literal: {"key": "value", "age": 25}  // NEW!
+    if (match(TokenType::LeftBrace)) {
+        return hashMapLiteral();
+    }
+
     error("Expected expression");
     return nullptr;
 }

@@ -156,6 +156,17 @@ struct IndexAssignExpr : Expr {
         : Expr(bracket), object(std::move(obj)), index(std::move(idx)), value(std::move(val)) {}
 };
 
+// ========================================
+// HASH MAP EXPRESSIONS - NEW!
+// ========================================
+
+// Hash Map Literal: {"key": "value", "age": 25}
+struct HashMapExpr : Expr {
+    std::vector<std::pair<ExprPtr, ExprPtr>> keyValuePairs;  // Key-value pairs
+    HashMapExpr(Token brace, std::vector<std::pair<ExprPtr, ExprPtr>> pairs)
+        : Expr(brace), keyValuePairs(std::move(pairs)) {}
+};
+
 // Member Access: array.length, array.push
 struct MemberExpr : Expr {
     ExprPtr object;      // The object (array, etc.)

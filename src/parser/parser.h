@@ -51,11 +51,14 @@ private:
     ExprPtr postfix();
     ExprPtr call();
     ExprPtr primary();
-    
+
     // Array parsing - NEW!
     ExprPtr arrayLiteral();
     ExprPtr finishIndexOrMember(ExprPtr object);
-    
+
+    // Hash map parsing - NEW!
+    ExprPtr hashMapLiteral();
+
     // Helper to finish call expressions
     ExprPtr finishCall(ExprPtr callee);
     

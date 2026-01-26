@@ -97,6 +97,9 @@ private:
     Value evaluateIndexAssign(IndexAssignExpr* expr);
     Value evaluateMember(MemberExpr* expr);
     
+    // HASH MAP EVALUATION - NEW!
+    Value evaluateHashMap(HashMapExpr* expr);
+    
     // Helper methods
     void checkNumberOperand(const Token& op, const Value& operand);
     void checkNumberOperands(const Token& op, const Value& left, const Value& right);

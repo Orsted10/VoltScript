@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(VoltScript VERSION 0.6.9 LANGUAGES CXX)
+project(VoltScript VERSION 0.7.0 LANGUAGES CXX)  # Milestone 7: Objects & Hash Maps
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,21 +23,24 @@ include_directories(
 )
 
 # Source files
-set(SOURCES
-    src/main.cpp
-    src/lexer/token.cpp
-    src/lexer/lexer.cpp
-    src/parser/ast.cpp
-    src/parser/parser.cpp
-    src/interpreter/value.cpp
-    src/interpreter/environment.cpp
-    src/features/callable.cpp
-    src/interpreter/interpreter.cpp
-    src/features/array.cpp
+file(GLOB_RECURSE VOLT_SOURCES
+    src/*.cpp
+    src/features/*.cpp  # Include feature files
 )
 
 # Main executable
-add_executable(volt ${SOURCES})
+add_executable(volt
+    ${VOLT_SOURCES}
+)
+
+target_include_directories(volt PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(volt PRIVATE 
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/Lexer
+    ${CMAKE_SOURCE_DIR}/src/Parser
+    ${CMAKE_SOURCE_DIR}/src/Interpreter
+    ${CMAKE_SOURCE_DIR}/src/features  # NEW!
+)
 
 # Set output directory
 set_target_properties(volt PROPERTIES
@@ -75,6 +78,7 @@ if(BUILD_TESTS)
         src/features/callable.cpp
         src/interpreter/interpreter.cpp
         src/features/array.cpp
+        src/features/hashmap.cpp  # NEW!
         tests/test_lexer.cpp
         tests/test_parser.cpp
         tests/test_evaluator.cpp
@@ -84,6 +88,7 @@ if(BUILD_TESTS)
         tests/test_arrays.cpp
         tests/test_error_reporting.cpp
         tests/test_run_until.cpp
+        tests/test_hash_maps.cpp  # NEW!
     )
     
     # Test executable
@@ -104,7 +109,7 @@ if(BUILD_TESTS)
     include(GoogleTest)
     gtest_discover_tests(volt_tests)
     
-    message(STATUS "✅ Tests enabled (296 tests)")
+    message(STATUS "✅ Tests enabled (320 tests)")
 endif()
 
 # ========================================
@@ -115,7 +120,7 @@ message(STATUS "")
 message(STATUS "========================================")
 message(STATUS "⚡ VoltScript v${PROJECT_VERSION}")
 message(STATUS "========================================")
-message(STATUS "Milestone:      Run-Until Loops & Control Flow")
+message(STATUS "Milestone:      Objects & Hash Maps 🗺️")
 message(STATUS "Build type:     ${CMAKE_BUILD_TYPE}")
 message(STATUS "Compiler:       ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "C++ Standard:   C++${CMAKE_CXX_STANDARD}")

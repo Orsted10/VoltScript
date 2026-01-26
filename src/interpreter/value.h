@@ -9,6 +9,7 @@ namespace volt {
 // Forward declarations
 class Callable;
 class VoltArray;  // NEW!
+struct VoltHashMap;  // NEW! - Changed from class to struct to match definition
 
 // Runtime value types
 using Value = std::variant<
@@ -17,7 +18,8 @@ using Value = std::variant<
     double,                      // number
     std::string,                 // string
     std::shared_ptr<Callable>,   // function
-    std::shared_ptr<VoltArray>   // array - NEW!
+    std::shared_ptr<VoltArray>,  // array - NEW!
+    std::shared_ptr<VoltHashMap> // hash map - NEW!
 >;
 
 // Type checking helpers
@@ -45,6 +47,10 @@ inline bool isArray(const Value& v) {  // NEW!
     return std::holds_alternative<std::shared_ptr<VoltArray>>(v);
 }
 
+inline bool isHashMap(const Value& v) {  // NEW!
+    return std::holds_alternative<std::shared_ptr<VoltHashMap>>(v);
+}
+
 // Get typed values
 inline double asNumber(const Value& v) {
     return std::get<double>(v);
@@ -60,6 +66,10 @@ inline std::string asString(const Value& v) {
 
 inline std::shared_ptr<VoltArray> asArray(const Value& v) {  // NEW!
     return std::get<std::shared_ptr<VoltArray>>(v);
+}
+
+inline std::shared_ptr<VoltHashMap> asHashMap(const Value& v) {  // NEW!
+    return std::get<std::shared_ptr<VoltHashMap>>(v);
 }
 
 // Truthiness (for conditionals)
