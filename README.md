@@ -3,20 +3,20 @@
 # ⚡ VoltScript ⚡  
 ### *A programming language built from scratch in modern C++*
 
-**Version:** `0.7.0`  
+**Version:** `0.7.2`  
 **Milestone:** Objects & Hash Maps 🗺️
 **Status:** 🟢 Production-Ready | 🚀 Feature-Rich | 🧠 Educational  
 
 > *From tokens → trees → closures → arrays → objects*  
 
-[![Tests](https://img.shields.io/badge/tests-320%2F320-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-345%2F345-brightgreen)]()
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 </div>
 
 ---
-
+  
 ## 🧠 What is VoltScript?
 
 VoltScript is a **fully-functional programming language**, written completely from scratch in **C++20**.
@@ -285,7 +285,7 @@ cmake --build build --config Release
 ctest --output-on-failure --test-dir build
 ```
 
-**Result:** 🟢 **294 / 294 tests passing (100%)**
+**Result:** ✅ **100% Pass Rate** (345/345)
 
 ---
 
@@ -294,16 +294,9 @@ ctest --output-on-failure --test-dir build
 ### Interactive REPL
 
 ```
-⚡ VoltScript v0.7.0 - Interactive REPL
-Type 'exit' or 'quit' to leave, 'clear' to reset
-
-> let person = {"name": "Alice", "age": 25};
-> print person["name"];
-Alice
-> person.email = "alice@example.com";  // TODO: Object properties
-> let nums = [1, 2, 3];
-> print nums.length;
-3
+⚡ VoltScript v0.7.2 REPL
+Type 'exit' to quit
+>>
 ```
 
 ---
@@ -496,9 +489,9 @@ print max();  // 9
 
 ---
 
-## 🧪 Testing (320 Tests!)
+## 🧪 Testing (345 Tests!)
 
-VoltScript has **comprehensive test coverage** with 320 unit tests:
+VoltScript has **comprehensive test coverage** with 345 unit tests:
 
 | Test Suite | Tests | Description |
 |-----------|-------|-------------|
@@ -521,7 +514,7 @@ VoltScript has **comprehensive test coverage** with 320 unit tests:
 ctest --test-dir build --output-on-failure
 ```
 
-**Result:** ✅ **100% Pass Rate** (320/320)
+**Result:** ✅ **100% Pass Rate** (345/345)
 
 ---
 
