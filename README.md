@@ -213,9 +213,10 @@ Array features:
 - ✅ Trailing commas: `[1, 2, 3,]`
 - ✅ Bounds checking with helpful errors
 
----
+```
 
 ## 🗂️ Project Structure
+
 
 ```
 VoltScript/
