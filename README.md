@@ -61,7 +61,7 @@ Every subsystem is written to be:
 
 ---
 
-## ✨ Features (v0.7.2)
+## ✨ Features (v0.7.5)
 
 ### 🧩 Lexer — *Characters → Tokens*
 
@@ -161,6 +161,15 @@ Built-in functions:
 - `floor(x)` — Round down to integer
 - `ceil(x)` — Round up to integer
 - `random()` — Random number between 0 and 1
+- `sin(x)` — Sine function (NEW v0.7.5)
+- `cos(x)` — Cosine function (NEW v0.7.5)
+- `tan(x)` — Tangent function (NEW v0.7.5)
+- `log(x)` — Natural logarithm (NEW v0.7.5)
+- `exp(x)` — Exponential function (NEW v0.7.5)
+- `now()` — Current timestamp in milliseconds (NEW v0.7.5)
+- `formatDate(timestamp, format)` — Format timestamp (NEW v0.7.5)
+- `jsonEncode(value)` — Encode value to JSON string (NEW v0.7.5)
+- `jsonDecode(jsonString)` — Decode JSON string to value (NEW v0.7.5)
 
 ---
 
@@ -237,7 +246,8 @@ VoltScript/
 │   ├── fibonacci.volt       # Fibonacci sequence
 │   ├── hash_maps.volt       # Hash map usage
 │   ├── enhanced_features.volt # v0.7.1 features
-│   └── v072_enhancements.volt # New v0.7.2 features
+│   ├── v072_enhancements.volt # v0.7.2 features
+│   └── v075_demo.volt       # New v0.7.5 features
 ├── CMakeLists.txt
 └── README.md
 ```
@@ -294,7 +304,7 @@ ctest --output-on-failure --test-dir build
 ### Interactive REPL
 
 ```
-⚡ VoltScript v0.7.2 REPL
+⚡ VoltScript v0.7.5 REPL
 Type 'exit' to quit
 >>
 ```
@@ -600,7 +610,7 @@ Inspired by:
 
 <div align="center">
 
-### ⚡ VoltScript v0.7.2 ⚡
+### ⚡ VoltScript v0.7.5 ⚡
 
 **Functions. Closures. Arrays. Power.**  
 *This is where languages get real.*

@@ -107,6 +107,11 @@ private:
     // Register built-in functions (like clock(), input(), etc.)
     void defineNatives();
     
+    // JSON encoding/decoding methods (NEW FOR v0.7.5)
+    std::string encodeToJson(const Value& value);
+    Value decodeFromJson(const std::string& jsonString);
+    void encodeJsonValue(const Value& value, std::ostringstream& oss);
+    
     std::shared_ptr<Environment> environment_;
     std::shared_ptr<Environment> globals_;
 };

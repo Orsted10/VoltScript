@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(VoltScript VERSION 0.7.2 LANGUAGES CXX)  # Milestone 7: Objects & Hash Maps
+project(VoltScript VERSION 0.7.5 LANGUAGES CXX)  # Milestone 7: Objects & Hash Maps
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -93,6 +93,7 @@ if(BUILD_TESTS)
         tests/test_string_functions.cpp
         tests/test_math_functions.cpp  # NEW!
         tests/test_string_enhancements.cpp  # NEW!
+        tests/test_v075_simple.cpp  # NEW!
     )
     
     # Test executable

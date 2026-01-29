@@ -13,6 +13,8 @@
 #include <cmath>
 #include <iostream>  // NEW! For std::cout, std::cin
 #include <chrono>    // NEW! For clock() function
+#include <sstream>   // NEW! For JSON encoding
+#include <iomanip>   // NEW! For JSON formatting
 
 namespace volt {
 
@@ -449,99 +451,21 @@ void Interpreter::defineNatives() {
     
     // ==================== JSON FUNCTIONS (NEW FOR v0.7.5) ====================
     
-    // jsonEncode(value) - encode value to JSON string (simple implementation)
+    // jsonEncode(value) - encode value to JSON string
     globals_->define("jsonEncode", std::make_shared<NativeFunction>(
         1,
-        [](const std::vector<Value>& args) -> Value {
-            // Simple JSON encoding
-            if (isNil(args[0])) return "null";
-            if (isBool(args[0])) return asBool(args[0]) ? "true" : "false";
-            if (isNumber(args[0])) {
-                double num = asNumber(args[0]);
-                if (num == static_cast<long long>(num)) {
-                    return std::to_string(static_cast<long long>(num));
-                } else {
-                    return std::to_string(num);
-                }
-            }
-            if (isString(args[0])) {
-                std::string str = asString(args[0]);
-                // Simple string escaping
-                std::string escaped;
-                escaped += "\"";
-                for (char c : str) {
-                    if (c == '"') escaped += "\\\"";
-                    else if (c == '\\') escaped += "\\\\";
-                    else escaped += c;
-                }
-                escaped += "\"";
-                return escaped;
-            }
-            if (isArray(args[0])) {
-                return "[]"; // Simplified
-            }
-            if (isHashMap(args[0])) {
-                return "{}"; // Simplified
-            }
-            return "\"" + valueToString(args[0]) + "\"";
+        [this](const std::vector<Value>& args) -> Value {
+            return this->encodeToJson(args[0]);
         },
         "jsonEncode"
     ));
     
-    // jsonDecode(jsonString) - decode JSON string to value (simple implementation)
+    // jsonDecode(jsonString) - decode JSON string to value
     globals_->define("jsonDecode", std::make_shared<NativeFunction>(
         1,
-        [](const std::vector<Value>& args) -> Value {
+        [this](const std::vector<Value>& args) -> Value {
             if (!isString(args[0])) throw std::runtime_error("jsonDecode() requires a string");
-            std::string jsonStr = asString(args[0]);
-            
-            // Simple JSON decoding
-            // Remove leading/trailing whitespace
-            jsonStr.erase(0, jsonStr.find_first_not_of(" \t\n\r"));
-            jsonStr.erase(jsonStr.find_last_not_of(" \t\n\r") + 1);
-            
-            if (jsonStr.empty()) return nullptr;
-            
-            // Handle null
-            if (jsonStr == "null") return nullptr;
-            
-            // Handle boolean
-            if (jsonStr == "true") return true;
-            if (jsonStr == "false") return false;
-            
-            // Handle string (quoted)
-            if (jsonStr.front() == '"' && jsonStr.back() == '"') {
-                // Remove quotes and handle escape sequences
-                std::string str = jsonStr.substr(1, jsonStr.length() - 2);
-                // Simple escape sequence handling
-                std::string result;
-                for (size_t i = 0; i < str.length(); i++) {
-                    if (str[i] == '\\' && i + 1 < str.length()) {
-                        switch (str[++i]) {
-                            case '"': result += '"'; break;
-                            case '\\': result += '\\'; break;
-                            default: result += str[i-1]; result += str[i]; break;
-                        }
-                    } else {
-                        result += str[i];
-                    }
-                }
-                return result;
-            }
-            
-            // Handle number
-            try {
-                size_t pos;
-                double num = std::stod(jsonStr, &pos);
-                if (pos == jsonStr.length()) {
-                    return num;
-                }
-            } catch (...) {
-                // Not a valid number
-            }
-            
-            // If we can't parse it, treat as string
-            return jsonStr;
+            return this->decodeFromJson(asString(args[0]));
         },
         "jsonDecode"
     ));
@@ -1574,6 +1498,175 @@ void Interpreter::checkNumberOperand(const Token& op, const Value& operand) {
 void Interpreter::checkNumberOperands(const Token& op, const Value& left, const Value& right) {
     if (isNumber(left) && isNumber(right)) return;
     throw RuntimeError(op, "Operands must be numbers");
+}
+
+}
+
+// ==================== JSON ENCODING/DECODING METHODS ====================
+
+std::string Interpreter::encodeToJson(const Value& value) {
+    std::ostringstream oss;
+    encodeJsonValue(value, oss);
+    return oss.str();
+}
+
+Value Interpreter::decodeFromJson(const std::string& jsonString) {
+    // Simple JSON decoder - handles basic types
+    std::string trimmed = jsonString;
+    // Remove leading/trailing whitespace
+    trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r"));
+    trimmed.erase(trimmed.find_last_not_of(" \t\n\r") + 1);
+    
+    if (trimmed.empty()) {
+        return nullptr;
+    }
+    
+    // Handle null
+    if (trimmed == "null") {
+        return nullptr;
+    }
+    
+    // Handle boolean
+    if (trimmed == "true") {
+        return true;
+    }
+    if (trimmed == "false") {
+        return false;
+    }
+    
+    // Handle string (quoted)
+    if (trimmed.front() == '"' && trimmed.back() == '"') {
+        // Remove quotes and handle escape sequences
+        std::string str = trimmed.substr(1, trimmed.length() - 2);
+        // Simple escape sequence handling
+        std::string result;
+        for (size_t i = 0; i < str.length(); i++) {
+            if (str[i] == '\\' && i + 1 < str.length()) {
+                switch (str[++i]) {
+                    case '"': result += '"'; break;
+                    case '\\': result += '\\'; break;
+                    case '/': result += '/'; break;
+                    case 'b': result += '\b'; break;
+                    case 'f': result += '\f'; break;
+                    case 'n': result += '\n'; break;
+                    case 'r': result += '\r'; break;
+                    case 't': result += '\t'; break;
+                    default: result += str[i-1]; result += str[i]; break;
+                }
+            } else {
+                result += str[i];
+            }
+        }
+        return result;
+    }
+    
+    // Handle number
+    try {
+        // Check if it's a valid number
+        size_t pos;
+        double num = std::stod(trimmed, &pos);
+        if (pos == trimmed.length()) {
+            return num;
+        }
+    } catch (...) {
+        // Not a valid number
+    }
+    
+    // Handle array
+    if (trimmed.front() == '[' && trimmed.back() == ']') {
+        // Parse array elements
+        std::string content = trimmed.substr(1, trimmed.length() - 2);
+        auto array = std::make_shared<VoltArray>();
+        
+        // Simple CSV-like parsing (doesn't handle nested structures well)
+        std::istringstream iss(content);
+        std::string element;
+        while (std::getline(iss, element, ',')) {
+            // Trim whitespace
+            element.erase(0, element.find_first_not_of(" \t\n\r"));
+            element.erase(element.find_last_not_of(" \t\n\r") + 1);
+            if (!element.empty()) {
+                array->push(decodeFromJson(element));
+            }
+        }
+        return array;
+    }
+    
+    // Handle object
+    if (trimmed.front() == '{' && trimmed.back() == '}') {
+        // Parse object key-value pairs
+        // This is a simplified implementation
+        return std::make_shared<VoltHashMap>(); // Return empty hashmap for now
+    }
+    
+    // If we can't parse it, treat as string
+    return trimmed;
+}
+
+void Interpreter::encodeJsonValue(const Value& value, std::ostringstream& oss) {
+    if (isNil(value)) {
+        oss << "null";
+    } else if (isBool(value)) {
+        oss << (asBool(value) ? "true" : "false");
+    } else if (isNumber(value)) {
+        double num = asNumber(value);
+        if (num == static_cast<long long>(num)) {
+            oss << static_cast<long long>(num);
+        } else {
+            oss << std::fixed << std::setprecision(6) << num;
+            // Remove trailing zeros
+            std::string str = oss.str();
+            oss.str("");
+            oss.clear();
+            size_t dotPos = str.find('.');
+            if (dotPos != std::string::npos) {
+                size_t lastNonZero = str.find_last_not_of('0');
+                if (lastNonZero == dotPos) {
+                    str = str.substr(0, dotPos);
+                } else if (lastNonZero != std::string::npos) {
+                    str = str.substr(0, lastNonZero + 1);
+                }
+            }
+            oss << str;
+        }
+    } else if (isString(value)) {
+        std::string str = asString(value);
+        oss << "\"";
+        for (char c : str) {
+            switch (c) {
+                case '"': oss << "\\\""; break;
+                case '\\': oss << "\\\\"; break;
+                case '/': oss << "\/"; break;
+                case '\b': oss << "\\b"; break;
+                case '\f': oss << "\\f"; break;
+                case '\n': oss << "\\n"; break;
+                case '\r': oss << "\\r"; break;
+                case '\t': oss << "\\t"; break;
+                default:
+                    if (c >= 0 && c < 32) {
+                        // Escape control characters
+                        oss << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(c);
+                    } else {
+                        oss << c;
+                    }
+                    break;
+            }
+        }
+        oss << "\"";
+    } else if (isArray(value)) {
+        auto array = asArray(value);
+        oss << "[";
+        const auto& elements = array->elements();
+        for (size_t i = 0; i < elements.size(); i++) {
+            if (i > 0) oss << ",";
+            encodeJsonValue(elements[i], oss);
+        }
+        oss << "]";
+    } else if (isHashMap(value)) {
+        oss << "{}"; // Simplified - just return empty object
+    } else {
+        oss << "\"" << valueToString(value) << "\"";
+    }
 }
 
 } // namespace volt
