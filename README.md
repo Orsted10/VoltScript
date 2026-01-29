@@ -3,7 +3,7 @@
 # ⚡ VoltScript ⚡  
 ### *A programming language built from scratch in modern C++*
 
-**Version:** `0.7.2`  
+**Version:** `0.7.5`  
 **Milestone:** Objects & Hash Maps 🗺️
 **Status:** 🟢 Production-Ready | 🚀 Feature-Rich | 🧠 Educational  
 
