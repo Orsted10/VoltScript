@@ -1,0 +1,3 @@
+print "Test";
+let t = thread.spawn(fn() { return 42; });
+print thread.join(t);

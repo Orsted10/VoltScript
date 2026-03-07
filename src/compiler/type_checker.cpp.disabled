@@ -1,0 +1,776 @@
+#include "type_checker.h"
+#include <sstream>
+
+namespace claw {
+
+// Type implementation
+bool Type::isAssignableFrom(const Type& other) const {
+    if (kind == Kind::Any || other.kind == Kind::Any) return true;
+    if (kind == other.kind) {
+        if (kind == Kind::Array && !params.empty() && !other.params.empty()) {
+            return params[0]->isAssignableFrom(*other.params[0]);
+        }
+        if (kind == Kind::Map && params.size() >= 2 && other.params.size() >= 2) {
+            return params[0]->isAssignableFrom(*other.params[0]) &&
+                   params[1]->isAssignableFrom(*other.params[1]);
+        }
+        return true;
+    }
+    if (kind == Kind::Union) {
+        for (const auto& t : unionTypes) {
+            if (t->isAssignableFrom(other)) return true;
+        }
+    }
+    // nil can be assigned to optional types
+    if (other.kind == Kind::Nil) return true;
+    return false;
+}
+
+std::string Type::toString() const {
+    switch (kind) {
+        case Kind::Any: return "any";
+        case Kind::Nil: return "nil";
+        case Kind::Bool: return "bool";
+        case Kind::Number: return "number";
+        case Kind::String: return "string";
+        case Kind::Array: 
+            if (!params.empty()) return "array<" + params[0]->toString() + ">";
+            return "array";
+        case Kind::Map:
+            if (params.size() >= 2) return "map<" + params[0]->toString() + "," + params[1]->toString() + ">";
+            return "map";
+        case Kind::Function: return "function";
+        case Kind::Class: return name.empty() ? "class" : name;
+        case Kind::Union: {
+            std::string result;
+            for (size_t i = 0; i < unionTypes.size(); i++) {
+                if (i > 0) result += " | ";
+                result += unionTypes[i]->toString();
+            }
+            return result;
+        }
+        case Kind::Generic: return name + "<...>";
+        case Kind::Void: return "void";
+    }
+    return "unknown";
+}
+
+// TypeEnvironment implementation
+void TypeEnvironment::define(const std::string& name, std::shared_ptr<Type> type) {
+    if (!scopes_.empty()) {
+        scopes_.back()[name] = std::move(type);
+    }
+}
+
+std::shared_ptr<Type> TypeEnvironment::lookup(const std::string& name) const {
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+        auto found = it->find(name);
+        if (found != it->end()) return found->second;
+    }
+    return nullptr;
+}
+
+void TypeEnvironment::enterScope() {
+    scopes_.emplace_back();
+}
+
+void TypeEnvironment::exitScope() {
+    if (!scopes_.empty()) scopes_.pop_back();
+}
+
+// TypeChecker implementation
+TypeChecker::TypeChecker() {
+    env_.enterScope();
+    // Define built-in types
+    env_.define("int", Type::makeNumber());
+    env_.define("float", Type::makeNumber());
+    env_.define("double", Type::makeNumber());
+    env_.define("number", Type::makeNumber());
+    env_.define("bool", Type::makeBool());
+    env_.define("str", Type::makeString());
+    env_.define("string", Type::makeString());
+    env_.define("nil", Type::makeNil());
+    env_.define("void", Type::makeNil());
+    env_.define("any", Type::makeAny());
+}
+
+bool TypeChecker::check(const std::vector<StmtPtr>& statements) {
+    errors_.clear();
+    for (const auto& stmt : statements) {
+        checkStmt(stmt.get());
+    }
+    return errors_.empty();
+}
+
+void TypeChecker::error(const std::string& message) {
+    errors_.push_back(message);
+}
+
+std::shared_ptr<Type> TypeChecker::parseTypeString(const std::string& typeStr) {
+    if (typeStr == "int" || typeStr == "float" || typeStr == "double" || typeStr == "number") {
+        return Type::makeNumber();
+    }
+    if (typeStr == "bool" || typeStr == "boolean") {
+        return Type::makeBool();
+    }
+    if (typeStr == "str" || typeStr == "string") {
+        return Type::makeString();
+    }
+    if (typeStr == "nil" || typeStr == "void") {
+        return Type::makeNil();
+    }
+    if (typeStr == "any") {
+        return Type::makeAny();
+    }
+    // Check for array<T>
+    if (typeStr.find("array<") == 0 || typeStr.find("Array<") == 0) {
+        auto inner = typeStr.substr(typeStr.find('<') + 1);
+        inner = inner.substr(0, inner.find('>'));
+        return Type::makeArray(parseTypeString(inner));
+    }
+    // Check for map<K,V>
+    if (typeStr.find("map<") == 0 || typeStr.find("Map<") == 0) {
+        auto inner = typeStr.substr(typeStr.find('<') + 1);
+        inner = inner.substr(0, inner.find('>'));
+        auto comma = inner.find(',');
+        if (comma != std::string::npos) {
+            auto key = parseTypeString(inner.substr(0, comma));
+            auto val = parseTypeString(inner.substr(comma + 1));
+            return Type::makeMap(std::move(key), std::move(val));
+        }
+    }
+    // Check for union types (A | B | C)
+    if (typeStr.find('|') != std::string::npos) {
+        std::vector<std::shared_ptr<Type>> unionTypes;
+        size_t start = 0;
+        while (start < typeStr.size()) {
+            size_t pipe = typeStr.find('|', start);
+            std::string part;
+            if (pipe == std::string::npos) {
+                part = typeStr.substr(start);
+                start = typeStr.size();
+            } else {
+                part = typeStr.substr(start, pipe - start);
+                start = pipe + 1;
+            }
+            // Trim whitespace
+            size_t first = part.find_first_not_of(" \t");
+            size_t last = part.find_last_not_of(" \t");
+            if (first != std::string::npos) {
+                part = part.substr(first, last - first + 1);
+                unionTypes.push_back(parseTypeString(part));
+            }
+        }
+        if (!unionTypes.empty()) {
+            return Type::makeUnion(std::move(unionTypes));
+        }
+    }
+    // Default to any for unknown types
+    return Type::makeAny();
+}
+
+bool TypeChecker::typesEqual(const std::shared_ptr<Type>& a, const std::shared_ptr<Type>& b) {
+    if (!a || !b) return false;
+    if (a->kind != b->kind) return false;
+    if (a->kind == Type::Kind::Array && !a->params.empty() && !b->params.empty()) {
+        return typesEqual(a->params[0], b->params[0]);
+    }
+    if (a->kind == Type::Kind::Map && a->params.size() >= 2 && b->params.size() >= 2) {
+        return typesEqual(a->params[0], b->params[0]) && typesEqual(a->params[1], b->params[1]);
+    }
+    return true;
+}
+
+bool TypeChecker::isSubtype(const std::shared_ptr<Type>& sub, const std::shared_ptr<Type>& super) {
+    if (!sub || !super) return false;
+    if (super->kind == Type::Kind::Any) return true;
+    if (sub->kind == super->kind) return true;
+    if (super->kind == Type::Kind::Union) {
+        for (const auto& t : super->unionTypes) {
+            if (isSubtype(sub, t)) return true;
+        }
+    }
+    return false;
+}
+
+std::shared_ptr<Type> TypeChecker::checkExpr(Expr* expr) {
+    if (!expr) return Type::makeNil();
+    Value result = expr->accept(*this);
+    // Extract type from Value (we store type pointer in the value)
+    // For simplicity, we return the type directly through a global or refactor to return shared_ptr
+    return Type::makeAny(); // Placeholder - would need value system integration
+}
+
+void TypeChecker::checkStmt(Stmt* stmt) {
+    if (!stmt) return;
+    stmt->accept(*this);
+}
+
+// Expression visitors
+Value TypeChecker::visitLiteralExpr(LiteralExpr* expr) {
+    if (isNil(expr->value)) return nilValue();
+    if (isBool(expr->value)) return boolValue(true);
+    if (isNumber(expr->value)) return numberToValue(0);
+    if (isString(expr->value)) {
+        auto sv = StringPool::intern("");
+        return stringValue(sv.data());
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitVariableExpr(VariableExpr* expr) {
+    auto type = env_.lookup(expr->name);
+    if (!type) {
+        error("Undefined variable: " + expr->name);
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitUnaryExpr(UnaryExpr* expr) {
+    checkExpr(expr->right.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitBinaryExpr(BinaryExpr* expr) {
+    auto left = checkExpr(expr->left.get());
+    auto right = checkExpr(expr->right.get());
+    
+    // Check operand types for arithmetic
+    if (expr->op.type == TokenType::Plus || expr->op.type == TokenType::Minus ||
+        expr->op.type == TokenType::Star || expr->op.type == TokenType::Slash) {
+        if (left->kind != Type::Kind::Number && left->kind != Type::Kind::Any) {
+            error("Left operand must be a number");
+        }
+        if (right->kind != Type::Kind::Number && right->kind != Type::Kind::Any) {
+            error("Right operand must be a number");
+        }
+    }
+    
+    return nilValue();
+}
+
+Value TypeChecker::visitLogicalExpr(LogicalExpr* expr) {
+    checkExpr(expr->left.get());
+    checkExpr(expr->right.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitGroupingExpr(GroupingExpr* expr) {
+    return checkExpr(expr->expression.get()), nilValue();
+}
+
+Value TypeChecker::visitCallExpr(CallExpr* expr) {
+    checkExpr(expr->callee.get());
+    for (const auto& arg : expr->arguments) {
+        checkExpr(arg.get());
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitAssignExpr(AssignExpr* expr) {
+    auto valueType = checkExpr(expr->value.get());
+    auto varType = env_.lookup(expr->name);
+    if (varType && !valueType->isAssignableFrom(*varType)) {
+        error("Cannot assign " + valueType->toString() + " to " + varType->toString());
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitCompoundAssignExpr(CompoundAssignExpr* expr) {
+    checkExpr(expr->value.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitCompoundMemberAssignExpr(CompoundMemberAssignExpr* expr) {
+    checkExpr(expr->object.get());
+    checkExpr(expr->value.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitCompoundIndexAssignExpr(CompoundIndexAssignExpr* expr) {
+    checkExpr(expr->object.get());
+    checkExpr(expr->index.get());
+    checkExpr(expr->value.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitUpdateExpr(UpdateExpr* expr) {
+    auto type = env_.lookup(expr->name);
+    if (type && type->kind != Type::Kind::Number && type->kind != Type::Kind::Any) {
+        error("Increment/decrement requires a number");
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitUpdateMemberExpr(UpdateMemberExpr* expr) {
+    checkExpr(expr->object.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitUpdateIndexExpr(UpdateIndexExpr* expr) {
+    checkExpr(expr->object.get());
+    checkExpr(expr->index.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitTernaryExpr(TernaryExpr* expr) {
+    checkExpr(expr->condition.get());
+    checkExpr(expr->thenBranch.get());
+    checkExpr(expr->elseBranch.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitArrayExpr(ArrayExpr* expr) {
+    for (const auto& elem : expr->elements) {
+        checkExpr(elem.get());
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitIndexExpr(IndexExpr* expr) {
+    checkExpr(expr->object.get());
+    checkExpr(expr->index.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitIndexAssignExpr(IndexAssignExpr* expr) {
+    checkExpr(expr->object.get());
+    checkExpr(expr->index.get());
+    checkExpr(expr->value.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitHashMapExpr(HashMapExpr* expr) {
+    for (const auto& [key, val] : expr->keyValuePairs) {
+        checkExpr(key.get());
+        checkExpr(val.get());
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitMemberExpr(MemberExpr* expr) {
+    checkExpr(expr->object.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitSetExpr(SetExpr* expr) {
+    checkExpr(expr->object.get());
+    checkExpr(expr->value.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitThisExpr(ThisExpr* expr) {
+    return nilValue();
+}
+
+Value TypeChecker::visitSuperExpr(SuperExpr* expr) {
+    return nilValue();
+}
+
+Value TypeChecker::visitFunctionExpr(FunctionExpr* expr) {
+    env_.enterScope();
+    for (const auto& param : expr->parameters) {
+        env_.define(param, Type::makeAny());
+    }
+    for (const auto& stmt : expr->body) {
+        checkStmt(stmt.get());
+    }
+    env_.exitScope();
+    return nilValue();
+}
+
+Value TypeChecker::visitFStringExpr(FStringExpr* expr) {
+    for (const auto& seg : expr->segments) {
+        if (seg.isExpr && seg.expr) {
+            checkExpr(seg.expr.get());
+        }
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitTemplateExpr(TemplateExpr* expr) {
+    for (const auto& seg : expr->segments) {
+        if (seg.isExpr && seg.expr) {
+            checkExpr(seg.expr.get());
+        }
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitSpreadExpr(SpreadExpr* expr) {
+    checkExpr(expr->expr.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitOptionalChainExpr(OptionalChainExpr* expr) {
+    checkExpr(expr->object.get());
+    if (expr->index) checkExpr(expr->index.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitNullCoalesceExpr(NullCoalesceExpr* expr) {
+    checkExpr(expr->left.get());
+    checkExpr(expr->right.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitPipeExpr(PipeExpr* expr) {
+    checkExpr(expr->left.get());
+    checkExpr(expr->right.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitAwaitExpr(AwaitExpr* expr) {
+    checkExpr(expr->expr.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitYieldExpr(YieldExpr* expr) {
+    if (expr->expr) checkExpr(expr->expr.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitMatchExpr(MatchExpr* expr) {
+    checkExpr(expr->subject.get());
+    for (const auto& arm : expr->arms) {
+        for (const auto& pat : arm.patterns) {
+            checkExpr(pat.get());
+        }
+        if (arm.guard) checkExpr(arm.guard.get());
+        for (const auto& stmt : arm.body) {
+            checkStmt(stmt.get());
+        }
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitComprehensionExpr(ComprehensionExpr* expr) {
+    env_.enterScope();
+    env_.define(expr->varName, Type::makeAny());
+    checkExpr(expr->iterable.get());
+    if (expr->condition) checkExpr(expr->condition.get());
+    checkExpr(expr->body.get());
+    env_.exitScope();
+    return nilValue();
+}
+
+Value TypeChecker::visitDestructureArrayExpr(DestructureArrayExpr* expr) {
+    checkExpr(expr->value.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitDestructureObjectExpr(DestructureObjectExpr* expr) {
+    checkExpr(expr->value.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitTypeAnnotationExpr(TypeAnnotationExpr* expr) {
+    checkExpr(expr->expr.get());
+    return nilValue();
+}
+
+Value TypeChecker::visitNewExpr(NewExpr* expr) {
+    checkExpr(expr->callee.get());
+    for (const auto& arg : expr->arguments) {
+        checkExpr(arg.get());
+    }
+    return nilValue();
+}
+
+Value TypeChecker::visitMetaExpr(MetaExpr* expr) {
+    checkExpr(expr->object.get());
+    if (expr->metatable) checkExpr(expr->metatable.get());
+    return nilValue();
+}
+
+// Statement visitors
+void TypeChecker::visitExprStmt(ExprStmt* stmt) {
+    checkExpr(stmt->expr.get());
+}
+
+void TypeChecker::visitPrintStmt(PrintStmt* stmt) {
+    checkExpr(stmt->expr.get());
+}
+
+void TypeChecker::visitLetStmt(LetStmt* stmt) {
+    auto initType = stmt->initializer ? checkExpr(stmt->initializer.get()) : Type::makeNil();
+    auto declaredType = stmt->typeName.empty() ? initType : parseTypeString(stmt->typeName);
+    
+    if (!stmt->typeName.empty() && !initType->isAssignableFrom(*declaredType)) {
+        error("Type mismatch in let declaration: cannot assign " + 
+              initType->toString() + " to " + declaredType->toString());
+    }
+    
+    env_.define(stmt->name, declaredType);
+}
+
+void TypeChecker::visitConstStmt(ConstStmt* stmt) {
+    auto initType = checkExpr(stmt->initializer.get());
+    auto declaredType = stmt->typeName.empty() ? initType : parseTypeString(stmt->typeName);
+    
+    if (!stmt->typeName.empty() && !initType->isAssignableFrom(*declaredType)) {
+        error("Type mismatch in const declaration");
+    }
+    
+    env_.define(stmt->name, declaredType);
+}
+
+void TypeChecker::visitFnStmt(FnStmt* stmt) {
+    std::vector<std::shared_ptr<Type>> paramTypes;
+    for (const auto& p : stmt->params) {
+        auto type = p.typeName.empty() ? Type::makeAny() : parseTypeString(p.typeName);
+        paramTypes.push_back(type);
+    }
+    
+    auto returnType = stmt->returnType.empty() ? Type::makeAny() : parseTypeString(stmt->returnType);
+    
+    // Define function type in outer scope
+    auto fnType = Type::makeFunction(paramTypes, returnType);
+    env_.define(stmt->name, fnType);
+    
+    // Check function body
+    env_.enterScope();
+    for (size_t i = 0; i < stmt->params.size(); i++) {
+        env_.define(stmt->params[i].name, paramTypes[i]);
+    }
+    
+    auto prevReturnType = currentFunctionReturnType_;
+    currentFunctionReturnType_ = returnType;
+    inFunction_ = true;
+    
+    for (const auto& s : stmt->body) {
+        checkStmt(s.get());
+    }
+    
+    currentFunctionReturnType_ = prevReturnType;
+    inFunction_ = false;
+    env_.exitScope();
+}
+
+void TypeChecker::visitReturnStmt(ReturnStmt* stmt) {
+    if (!inFunction_) {
+        error("Return statement outside of function");
+        return;
+    }
+    if (stmt->value) {
+        auto valueType = checkExpr(stmt->value.get());
+        if (currentFunctionReturnType_ && 
+            !valueType->isAssignableFrom(*currentFunctionReturnType_)) {
+            error("Return type mismatch: expected " + currentFunctionReturnType_->toString() +
+                  ", got " + valueType->toString());
+        }
+    }
+}
+
+void TypeChecker::visitBreakStmt(BreakStmt* stmt) {
+    if (!inLoop_) {
+        error("Break statement outside of loop");
+    }
+}
+
+void TypeChecker::visitContinueStmt(ContinueStmt* stmt) {
+    if (!inLoop_) {
+        error("Continue statement outside of loop");
+    }
+}
+
+void TypeChecker::visitIfStmt(IfStmt* stmt) {
+    checkExpr(stmt->condition.get());
+    env_.enterScope();
+    for (const auto& s : stmt->thenBranch) {
+        checkStmt(s.get());
+    }
+    env_.exitScope();
+    
+    for (const auto& [cond, body] : stmt->elseIfClauses) {
+        if (cond) checkExpr(cond.get());
+        env_.enterScope();
+        for (const auto& s : body) {
+            checkStmt(s.get());
+        }
+        env_.exitScope();
+    }
+    
+    env_.enterScope();
+    for (const auto& s : stmt->elseBranch) {
+        checkStmt(s.get());
+    }
+    env_.exitScope();
+}
+
+void TypeChecker::visitWhileStmt(WhileStmt* stmt) {
+    checkExpr(stmt->condition.get());
+    env_.enterScope();
+    bool prevInLoop = inLoop_;
+    inLoop_ = true;
+    for (const auto& s : stmt->body) {
+        checkStmt(s.get());
+    }
+    inLoop_ = prevInLoop;
+    env_.exitScope();
+}
+
+void TypeChecker::visitForStmt(ForStmt* stmt) {
+    env_.enterScope();
+    if (stmt->initializer) checkStmt(stmt->initializer.get());
+    if (stmt->condition) checkExpr(stmt->condition.get());
+    if (stmt->increment) checkExpr(stmt->increment.get());
+    
+    bool prevInLoop = inLoop_;
+    inLoop_ = true;
+    for (const auto& s : stmt->body) {
+        checkStmt(s.get());
+    }
+    inLoop_ = prevInLoop;
+    env_.exitScope();
+}
+
+void TypeChecker::visitForOfStmt(ForOfStmt* stmt) {
+    env_.enterScope();
+    env_.define(stmt->varName, Type::makeAny());
+    checkExpr(stmt->iterable.get());
+    
+    bool prevInLoop = inLoop_;
+    inLoop_ = true;
+    for (const auto& s : stmt->body) {
+        checkStmt(s.get());
+    }
+    inLoop_ = prevInLoop;
+    env_.exitScope();
+}
+
+void TypeChecker::visitForInStmt(ForInStmt* stmt) {
+    env_.enterScope();
+    env_.define(stmt->varName, Type::makeString());
+    checkExpr(stmt->iterable.get());
+    
+    bool prevInLoop = inLoop_;
+    inLoop_ = true;
+    for (const auto& s : stmt->body) {
+        checkStmt(s.get());
+    }
+    inLoop_ = prevInLoop;
+    env_.exitScope();
+}
+
+void TypeChecker::visitBlockStmt(BlockStmt* stmt) {
+    env_.enterScope();
+    for (const auto& s : stmt->statements) {
+        checkStmt(s.get());
+    }
+    env_.exitScope();
+}
+
+void TypeChecker::visitTryStmt(TryStmt* stmt) {
+    env_.enterScope();
+    for (const auto& s : stmt->tryBody) {
+        checkStmt(s.get());
+    }
+    env_.exitScope();
+    
+    env_.enterScope();
+    if (!stmt->catchVar.empty()) {
+        env_.define(stmt->catchVar, Type::makeAny());
+    }
+    for (const auto& s : stmt->catchBody) {
+        checkStmt(s.get());
+    }
+    env_.exitScope();
+    
+    if (!stmt->finallyBody.empty()) {
+        env_.enterScope();
+        for (const auto& s : stmt->finallyBody) {
+            checkStmt(s.get());
+        }
+        env_.exitScope();
+    }
+}
+
+void TypeChecker::visitThrowStmt(ThrowStmt* stmt) {
+    if (stmt->value) checkExpr(stmt->value.get());
+}
+
+void TypeChecker::visitImportStmt(ImportStmt* stmt) {
+    // Import types would be resolved from module metadata
+}
+
+void TypeChecker::visitExportStmt(ExportStmt* stmt) {
+    if (stmt->value) checkExpr(stmt->value.get());
+}
+
+void TypeChecker::visitClassStmt(ClassStmt* stmt) {
+    auto classType = std::make_shared<Type>(Type::Kind::Class, stmt->name);
+    env_.define(stmt->name, classType);
+    
+    env_.enterScope();
+    for (const auto& member : stmt->members) {
+        if (member.kind == ClassMember::Kind::Method || 
+            member.kind == ClassMember::Kind::StaticMethod) {
+            // Define method
+        } else if (member.kind == ClassMember::Kind::Field ||
+                   member.kind == ClassMember::Kind::StaticField) {
+            if (member.fieldInit) {
+                checkExpr(member.fieldInit.get());
+            }
+        }
+    }
+    env_.exitScope();
+}
+
+void TypeChecker::visitSwitchStmt(SwitchStmt* stmt) {
+    checkExpr(stmt->expression.get());
+    for (const auto& c : stmt->cases) {
+        if (!c.isDefault && c.match) checkExpr(c.match.get());
+        env_.enterScope();
+        for (const auto& s : c.body) {
+            checkStmt(s.get());
+        }
+        env_.exitScope();
+    }
+}
+
+void TypeChecker::visitEnumStmt(EnumStmt* stmt) {
+    // Enum values are numbers or strings
+    for (const auto& member : stmt->members) {
+        if (member.value) checkExpr(member.value.get());
+    }
+}
+
+
+void TypeChecker::visitInterfaceStmt(InterfaceStmt* stmt) {
+    // Interface definitions for type checking
+}
+
+void TypeChecker::visitDeferStmt(DeferStmt* stmt) {
+    for (const auto& s : stmt->body) {
+        checkStmt(s.get());
+    }
+}
+
+void TypeChecker::visitWithStmt(WithStmt* stmt) {
+    checkExpr(stmt->resource.get());
+    env_.enterScope();
+    env_.define(stmt->varName, Type::makeAny());
+    for (const auto& s : stmt->body) {
+        checkStmt(s.get());
+    }
+    env_.exitScope();
+}
+
+void TypeChecker::visitLabeledStmt(LabeledStmt* stmt) {
+    for (const auto& s : stmt->body) {
+        checkStmt(s.get());
+    }
+}
+
+void TypeChecker::visitDecoratorStmt(DecoratorStmt* stmt) {
+    for (const auto& arg : stmt->arguments) {
+        checkExpr(arg.get());
+    }
+    // Apply to target statement
+    if (stmt->target) {
+        checkStmt(stmt->target.get());
+    }
+}
+
+} // namespace claw

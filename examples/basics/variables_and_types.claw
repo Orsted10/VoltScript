@@ -1,0 +1,56 @@
+// 📝 Variables and Types - Natural and Intuitive!
+
+// Numbers - just write them!
+let age = 25;
+let price = 19.99;
+let temperature = -5;
+let bigNumber = 1000000;
+
+print "Age:", age;
+print "Price: $" + price;
+print "Temperature:", temperature + "°C";
+print "Big number:", bigNumber;
+
+// Strings - easy and flexible
+let name = "ClawScript";
+let greeting = "Hello, " + name + "!";
+let multiline = "This is a
+multi-line string
+that's easy to read!";
+
+print greeting;
+print multiline;
+
+// Boolean values - true or false
+let isAwesome = true;
+let isDifficult = false;
+
+print "Is ClawScript awesome?", isAwesome;
+print "Is it difficult?", isDifficult;
+
+// Arrays - lists of anything!
+let fruits = ["apple", "banana", "orange"];
+let numbers = [1, 2, 3, 4, 5];
+let mixed = ["hello", 42, true, [1, 2, 3]];
+
+print "Fruits:", fruits;
+print "Numbers:", numbers;
+print "Mixed array:", mixed;
+
+// Objects/Maps - key-value pairs
+let person = {
+    name: "Alice",
+    age: 30,
+    city: "Wonderland"
+};
+
+print "Person:", person;
+print "Name:", person.name;
+print "Age:", person.age;
+
+// Null and undefined
+let emptyValue = null;
+let notDefined = undefined;
+
+print "Empty value:", emptyValue;
+print "Not defined:", notDefined;

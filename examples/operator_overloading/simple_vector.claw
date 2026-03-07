@@ -1,0 +1,23 @@
+// Simple Vector Class with Operator Overloading
+
+class Vec2 {
+    fn init(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    fn __add(other) {
+        return Vec2(this.x + other.x, this.y + other.y);
+    }
+    
+    fn __str() {
+        return "Vec2(" + this.x + ", " + this.y + ")";
+    }
+}
+
+let v1 = Vec2(1, 2);
+let v2 = Vec2(3, 4);
+
+print "v1 =", v1;
+print "v2 =", v2;
+print "v1 + v2 =", v1 + v2;

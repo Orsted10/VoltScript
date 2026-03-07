@@ -1,0 +1,12 @@
+print "ClawScript Infinite Cosmos Test";
+print "Testing infinite functionality...";
+
+// Test basic math
+let x = 42;
+print "Number:", x;
+
+// Test string
+let message = "ClawScript is infinite!";
+print "Message:", message;
+
+print "✅ Infinite test complete!";

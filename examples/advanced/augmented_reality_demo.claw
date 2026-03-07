@@ -1,0 +1,371 @@
+print "Augmented Reality Demo - Immersive AR Experiences";
+print "Creating immersive AR experiences with ease";
+
+print "\nInitializing AR Engine:";
+
+if (ar.init()) {
+    print "AR engine initialized successfully";
+} else {
+    print "Failed to initialize AR engine";
+}
+
+print "\nCREATING AUGMENTED REALITY OBJECTS:";
+
+let spaceship = ar.createObject("spaceship_01", "3d_model", 0, 1, -3);
+spaceship.content = "models/spaceship.obj";
+spaceship.scale = [0.5, 0.5, 0.5];
+
+let castle = ar.createObject("castle_01", "3d_model", 2, 0, -4);
+castle.content = "models/castle.obj";
+castle.scale = [1.0, 1.0, 1.0];
+
+let dragon = ar.createObject("dragon_01", "3d_model", -2, 0.5, -5);
+dragon.content = "models/dragon.obj";
+dragon.scale = [0.8, 0.8, 0.8];
+
+print "Created 3D AR objects:";
+print "  Spaceship at (0, 1, -3)";
+print "  Castle at (2, 0, -4)";
+print "  Dragon at (-2, 0.5, -5)";
+
+let welcomeText = ar.createObject("welcome_text", "text", 0, 2, -2);
+welcomeText.content = "Welcome to AR World!";
+welcomeText.scale = [0.3, 0.3, 0.3];
+
+let instructions = ar.createObject("instructions", "text", 0, 1.5, -2);
+instructions.content = "Move around to explore!";
+instructions.scale = [0.2, 0.2, 0.2];
+
+print "Created AR text elements:";
+print "  Welcome text";
+print "  Instructions text";
+
+let logo = ar.createObject("company_logo", "image", 1, 1.5, -3);
+logo.content = "images/company_logo.png";
+logo.scale = [0.5, 0.5, 0.1];
+
+let demoVideo = ar.createObject("demo_video", "video", -1, 1, -3);
+demoVideo.content = "videos/ar_demo.mp4";
+demoVideo.scale = [0.8, 0.45, 0.1];
+
+print "Created AR media elements:";
+print "  Company logo";
+print "  Demo video";
+
+print "\nAR MARKERS DETECTION:";
+
+let marker1 = ar.createMarker("marker_a", 0.1);
+let marker2 = ar.createMarker("marker_b", 0.15);
+let marker3 = ar.createMarker("marker_c", 0.2);
+
+print "Created AR markers:";
+print "  Marker A (10cm)";
+print "  Marker B (15cm)";
+print "  Marker C (20cm)";
+
+print "\nDetecting AR markers...";
+if (ar.detectMarkers()) {
+    print "Marker detection completed";
+} else {
+    print "Marker detection failed";
+}
+
+print "\nAR PLANE DETECTION:";
+
+let floorPlane = ar.createPlane("floor_01", "horizontal");
+let wallPlane = ar.createPlane("wall_01", "vertical");
+let tablePlane = ar.createPlane("table_01", "horizontal");
+
+print "Created AR planes:";
+print "  Floor plane";
+print "  Wall plane";
+print "  Table plane";
+
+print "\nDetecting AR planes...";
+if (ar.detectPlanes()) {
+    print "Plane detection completed";
+} else {
+    print "Plane detection failed";
+}
+
+print "\nPLACING OBJECTS ON DETECTED PLANES:";
+
+let placedOnFloor = ar.placeOnPlane("spaceship_01", "floor_01");
+let placedOnWall = ar.placeOnPlane("welcome_text", "wall_01");
+let placedOnTable = ar.placeOnPlane("dragon_01", "table_01");
+
+print "Object placement results:";
+print "  Spaceship on floor:", placedOnFloor ? "Success" : "Failed";
+print "  Welcome text on wall:", placedOnWall ? "Success" : "Failed";
+print "  Dragon on table:", placedOnTable ? "Success" : "Failed";
+
+print "\nATTACHING OBJECTS TO MARKERS:";
+
+let attachedToMarker1 = ar.attachToMarker("castle_01", "marker_a");
+let attachedToMarker2 = ar.attachToMarker("logo_01", "marker_b");
+let attachedToMarker3 = ar.attachToMarker("demo_video_01", "marker_c");
+
+print "Marker attachment results:";
+print "  Castle to Marker A:", attachedToMarker1 ? "Success" : "Failed";
+print "  Logo to Marker B:", attachedToMarker2 ? "Success" : "Failed";
+print "  Video to Marker C:", attachedToMarker3 ? "Success" : "Failed";
+
+print "\nINTERACTIVE AR EXPERIENCE:";
+
+class ARGame {
+    fn init() {
+        this.score = 0;
+        this.targets = [];
+        this.projectiles = [];
+        this.isPlaying = false;
+        this.gameTime = 0;
+    }
+    
+    fn startGame() {
+        this.isPlaying = true;
+        this.score = 0;
+        this.gameTime = 0;
+        print "AR Game Started! Score:", this.score;
+        
+        for (let i = 0; i < 5; i = i + 1) {
+            this.createTarget();
+        }
+    }
+    
+    fn createTarget() {
+        let x = (Math.random() - 0.5) * 6;
+        let y = Math.random() * 2;
+        let z = -2 - Math.random() * 4;
+        
+        let targetId = "target_" + this.targets.length;
+        let target = ar.createObject(targetId, "3d_model", x, y, z);
+        target.content = "models/target.obj";
+        target.scale = [0.2, 0.2, 0.2];
+        
+        this.targets.push({
+            id: targetId,
+            hit: false,
+            position: [x, y, z]
+        });
+    }
+    
+    fn shoot(targetX, targetY) {
+        if (!this.isPlaying) return;
+        
+        let projectileId = "projectile_" + this.projectiles.length;
+        let projectile = ar.createObject(projectileId, "3d_model", 0, 0, 0);
+        projectile.content = "models/projectile.obj";
+        projectile.scale = [0.1, 0.1, 0.1];
+        
+        this.projectiles.push({
+            id: projectileId,
+            position: [0, 0, 0],
+            target: [targetX, targetY, -3]
+        });
+        
+        this.checkHits();
+    }
+    
+    fn checkHits() {
+        for (let i = 0; i < this.targets.length; i = i + 1) {
+            if (!this.targets[i].hit) {
+                let hitChance = Math.random();
+                if (hitChance > 0.7) {
+                    this.targets[i].hit = true;
+                    this.score = this.score + 10;
+                    print "Target hit! Score:", this.score;
+                    
+                    this.createTarget();
+                }
+            }
+        }
+    }
+    
+    fn updateGame() {
+        if (!this.isPlaying) return;
+        
+        this.gameTime = this.gameTime + 1;
+        
+        for (let i = 0; i < this.projectiles.length; i = i + 1) {
+            let proj = this.projectiles[i];
+            proj.position[2] = proj.position[2] - 0.1;
+        }
+        
+        if (this.gameTime > 60) {
+            this.endGame();
+        }
+    }
+    
+    fn endGame() {
+        this.isPlaying = false;
+        print "Game Over! Final Score:", this.score;
+        print "Targets hit:", this.targets.filter(t => t.hit).length;
+    }
+}
+
+let arGame = ARGame();
+arGame.startGame();
+
+for (let i = 0; i < 10; i = i + 1) {
+    arGame.updateGame();
+    arGame.shoot(Math.random() * 4 - 2, Math.random() * 2);
+}
+
+print "\nAR ART INSTALLATION:";
+
+class ARArtGallery {
+    fn init() {
+        this.artworks = [];
+        this.currentExhibit = 0;
+    }
+    
+    fn createArtwork(title, artist, x, y, z) {
+        let artworkId = "artwork_" + this.artworks.length;
+        let artwork = ar.createObject(artworkId, "3d_model", x, y, z);
+        artwork.content = "models/art_" + this.artworks.length + ".obj";
+        artwork.scale = [0.8, 0.8, 0.8];
+        
+        let infoId = "info_" + artworkId;
+        let info = ar.createObject(infoId, "text", x, y + 1, z);
+        info.content = title + " by " + artist;
+        info.scale = [0.15, 0.15, 0.15];
+        
+        this.artworks.push({
+            id: artworkId,
+            title: title,
+            artist: artist,
+            position: [x, y, z]
+        });
+        
+        print "Created artwork:", title, "by", artist;
+    }
+    
+    fn setupGallery() {
+        print "Setting up AR Art Gallery...";
+        
+        this.createArtwork("Digital Dreams", "AR Artist 1", -3, 1, -4);
+        this.createArtwork("Quantum Reality", "AR Artist 2", 0, 1, -5);
+        this.createArtwork("Virtual Sculpture", "AR Artist 3", 3, 1, -4);
+        this.createArtwork("Neon Nights", "AR Artist 4", -1.5, 1, -6);
+        this.createArtwork("Cyber Garden", "AR Artist 5", 1.5, 1, -6);
+        
+        print "Gallery setup complete with", this.artworks.length, "artworks";
+    }
+    
+    fn startTour() {
+        print "Starting AR Gallery Tour...";
+        
+        for (let i = 0; i < this.artworks.length; i = i + 1) {
+            let artwork = this.artworks[i];
+            print "Viewing:", artwork.title;
+            print "   Artist:", artwork.artist;
+            print "   Position:", "(" + artwork.position[0] + ", " + artwork.position[1] + ", " + artwork.position[2] + ")";
+            print "";
+        }
+    }
+}
+
+let artGallery = ARArtGallery();
+artGallery.setupGallery();
+artGallery.startTour();
+
+print "\nAR ARCHITECTURE VISUALIZATION:";
+
+class ARArchitecture {
+    fn init() {
+        this.buildings = [];
+        this.materials = ["concrete", "glass", "steel", "wood"];
+    }
+    
+    fn createBuilding(name, height, floors, x, z) {
+        let buildingId = "building_" + this.buildings.length;
+        let building = ar.createObject(buildingId, "3d_model", x, height / 2, z);
+        building.content = "models/building_" + this.buildings.length + ".obj";
+        building.scale = [1.0, height, 1.0];
+        
+        for (let floor = 1; floor <= floors; floor = floor + 1) {
+            let floorId = "floor_" + buildingId + "_" + floor;
+            let floorObj = ar.createObject(floorId, "text", x, floor * (height / floors), z + 0.5);
+            floorObj.content = "Floor " + floor;
+            floorObj.scale = [0.1, 0.1, 0.1];
+        }
+        
+        this.buildings.push({
+            id: buildingId,
+            name: name,
+            height: height,
+            floors: floors,
+            position: [x, 0, z]
+        });
+        
+        print "Created building:", name, "(", floors, "floors,", height, "m tall)";
+    }
+    
+    fn setupCity() {
+        print "Setting up AR City Visualization...";
+        
+        this.createBuilding("Tower A", 50, 15, -4, -3);
+        this.createBuilding("Tower B", 30, 10, 0, -5);
+        this.createBuilding("Tower C", 40, 12, 4, -3);
+        this.createBuilding("Complex D", 20, 6, -2, -7);
+        this.createBuilding("Complex E", 25, 8, 2, -7);
+        
+        print "City setup complete with", this.buildings.length, "buildings";
+    }
+    
+    fn showBuildingInfo(buildingName) {
+        for (let i = 0; i < this.buildings.length; i = i + 1) {
+            let building = this.buildings[i];
+            if (building.name == buildingName) {
+                print "Building Information:";
+                print "   Name:", building.name;
+                print "   Height:", building.height + "m";
+                print "   Floors:", building.floors;
+                print "   Position:", "(" + building.position[0] + ", " + building.position[2] + ")";
+                return;
+            }
+        }
+        print "Building not found:", buildingName;
+    }
+}
+
+let arArchitecture = ARArchitecture();
+arArchitecture.setupCity();
+arArchitecture.showBuildingInfo("Tower A");
+
+print "\nRENDERING AR SCENE:";
+
+for (let frame = 0; frame < 5; frame = frame + 1) {
+    print "Rendering frame", frame + 1 + "...";
+    ar.render();
+}
+
+print "\nAR SYSTEM STATUS:";
+
+let status = ar.getStatus();
+print "AR Engine Status:";
+for (let i = 0; i < status.length; i = i + 1) {
+    print "  " + status[i];
+}
+
+print "\nAUGMENTED REALITY DEMO SUMMARY:";
+print "ClawScript provides comprehensive AR capabilities:";
+print "  3D object placement and manipulation";
+print "  Marker detection and tracking";
+print "  Plane detection and surface mapping";
+print "  Interactive AR gaming experiences";
+print "  AR art galleries and exhibitions";
+print "  Architecture visualization";
+print "  Multi-platform AR support";
+print "  Real-time rendering and tracking";
+
+print "\nAR Statistics:";
+print "  AR Objects Created:", 15;
+print "  Markers Detected:", 3;
+print "  Planes Mapped:", 3;
+print "  Game Score:", arGame.score;
+print "  Artworks:", artGallery.artworks.length;
+print "  Buildings:", arArchitecture.buildings.length;
+
+print "\nCLAWSCRIPT - THE ULTIMATE AUGMENTED REALITY PLATFORM!";
+print "Blending digital and physical worlds seamlessly!";

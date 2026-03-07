@@ -1,0 +1,145 @@
+// ============================================================
+// ClawScript Coroutine Test
+// ============================================================
+
+print("=== Coroutine Tests ===");
+
+// --- Test 1: Basic yield sequence ---
+let co1 = coroutine(fn() {
+    yield 10;
+    yield 20;
+    return 30;
+});
+
+let v1 = co1.resume();
+let v2 = co1.resume();
+let v3 = co1.resume();
+
+if (v1 == 10 and v2 == 20 and v3 == 30) {
+    print("PASS: basic yield sequence");
+} else {
+    print("FAIL: basic yield sequence got " + v1 + " " + v2 + " " + v3);
+}
+
+// --- Test 2: Status transitions ---
+let co2 = coroutine(fn() {
+    yield 1;
+    return 2;
+});
+
+if (co2.status() == "suspended") {
+    print("PASS: initial status is suspended");
+} else {
+    print("FAIL: initial status is " + co2.status());
+}
+
+co2.resume();
+if (co2.status() == "suspended") {
+    print("PASS: status after first yield is suspended");
+} else {
+    print("FAIL: status after first yield is " + co2.status());
+}
+
+co2.resume();
+if (co2.isDead()) {
+    print("PASS: status after return is dead");
+} else {
+    print("FAIL: status after return is " + co2.status());
+}
+
+// --- Test 3: Coroutine as generator ---
+fn range(n) {
+    return coroutine(fn() {
+        let i = 0;
+        while (i < n) {
+            yield i;
+            i = i + 1;
+        }
+    });
+}
+
+let gen = range(5);
+let sum = 0;
+while (!gen.isDead()) {
+    let val = gen.resume();
+    if (!gen.isDead()) {
+        sum = sum + val;
+    }
+}
+// sum = 0+1+2+3+4 = 10
+if (sum == 10) {
+    print("PASS: generator range(5) sum = 10");
+} else {
+    print("FAIL: generator sum = " + sum);
+}
+
+// --- Test 4: Multiple independent coroutines ---
+let coA = coroutine(fn() { yield "A1"; yield "A2"; return "A3"; });
+let coB = coroutine(fn() { yield "B1"; yield "B2"; return "B3"; });
+
+let a1 = coA.resume();
+let b1 = coB.resume();
+let a2 = coA.resume();
+let b2 = coB.resume();
+
+if (a1 == "A1" and b1 == "B1" and a2 == "A2" and b2 == "B2") {
+    print("PASS: multiple independent coroutines");
+} else {
+    print("FAIL: multiple coroutines: " + a1 + " " + b1 + " " + a2 + " " + b2);
+}
+
+// --- Test 5: isCoroutine() ---
+let co5 = coroutine(fn() { return 42; });
+if (isCoroutine(co5)) {
+    print("PASS: isCoroutine() returns true for coroutine");
+} else {
+    print("FAIL: isCoroutine() returned false");
+}
+if (!isCoroutine(42)) {
+    print("PASS: isCoroutine() returns false for non-coroutine");
+} else {
+    print("FAIL: isCoroutine() returned true for number");
+}
+
+// --- Test 6: compose() and pipe() ---
+fn double(x) { return x * 2; }
+fn addOne(x) { return x + 1; }
+fn square(x) { return x * x; }
+
+let composed = compose(double, addOne, square);  // double(addOne(square(x)))
+let r1 = composed(3);  // square(3)=9, addOne(9)=10, double(10)=20
+if (r1 == 20) {
+    print("PASS: compose(double, addOne, square)(3) = 20");
+} else {
+    print("FAIL: compose result = " + r1);
+}
+
+let piped = pipe(square, addOne, double);  // double(addOne(square(x)))
+let r2 = piped(3);  // square(3)=9, addOne(9)=10, double(10)=20
+if (r2 == 20) {
+    print("PASS: pipe(square, addOne, double)(3) = 20");
+} else {
+    print("FAIL: pipe result = " + r2);
+}
+
+// --- Test 7: Multiple return values ---
+fn minMax(arr) {
+    let mn = arr[0];
+    let mx = arr[0];
+    for (let i = 1; i < arr.length; i++) {
+        if (arr[i] < mn) { mn = arr[i]; }
+        if (arr[i] > mx) { mx = arr[i]; }
+    }
+    return mn, mx;
+}
+
+let results = minMax([3, 1, 4, 1, 5, 9, 2, 6]);
+let mn = results[0];
+let mx = results[1];
+if (mn == 1 and mx == 9) {
+    print("PASS: multiple return values (min=1, max=9)");
+} else {
+    print("FAIL: multiple return values got min=" + mn + " max=" + mx);
+}
+
+print("=== Coroutine Tests Complete ===");

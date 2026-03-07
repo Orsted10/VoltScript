@@ -1,0 +1,36 @@
+// ── Regex stdlib test ────────────────────────────────────────────────────────
+print("=== Regex Tests ===");
+
+// reMatch — full string match
+print(reMatch("^\\d+$", "12345"));
+print(reMatch("^\\d+$", "123abc"));
+
+// reTest — search anywhere
+print(reTest("\\d+", "abc123def"));
+print(reTest("\\d+", "abcdef"));
+
+// reSearch — first match
+let m = reSearch("\\d+", "abc123def456");
+print(m);
+
+// reFindAll — all matches
+let all = reFindAll("\\d+", "a1b22c333");
+print(all.length);
+
+// reReplace — replace all
+let r = reReplace("\\s+", "hello   world  foo", " ");
+print(r);
+
+// reSplit — split by pattern
+let parts = reSplit(",\\s*", "a, b,c,  d");
+print(parts.length);
+
+// reGroups — capture groups
+let groups = reGroups("(\\w+)@(\\w+)\\.com", "user@example.com");
+print(groups.length);
+
+// reEscape — escape metacharacters
+let escaped = reEscape("hello.world");
+print(escaped);
+
+print("=== Regex Tests PASSED ===");

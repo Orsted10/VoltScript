@@ -1,0 +1,31 @@
+// Simple Performance Test
+
+fn fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fn arraySum(arr) {
+    let sum = 0;
+    for (let i = 0; i < arr.length; i = i + 1) {
+        sum = sum + arr[i];
+    }
+    return sum;
+}
+
+print "Performance Test";
+
+let numbers = [];
+for (let i = 0; i < 1000; i = i + 1) {
+    numbers.push(i);
+}
+
+print "Array sum test:";
+let time = benchmark(arraySum, numbers);
+print "Time:", time.timeMicroseconds;
+print "Result:", time.result;
+
+print "Fibonacci test:";
+let fibTime = benchmark(fibonacci, 20);
+print "Time:", fibTime.timeMicroseconds;
+print "Result:", fibTime.result;

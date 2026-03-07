@@ -1,0 +1,3 @@
+print "Thread Test";
+let t = spawn(fn() { return 42; });
+print t.join(t);

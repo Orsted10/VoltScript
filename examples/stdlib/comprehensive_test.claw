@@ -1,0 +1,511 @@
+// ============================================================
+// ClawScript Comprehensive Test Suite
+// Tests ALL language features and stdlib
+// ============================================================
+
+let passed = 0;
+let failed = 0;
+
+fn assert(condition, name) {
+    if (condition) {
+        print("[PASS] " + name);
+        passed = passed + 1;
+    } else {
+        print("[FAIL] " + name);
+        failed = failed + 1;
+    }
+}
+
+fn assertEq(a, b, name) {
+    if (a == b) {
+        print("[PASS] " + name);
+        passed = passed + 1;
+    } else {
+        print("[FAIL] " + name + " (got: " + a + ", expected: " + b + ")");
+        failed = failed + 1;
+    }
+}
+
+print("=== ClawScript Comprehensive Test Suite ===\n");
+
+// ============================================================
+// 1. CLASSES & INHERITANCE
+// ============================================================
+print("--- 1. Classes & Inheritance ---");
+
+class Animal {
+    init(name, sound) {
+        this.name = name;
+        this.sound = sound;
+    }
+    speak() {
+        return this.name + " says " + this.sound;
+    }
+    getName() {
+        return this.name;
+    }
+}
+
+class Dog extends Animal {
+    init(name) {
+        super.init(name, "Woof");
+        this.tricks = [];
+    }
+    learn(trick) {
+        this.tricks.push(trick);
+    }
+    perform() {
+        return this.name + " performs: " + this.tricks.join(", ");
+    }
+}
+
+let cat = Animal("Cat", "Meow");
+let dog = Dog("Rex");
+dog.learn("sit");
+dog.learn("shake");
+
+assertEq(cat.speak(), "Cat says Meow", "class basic method");
+assertEq(dog.speak(), "Rex says Woof", "class inheritance method");
+assertEq(dog.getName(), "Rex", "class super method");
+assertEq(dog.perform(), "Rex performs: sit, shake", "class instance array");
+
+// ============================================================
+// 2. ERROR HANDLING
+// ============================================================
+print("\n--- 2. Error Handling ---");
+
+let errorCaught = false;
+let errorMsg = "";
+try {
+    throw "test error";
+} catch (e) {
+    errorCaught = true;
+    errorMsg = e;
+}
+assert(errorCaught, "try/catch basic");
+
+let divError = false;
+try {
+    let x = 1 / 0;
+} catch (e) {
+    divError = true;
+}
+assert(divError, "try/catch division by zero");
+
+let nestedError = false;
+try {
+    try {
+        throw "inner";
+    } catch (e) {
+        throw "outer";
+    }
+} catch (e) {
+    nestedError = true;
+}
+assert(nestedError, "try/catch nested");
+
+// ============================================================
+// 3. CLOSURES & HIGHER-ORDER FUNCTIONS
+// ============================================================
+print("\n--- 3. Closures & Higher-Order Functions ---");
+
+fn makeCounter(start) {
+    let count = start;
+    return fun() {
+        count = count + 1;
+        return count;
+    };
+}
+
+let counter = makeCounter(0);
+assertEq(counter(), 1, "closure counter 1");
+assertEq(counter(), 2, "closure counter 2");
+assertEq(counter(), 3, "closure counter 3");
+
+fn makeAdder(x) {
+    return fun(y) { return x + y; };
+}
+let add5 = makeAdder(5);
+assertEq(add5(3), 8, "closure adder");
+assertEq(add5(10), 15, "closure adder 2");
+
+// Array higher-order functions
+let nums = [1, 2, 3, 4, 5];
+let doubled = nums.map(fun(x) { return x * 2; });
+assertEq(doubled[0], 2, "array.map first");
+assertEq(doubled[4], 10, "array.map last");
+
+let evens = nums.filter(fun(x) { return x % 2 == 0; });
+assertEq(evens.length, 2, "array.filter count");
+assertEq(evens[0], 2, "array.filter first");
+
+let sum = nums.reduce(fun(acc, x) { return acc + x; }, 0);
+assertEq(sum, 15, "array.reduce sum");
+
+// ============================================================
+// 4. RECURSIVE ALGORITHMS
+// ============================================================
+print("\n--- 4. Recursive Algorithms ---");
+
+fn fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+assertEq(fibonacci(0), 0, "fibonacci(0)");
+assertEq(fibonacci(1), 1, "fibonacci(1)");
+assertEq(fibonacci(10), 55, "fibonacci(10)");
+
+fn factorial(n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+assertEq(factorial(1), 1, "factorial(1)");
+assertEq(factorial(5), 120, "factorial(5)");
+assertEq(factorial(10), 3628800, "factorial(10)");
+
+fn power(base, exp) {
+    if (exp == 0) return 1;
+    return base * power(base, exp - 1);
+}
+assertEq(power(2, 10), 1024, "recursive power");
+
+// ============================================================
+// 5. JSON
+// ============================================================
+print("\n--- 5. JSON ---");
+
+let obj = {"name": "ClawScript", "version": 2, "active": true};
+let jsonStr = jsonStringify(obj);
+assert(jsonStr != nil, "jsonStringify not nil");
+
+let parsed = jsonParse("{\"x\": 42, \"y\": \"hello\"}");
+assertEq(parsed["x"], 42, "jsonParse number");
+assertEq(parsed["y"], "hello", "jsonParse string");
+
+let arr = [1, 2, 3];
+let arrJson = jsonStringify(arr);
+assert(arrJson != nil, "jsonStringify array");
+
+// ============================================================
+// 6. STRING METHODS
+// ============================================================
+print("\n--- 6. String Methods ---");
+
+let s = "Hello, World!";
+assertEq(strLen(s), 13, "strLen");
+assertEq(strUpper(s), "HELLO, WORLD!", "strUpper");
+assertEq(strLower(s), "hello, world!", "strLower");
+assertEq(strContains(s, "World"), true, "strContains true");
+assertEq(strContains(s, "xyz"), false, "strContains false");
+assertEq(strStartsWith(s, "Hello"), true, "strStartsWith");
+assertEq(strEndsWith(s, "World!"), true, "strEndsWith");
+assertEq(strTrim("  hello  "), "hello", "strTrim");
+assertEq(strReplace(s, "World", "ClawScript"), "Hello, ClawScript!", "strReplace");
+
+let parts = strSplit("a,b,c", ",");
+assertEq(parts.length, 3, "strSplit length");
+assertEq(parts[0], "a", "strSplit first");
+assertEq(parts[2], "c", "strSplit last");
+
+assertEq(strSubstr("Hello", 1, 3), "el", "strSubstr");
+assertEq(strIndexOf("Hello", "l"), 2, "strIndexOf");
+
+// ============================================================
+// 7. MATH NATIVES
+// ============================================================
+print("\n--- 7. Math Natives ---");
+
+assertEq(mathFloor(3.7), 3, "mathFloor");
+assertEq(mathCeil(3.2), 4, "mathCeil");
+assertEq(mathRound(3.5), 4, "mathRound");
+assertEq(mathAbs(-5), 5, "mathAbs");
+assertEq(mathMax(3, 7), 7, "mathMax");
+assertEq(mathMin(3, 7), 3, "mathMin");
+assertEq(mathPow(2, 8), 256, "mathPow");
+assertEq(mathSqrt(144), 12, "mathSqrt");
+
+let pi = mathPI();
+assert(pi > 3.14 && pi < 3.15, "mathPI");
+
+let sinVal = mathSin(0);
+assertEq(sinVal, 0, "mathSin(0)");
+
+let cosVal = mathCos(0);
+assertEq(cosVal, 1, "mathCos(0)");
+
+// ============================================================
+// 8. ARRAY METHODS
+// ============================================================
+print("\n--- 8. Array Methods ---");
+
+let arr2 = [3, 1, 4, 1, 5, 9, 2, 6];
+let sorted = arr2.filter(fun(x) { return true; });  // copy
+
+assertEq(arr2.indexOf(5), 4, "array.indexOf");
+assertEq(arr2.indexOf(99), -1, "array.indexOf not found");
+assert(arr2.includes(9), "array.includes true");
+assert(!arr2.includes(99), "array.includes false");
+
+let found = arr2.find(fun(x) { return x > 5; });
+assertEq(found, 9, "array.find");
+
+let foundIdx = arr2.findIndex(fun(x) { return x > 5; });
+assertEq(foundIdx, 5, "array.findIndex");
+
+assert(arr2.some(fun(x) { return x > 8; }), "array.some true");
+assert(!arr2.some(fun(x) { return x > 100; }), "array.some false");
+assert(arr2.every(fun(x) { return x > 0; }), "array.every true");
+assert(!arr2.every(fun(x) { return x > 5; }), "array.every false");
+
+let nested = [[1, 2], [3, 4], [5, 6]];
+let flat = nested.flat();
+assertEq(flat.length, 6, "array.flat length");
+assertEq(flat[0], 1, "array.flat first");
+
+let joined = [1, 2, 3].join("-");
+assertEq(joined, "1-2-3", "array.join");
+
+let concat = [1, 2].concat([3, 4], [5]);
+assertEq(concat.length, 5, "array.concat length");
+
+// ============================================================
+// 9. SWITCH/CASE & ENUM
+// ============================================================
+print("\n--- 9. Switch/Case & Enum ---");
+
+fn getDayName(day) {
+    switch (day) {
+        case 0: return "Sunday";
+        case 1: return "Monday";
+        case 2: return "Tuesday";
+        case 3: return "Wednesday";
+        default: return "Other";
+    }
+}
+assertEq(getDayName(0), "Sunday", "switch case 0");
+assertEq(getDayName(2), "Tuesday", "switch case 2");
+assertEq(getDayName(9), "Other", "switch default");
+
+enum Direction {
+    North,
+    South,
+    East,
+    West
+};
+assertEq(Direction["North"], 0, "enum North");
+assertEq(Direction["South"], 1, "enum South");
+assertEq(Direction["East"], 2, "enum East");
+assertEq(Direction["West"], 3, "enum West");
+
+// ============================================================
+// 10. BITWISE OPERATORS
+// ============================================================
+print("\n--- 10. Bitwise Operators ---");
+
+assertEq(5 & 3, 1, "bitwise AND");
+assertEq(5 | 3, 7, "bitwise OR");
+assertEq(5 ^ 3, 6, "bitwise XOR");
+assertEq(~5, -6, "bitwise NOT");
+assertEq(1 << 3, 8, "left shift");
+assertEq(16 >> 2, 4, "right shift");
+
+let flags = 0;
+flags |= 1;   // set bit 0
+flags |= 4;   // set bit 2
+assertEq(flags & 1, 1, "bitwise flag set 0");
+assertEq(flags & 4, 4, "bitwise flag set 2");
+assertEq(flags & 2, 0, "bitwise flag unset 1");
+
+// ============================================================
+// 11. MATCH EXPRESSION
+// ============================================================
+print("\n--- 11. Match Expression ---");
+
+fn classify(n) {
+    return match(n) {
+        case 0: "zero",
+        case 1: "one",
+        case 2: "two",
+        default: "many"
+    };
+}
+assertEq(classify(0), "zero", "match zero");
+assertEq(classify(1), "one", "match one");
+assertEq(classify(2), "two", "match two");
+assertEq(classify(99), "many", "match default");
+
+// ============================================================
+// 12. NULL COALESCING & OPTIONAL CHAINING
+// ============================================================
+print("\n--- 12. Null Coalescing & Optional Chaining ---");
+
+let x = nil ?? "default";
+assertEq(x, "default", "null coalesce nil");
+
+let y = "value" ?? "default";
+assertEq(y, "value", "null coalesce non-nil");
+
+let map = {"a": {"b": 42}};
+let val = map?.a?.b;
+assertEq(val, 42, "optional chain success");
+
+let missing = map?.z?.b;
+assertEq(missing, nil, "optional chain nil");
+
+// ============================================================
+// 13. PIPE OPERATOR
+// ============================================================
+print("\n--- 13. Pipe Operator ---");
+
+fn double(x) { return x * 2; }
+fn addOne(x) { return x + 1; }
+fn square(x) { return x * x; }
+
+let result = 3 |> double |> addOne |> square;
+assertEq(result, 49, "pipe operator chain");  // ((3*2)+1)^2 = 7^2 = 49
+
+// ============================================================
+// 14. FOR-OF, FOR-IN, COMPREHENSIONS
+// ============================================================
+print("\n--- 14. For-of, For-in, Comprehensions ---");
+
+let items = [10, 20, 30];
+let forOfSum = 0;
+for (let item of items) {
+    forOfSum = forOfSum + item;
+}
+assertEq(forOfSum, 60, "for-of sum");
+
+let obj2 = {"a": 1, "b": 2, "c": 3};
+let keyCount = 0;
+for (let k in obj2) {
+    keyCount = keyCount + 1;
+}
+assertEq(keyCount, 3, "for-in key count");
+
+let squares = [x * x for x in [1, 2, 3, 4, 5]];
+assertEq(squares.length, 5, "comprehension length");
+assertEq(squares[0], 1, "comprehension first");
+assertEq(squares[4], 25, "comprehension last");
+
+let evenSquares = [x * x for x in [1, 2, 3, 4, 5] if x % 2 == 0];
+assertEq(evenSquares.length, 2, "comprehension filtered length");
+assertEq(evenSquares[0], 4, "comprehension filtered first");
+
+// ============================================================
+// 15. DESTRUCTURING
+// ============================================================
+print("\n--- 15. Destructuring ---");
+
+let [a, b, c] = [10, 20, 30];
+assertEq(a, 10, "array destructure a");
+assertEq(b, 20, "array destructure b");
+assertEq(c, 30, "array destructure c");
+
+// ============================================================
+// 16. TERNARY & COMPOUND OPERATORS
+// ============================================================
+print("\n--- 16. Ternary & Compound Operators ---");
+
+let t = 5 > 3 ? "yes" : "no";
+assertEq(t, "yes", "ternary true");
+
+let f = 5 < 3 ? "yes" : "no";
+assertEq(f, "no", "ternary false");
+
+let n = 10;
+n += 5;
+assertEq(n, 15, "compound +=");
+n -= 3;
+assertEq(n, 12, "compound -=");
+n *= 2;
+assertEq(n, 24, "compound *=");
+n /= 4;
+assertEq(n, 6, "compound /=");
+
+// ============================================================
+// 17. GAME MATH
+// ============================================================
+print("\n--- 17. Game Math ---");
+
+let v2 = vec2(3, 4);
+let v2len = vec2Length(v2);
+assertEq(v2len, 5, "vec2 length (3-4-5 triangle)");
+
+let v3a = vec3(1, 0, 0);
+let v3b = vec3(0, 1, 0);
+let cross = vec3Cross(v3a, v3b);
+assert(cross != nil, "vec3 cross product");
+
+let color = colorRGB(255, 128, 0);
+assert(color != nil, "colorRGB");
+
+// ============================================================
+// 18. COLLECTIONS
+// ============================================================
+print("\n--- 18. Collections ---");
+
+let s2 = setNew();
+setAdd(s2, 1);
+setAdd(s2, 2);
+setAdd(s2, 2);  // duplicate
+assertEq(setSize(s2), 2, "set no duplicates");
+assert(setHas(s2, 1), "set has 1");
+assert(!setHas(s2, 99), "set not has 99");
+
+let q = queueNew();
+queuePush(q, "first");
+queuePush(q, "second");
+assertEq(queueSize(q), 2, "queue size");
+assertEq(queuePop(q), "first", "queue FIFO");
+
+let stk = stackNew();
+stackPush(stk, "a");
+stackPush(stk, "b");
+assertEq(stackPop(stk), "b", "stack LIFO");
+
+// ============================================================
+// 19. ECS
+// ============================================================
+print("\n--- 19. ECS ---");
+
+let world = ecsCreateWorld();
+let e1 = ecsCreateEntity(world);
+let e2 = ecsCreateEntity(world);
+ecsSetComponent(world, e1, "hp", 100);
+ecsSetComponent(world, e2, "hp", 50);
+ecsSetComponent(world, e1, "pos", 0);
+
+let withHp = ecsQuery(world, "hp");
+assert(withHp != nil, "ecs query not nil");
+assert(ecsHasComponent(world, e1, "hp"), "ecs has component");
+assert(!ecsHasComponent(world, e1, "mana"), "ecs no component");
+
+ecsDestroyEntity(world, e2);
+ecsDestroyWorld(world);
+assert(true, "ecs lifecycle");
+
+// ============================================================
+// 20. TYPE FUNCTION
+// ============================================================
+print("\n--- 20. Type Checking ---");
+
+assertEq(type(42), "number", "type number");
+assertEq(type("hello"), "string", "type string");
+assertEq(type(true), "bool", "type bool");
+assertEq(type(nil), "nil", "type nil");
+assertEq(type([1,2,3]), "array", "type array");
+assertEq(type({"a":1}), "hashmap", "type hashmap");
+assertEq(type(fun(x){return x;}), "function", "type function");
+
+// ============================================================
+// FINAL RESULTS
+// ============================================================
+print("\n==========================================");
+print("RESULTS: " + passed + " passed, " + failed + " failed");
+print("==========================================");
+if (failed == 0) {
+    print("ALL TESTS PASSED!");
+} else {
+    print("SOME TESTS FAILED!");
+}

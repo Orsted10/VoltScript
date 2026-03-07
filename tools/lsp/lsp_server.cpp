@@ -129,12 +129,11 @@ static void analyzeDocument(Document& doc) {
             si.typeName = "unknown";
             if (let->initializer) {
                 if (auto* lit = dynamic_cast<LiteralExpr*>(let->initializer.get())) {
-                    switch (lit->type) {
-                        case LiteralExpr::Type::Number: si.typeName = "number"; break;
-                        case LiteralExpr::Type::String: si.typeName = "string"; break;
-                        case LiteralExpr::Type::Bool: si.typeName = "bool"; break;
-                        case LiteralExpr::Type::Nil: si.typeName = "nil"; break;
-                    }
+                    Value v = lit->value;
+                    if ((v & QNAN) != QNAN) si.typeName = "number";
+                    else if ((v & (QNAN | 0x7)) == (QNAN | TAG_STRING)) si.typeName = "string";
+                    else if (v == (QNAN | TAG_TRUE) || v == (QNAN | TAG_FALSE)) si.typeName = "bool";
+                    else if (v == (QNAN | TAG_NIL)) si.typeName = "nil";
                 } else if (auto* fexpr = dynamic_cast<FunctionExpr*>(let->initializer.get())) {
                     si.typeName = "function";
                     si.arity = static_cast<int>(fexpr->parameters.size());
@@ -147,8 +146,8 @@ static void analyzeDocument(Document& doc) {
             si.name = fn->name;
             si.def = tokenRange(fn->token);
             si.typeName = "function";
-            si.arity = static_cast<int>(fn->parameters.size());
-            for (auto& p : fn->parameters) si.params.push_back(p);
+            si.arity = static_cast<int>(fn->params.size());
+            for (auto& p : fn->params) si.params.push_back(p.name);
             doc.symbols[si.name] = std::move(si);
         } else if (auto* cls = dynamic_cast<ClassStmt*>(s.get())) {
             SymbolInfo si;
@@ -175,16 +174,18 @@ static void analyzeDocument(Document& doc) {
                 return;
             }
             if (auto* fn = dynamic_cast<FnStmt*>(s)) {
-                for (auto& p : fn->parameters) {
+                for (auto& p : fn->params) {
                     SymbolInfo si;
-                    si.name = p;
+                    si.name = p.name;
                     d->locals[si.name] = std::move(si);
                 }
                 for (auto& st : fn->body) walk(st.get());
                 return;
             }
             if (auto* c = dynamic_cast<ClassStmt*>(s)) {
-                for (auto& m : c->methods) walk(m.get());
+                for (auto& m : c->members) {
+                    if (m.method) for (auto& st : m.method->body) walk(st.get());
+                }
                 return;
             }
             if (auto* e = dynamic_cast<ExprStmt*>(s)) {
@@ -194,7 +195,7 @@ static void analyzeDocument(Document& doc) {
         }
         void walk(Expr* e) {
             if (!e) return;
-            if (auto* g = dynamic_cast<GroupingExpr*>(e)) { walk(g->expr.get()); return; }
+            if (auto* g = dynamic_cast<GroupingExpr*>(e)) { walk(g->expression.get()); return; }
             if (auto* a = dynamic_cast<ArrayExpr*>(e)) { for (auto& el : a->elements) walk(el.get()); return; }
             if (auto* h = dynamic_cast<HashMapExpr*>(e)) { for (auto& kv : h->keyValuePairs) { walk(kv.first.get()); walk(kv.second.get()); } return; }
             if (auto* b = dynamic_cast<BinaryExpr*>(e)) { walk(b->left.get()); walk(b->right.get()); return; }
@@ -258,7 +259,7 @@ static void analyzeDocument(Document& doc) {
                     }
                     return;
                 }
-                if (auto* g = dynamic_cast<GroupingExpr*>(e)) { walk(g->expr.get()); return; }
+                if (auto* g = dynamic_cast<GroupingExpr*>(e)) { walk(g->expression.get()); return; }
                 if (auto* l = dynamic_cast<LogicalExpr*>(e)) { walk(l->left.get()); walk(l->right.get()); return; }
                 if (auto* i = dynamic_cast<IndexExpr*>(e)) { walk(i->object.get()); walk(i->index.get()); return; }
                 if (auto* m = dynamic_cast<MemberExpr*>(e)) { walk(m->object.get()); return; }
@@ -269,12 +270,12 @@ static void analyzeDocument(Document& doc) {
                 if (auto* e = dynamic_cast<ExprStmt*>(s)) { walk(e->expr.get()); return; }
                 if (auto* p = dynamic_cast<PrintStmt*>(s)) { walk(p->expr.get()); return; }
                 if (auto* l = dynamic_cast<LetStmt*>(s)) { walk(l->initializer.get()); return; }
-                if (auto* r = dynamic_cast<ReturnStmt*>(s)) { walk(r->value.get()); return; }
+                if (auto* r = dynamic_cast<ReturnStmt*>(s)) { if (!r->values.empty()) walk(r->values[0].get()); return; }
                 if (auto* i = dynamic_cast<IfStmt*>(s)) { walk(i->condition.get()); walk(i->thenBranch.get()); walk(i->elseBranch.get()); return; }
                 if (auto* w = dynamic_cast<WhileStmt*>(s)) { walk(w->condition.get()); walk(w->body.get()); return; }
                 if (auto* f = dynamic_cast<ForStmt*>(s)) { walk(f->initializer.get()); walk(f->condition.get()); walk(f->increment.get()); walk(f->body.get()); return; }
                 if (auto* b = dynamic_cast<BlockStmt*>(s)) { for (auto& st : b->statements) walk(st.get()); return; }
-                if (auto* c = dynamic_cast<ClassStmt*>(s)) { for (auto& m : c->methods) walk(m.get()); return; }
+                if (auto* c = dynamic_cast<ClassStmt*>(s)) { for (auto& m : c->members) { if (m.method) for (auto& st : m.method->body) walk(st.get()); } return; }
                 if (auto* fn = dynamic_cast<FnStmt*>(s)) { for (auto& st : fn->body) walk(st.get()); return; }
             }
         } walker{&doc};

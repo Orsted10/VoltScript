@@ -43,6 +43,23 @@ public:
     Value visitSuperExpr(SuperExpr* expr) override;
     Value visitFunctionExpr(FunctionExpr* expr) override;
 
+    // New ExprVisitor nodes
+    Value visitFStringExpr(FStringExpr* expr) override;
+    Value visitTemplateExpr(TemplateExpr* expr) override;
+    Value visitSpreadExpr(SpreadExpr* expr) override;
+    Value visitOptionalChainExpr(OptionalChainExpr* expr) override;
+    Value visitNullCoalesceExpr(NullCoalesceExpr* expr) override;
+    Value visitPipeExpr(PipeExpr* expr) override;
+    Value visitAwaitExpr(AwaitExpr* expr) override;
+    Value visitYieldExpr(YieldExpr* expr) override;
+    Value visitMatchExpr(MatchExpr* expr) override;
+    Value visitComprehensionExpr(ComprehensionExpr* expr) override;
+    Value visitDestructureArrayExpr(DestructureArrayExpr* expr) override;
+    Value visitDestructureObjectExpr(DestructureObjectExpr* expr) override;
+    Value visitTypeAnnotationExpr(TypeAnnotationExpr* expr) override;
+    Value visitNewExpr(NewExpr* expr) override;
+    Value visitMetaExpr(MetaExpr* expr) override;
+
     // StmtVisitor implementation
     void visitExprStmt(ExprStmt* stmt) override;
     void visitPrintStmt(PrintStmt* stmt) override;
@@ -61,6 +78,20 @@ public:
     void visitImportStmt(ImportStmt* stmt) override;
     void visitClassStmt(ClassStmt* stmt) override;
     void visitSwitchStmt(SwitchStmt* stmt) override;
+
+    // New StmtVisitor nodes
+    void visitConstStmt(ConstStmt* stmt) override;
+    void visitEnumStmt(EnumStmt* stmt) override;
+    void visitInterfaceStmt(InterfaceStmt* stmt) override;
+    void visitForOfStmt(ForOfStmt* stmt) override;
+    void visitForInStmt(ForInStmt* stmt) override;
+    void visitDeferStmt(DeferStmt* stmt) override;
+    void visitAsyncFnStmt(AsyncFnStmt* stmt) override;
+    void visitWithStmt(WithStmt* stmt) override;
+    void visitLabeledStmt(LabeledStmt* stmt) override;
+    void visitMultiLetStmt(MultiLetStmt* stmt) override;
+    void visitExportStmt(ExportStmt* stmt) override;
+    void visitDecoratorStmt(DecoratorStmt* stmt) override;
 
 private:
     struct Local {

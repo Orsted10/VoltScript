@@ -1,0 +1,177 @@
+#pragma once
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include <memory>
+#include "parser/ast.h"
+#include "parser/stmt.h"
+
+namespace claw {
+
+// Type representation
+struct Type {
+    enum class Kind {
+        Any,        // Dynamic type
+        Nil,
+        Bool,
+        Number,
+        String,
+        Array,
+        Map,
+        Function,
+        Class,
+        Union,      // int | str | null
+        Generic,    // Array<T>
+        Void
+    };
+    
+    Kind kind;
+    std::string name;                    // For named types
+    std::vector<std::shared_ptr<Type>> params;  // For generics
+    std::vector<std::shared_ptr<Type>> unionTypes; // For unions
+    
+    Type(Kind k) : kind(k) {}
+    Type(Kind k, std::string n) : kind(k), name(std::move(n)) {}
+    
+    bool isAssignableFrom(const Type& other) const;
+    std::string toString() const;
+    
+    static std::shared_ptr<Type> makeAny() { return std::make_shared<Type>(Kind::Any); }
+    static std::shared_ptr<Type> makeNil() { return std::make_shared<Type>(Kind::Nil); }
+    static std::shared_ptr<Type> makeBool() { return std::make_shared<Type>(Kind::Bool); }
+    static std::shared_ptr<Type> makeNumber() { return std::make_shared<Type>(Kind::Number); }
+    static std::shared_ptr<Type> makeString() { return std::make_shared<Type>(Kind::String); }
+    static std::shared_ptr<Type> makeArray(std::shared_ptr<Type> elem) {
+        auto t = std::make_shared<Type>(Kind::Array);
+        t->params.push_back(std::move(elem));
+        return t;
+    }
+    static std::make_shared<Type> makeMap(std::shared_ptr<Type> key, std::shared_ptr<Type> val) {
+        auto t = std::make_shared<Type>(Kind::Map);
+        t->params.push_back(std::move(key));
+        t->params.push_back(std::move(val));
+        return t;
+    }
+    static std::shared_ptr<Type> makeFunction(
+        std::vector<std::shared_ptr<Type>> params,
+        std::shared_ptr<Type> ret) {
+        auto t = std::make_shared<Type>(Kind::Function);
+        t->params = std::move(params);
+        if (ret) t->params.push_back(std::move(ret));
+        return t;
+    }
+    static std::shared_ptr<Type> makeUnion(std::vector<std::shared_ptr<Type>> types) {
+        auto t = std::make_shared<Type>(Kind::Union);
+        t->unionTypes = std::move(types);
+        return t;
+    }
+};
+
+// Type environment for scope tracking
+class TypeEnvironment {
+public:
+    void define(const std::string& name, std::shared_ptr<Type> type);
+    std::shared_ptr<Type> lookup(const std::string& name) const;
+    void enterScope();
+    void exitScope();
+    
+private:
+    std::vector<std::unordered_map<std::string, std::shared_ptr<Type>>> scopes_;
+};
+
+// Type checker visitor
+class TypeChecker : public ExprVisitor, public StmtVisitor {
+public:
+    TypeChecker();
+    
+    // Run type checking on a program
+    bool check(const std::vector<StmtPtr>& statements);
+    const std::vector<std::string>& getErrors() const { return errors_; }
+    
+    // Expression visitors
+    Value visitLiteralExpr(LiteralExpr* expr) override;
+    Value visitVariableExpr(VariableExpr* expr) override;
+    Value visitUnaryExpr(UnaryExpr* expr) override;
+    Value visitBinaryExpr(BinaryExpr* expr) override;
+    Value visitLogicalExpr(LogicalExpr* expr) override;
+    Value visitGroupingExpr(GroupingExpr* expr) override;
+    Value visitCallExpr(CallExpr* expr) override;
+    Value visitAssignExpr(AssignExpr* expr) override;
+    Value visitCompoundAssignExpr(CompoundAssignExpr* expr) override;
+    Value visitCompoundMemberAssignExpr(CompoundMemberAssignExpr* expr) override;
+    Value visitCompoundIndexAssignExpr(CompoundIndexAssignExpr* expr) override;
+    Value visitUpdateExpr(UpdateExpr* expr) override;
+    Value visitUpdateMemberExpr(UpdateMemberExpr* expr) override;
+    Value visitUpdateIndexExpr(UpdateIndexExpr* expr) override;
+    Value visitTernaryExpr(TernaryExpr* expr) override;
+    Value visitArrayExpr(ArrayExpr* expr) override;
+    Value visitIndexExpr(IndexExpr* expr) override;
+    Value visitIndexAssignExpr(IndexAssignExpr* expr) override;
+    Value visitHashMapExpr(HashMapExpr* expr) override;
+    Value visitMemberExpr(MemberExpr* expr) override;
+    Value visitSetExpr(SetExpr* expr) override;
+    Value visitThisExpr(ThisExpr* expr) override;
+    Value visitSuperExpr(SuperExpr* expr) override;
+    Value visitFunctionExpr(FunctionExpr* expr) override;
+    Value visitFStringExpr(FStringExpr* expr) override;
+    Value visitTemplateExpr(TemplateExpr* expr) override;
+    Value visitSpreadExpr(SpreadExpr* expr) override;
+    Value visitOptionalChainExpr(OptionalChainExpr* expr) override;
+    Value visitNullCoalesceExpr(NullCoalesceExpr* expr) override;
+    Value visitPipeExpr(PipeExpr* expr) override;
+    Value visitAwaitExpr(AwaitExpr* expr) override;
+    Value visitYieldExpr(YieldExpr* expr) override;
+    Value visitMatchExpr(MatchExpr* expr) override;
+    Value visitComprehensionExpr(ComprehensionExpr* expr) override;
+    Value visitDestructureArrayExpr(DestructureArrayExpr* expr) override;
+    Value visitDestructureObjectExpr(DestructureObjectExpr* expr) override;
+    Value visitTypeAnnotationExpr(TypeAnnotationExpr* expr) override;
+    Value visitNewExpr(NewExpr* expr) override;
+    Value visitMetaExpr(MetaExpr* expr) override;
+    
+    // Statement visitors
+    void visitExprStmt(ExprStmt* stmt) override;
+    void visitPrintStmt(PrintStmt* stmt) override;
+    void visitLetStmt(LetStmt* stmt) override;
+    void visitConstStmt(ConstStmt* stmt) override;
+    void visitFnStmt(FnStmt* stmt) override;
+    void visitReturnStmt(ReturnStmt* stmt) override;
+    void visitBreakStmt(BreakStmt* stmt) override;
+    void visitContinueStmt(ContinueStmt* stmt) override;
+    void visitIfStmt(IfStmt* stmt) override;
+    void visitWhileStmt(WhileStmt* stmt) override;
+    void visitForStmt(ForStmt* stmt) override;
+    void visitForOfStmt(ForOfStmt* stmt) override;
+    void visitForInStmt(ForInStmt* stmt) override;
+    void visitBlockStmt(BlockStmt* stmt) override;
+    void visitTryStmt(TryStmt* stmt) override;
+    void visitThrowStmt(ThrowStmt* stmt) override;
+    void visitImportStmt(ImportStmt* stmt) override;
+    void visitExportStmt(ExportStmt* stmt) override;
+    void visitClassStmt(ClassStmt* stmt) override;
+    void visitSwitchStmt(SwitchStmt* stmt) override;
+    void visitMatchStmt(MatchStmt* stmt) override;
+    void visitEnumStmt(EnumStmt* stmt) override;
+    void visitInterfaceStmt(InterfaceStmt* stmt) override;
+    void visitDeferStmt(DeferStmt* stmt) override;
+    void visitWithStmt(WithStmt* stmt) override;
+    void visitLabeledStmt(LabeledStmt* stmt) override;
+    void visitDecoratorStmt(DecoratorStmt* stmt) override;
+    
+private:
+    TypeEnvironment env_;
+    std::vector<std::string> errors_;
+    std::shared_ptr<Type> currentFunctionReturnType_;
+    bool inLoop_ = false;
+    bool inFunction_ = false;
+    
+    std::shared_ptr<Type> checkExpr(Expr* expr);
+    void checkStmt(Stmt* stmt);
+    void error(const std::string& message);
+    
+    std::shared_ptr<Type> parseTypeString(const std::string& typeStr);
+    bool typesEqual(const std::shared_ptr<Type>& a, const std::shared_ptr<Type>& b);
+    bool isSubtype(const std::shared_ptr<Type>& sub, const std::shared_ptr<Type>& super);
+};
+
+} // namespace claw

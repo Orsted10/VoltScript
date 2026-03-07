@@ -1,0 +1,70 @@
+// Test for-of on coroutines (generator protocol)
+print("=== for-of coroutine tests ===");
+
+// Test 1: basic for-of on range generator
+fn range(n) {
+    return coroutine(fn() {
+        let i = 0;
+        while (i < n) {
+            yield i;
+            i = i + 1;
+        }
+    });
+}
+
+let sum = 0;
+for (let v of range(5)) {
+    sum = sum + v;
+}
+if (sum == 10) {
+    print("PASS: for-of range(5) sum=10");
+} else {
+    print("FAIL: sum=" + sum);
+}
+
+// Test 2: for-of collecting values
+let vals = [];
+for (let v of range(4)) {
+    vals.push(v);
+}
+if (vals.length == 4 and vals[0] == 0 and vals[3] == 3) {
+    print("PASS: for-of collects [0,1,2,3]");
+} else {
+    print("FAIL: vals=" + vals);
+}
+
+// Test 3: for-of with break
+let first3 = [];
+for (let v of range(100)) {
+    if (v >= 3) { break; }
+    first3.push(v);
+}
+if (first3.length == 3) {
+    print("PASS: for-of break after 3 items");
+} else {
+    print("FAIL: first3.length=" + first3.length);
+}
+
+// Test 4: for-of on string (existing behaviour unchanged)
+let chars = [];
+for (let c of "abc") {
+    chars.push(c);
+}
+if (chars.length == 3 and chars[0] == "a") {
+    print("PASS: for-of string still works");
+} else {
+    print("FAIL: chars=" + chars);
+}
+
+// Test 5: for-of on array (existing behaviour unchanged)
+let doubled = [];
+for (let x of [1, 2, 3]) {
+    doubled.push(x * 2);
+}
+if (doubled[0] == 2 and doubled[2] == 6) {
+    print("PASS: for-of array still works");
+} else {
+    print("FAIL: doubled=" + doubled);
+}
+
+print("=== for-of coroutine tests complete ===");

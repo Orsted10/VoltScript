@@ -1,0 +1,18 @@
+let co1 = coroutine(fn() {
+    yield 10;
+    yield 20;
+    return 30;
+});
+print("co1 type: " + type(co1));
+print("status: " + co1.status());
+let v1 = co1.resume();
+print("after resume 1, v1=" + v1);
+print("status: " + co1.status());
+let v2 = co1.resume();
+print("after resume 2, v2=" + v2);
+let v3 = co1.resume();
+print("after resume 3, v3=" + v3);
+print("status: " + co1.status());
+if (v1 == 10) { print("PASS v1"); } else { print("FAIL v1=" + v1); }
+if (v2 == 20) { print("PASS v2"); } else { print("FAIL v2=" + v2); }
+if (v3 == 30) { print("PASS v3"); } else { print("FAIL v3=" + v3); }

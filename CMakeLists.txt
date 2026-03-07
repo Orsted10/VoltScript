@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(ClawScript VERSION 2.0.0 LANGUAGES CXX)
+project(ClawScript VERSION 3.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -404,6 +404,7 @@ if(BUILD_TESTS)
         src/interpreter/value.cpp
         src/interpreter/environment.cpp
         src/features/callable.cpp
+        src/features/coroutine.cpp
         src/interpreter/interpreter.cpp
         src/interpreter/module.cpp
         src/interpreter/natives/native_math.cpp
@@ -413,6 +414,40 @@ if(BUILD_TESTS)
         src/interpreter/natives/native_time.cpp
         src/interpreter/natives/native_json.cpp
         src/interpreter/natives/native_security.cpp
+        src/interpreter/natives/native_gamemath.cpp
+        src/interpreter/natives/native_collections.cpp
+        src/interpreter/natives/native_regex.cpp
+        src/interpreter/natives/native_os.cpp
+        src/interpreter/natives/native_events.cpp
+        src/interpreter/natives/native_ecs.cpp
+        src/interpreter/natives/native_coroutine.cpp
+        src/interpreter/natives/native_ffi.cpp
+        src/interpreter/natives/native_http.cpp
+        src/interpreter/natives/native_thread.cpp
+        src/interpreter/natives/native_gfx.cpp
+        src/interpreter/natives/native_types.cpp
+        src/interpreter/natives/native_package.cpp
+        src/interpreter/natives/native_database.cpp
+        src/interpreter/natives/native_crypto.cpp
+        src/interpreter/natives/native_ai.cpp
+        src/interpreter/natives/native_websocket.cpp
+        src/interpreter/natives/native_audio.cpp
+        src/interpreter/natives/native_blockchain.cpp
+        src/interpreter/natives/native_vr.cpp
+        src/interpreter/natives/native_quantum.cpp
+        src/interpreter/natives/native_robotics.cpp
+        src/interpreter/natives/native_space.cpp
+        src/interpreter/natives/native_biotech.cpp
+        src/interpreter/natives/native_nanotech.cpp
+        src/interpreter/natives/native_climate.cpp
+        src/interpreter/natives/native_medical.cpp
+        src/interpreter/natives/native_physics.cpp
+        src/interpreter/natives/native_mathematics.cpp
+        src/interpreter/natives/native_optimization.cpp
+        src/interpreter/natives/native_cybersecurity.cpp
+        src/interpreter/natives/native_augmented_reality.cpp
+        src/interpreter/natives/native_blockchain_advanced.cpp
+        src/interpreter/natives/native_quantum_computing_advanced.cpp
         src/interpreter/gc_alloc.cpp
         src/observability/profiler.cpp
         src/features/array.cpp
@@ -539,6 +574,7 @@ if(BUILD_TESTS)
         src/interpreter/value.cpp
         src/interpreter/environment.cpp
         src/features/callable.cpp
+        src/features/coroutine.cpp
         src/interpreter/interpreter.cpp
         src/interpreter/natives/native_security.cpp
         src/interpreter/natives/native_math.cpp
@@ -547,6 +583,40 @@ if(BUILD_TESTS)
         src/interpreter/natives/native_io.cpp
         src/interpreter/natives/native_time.cpp
         src/interpreter/natives/native_json.cpp
+        src/interpreter/natives/native_gamemath.cpp
+        src/interpreter/natives/native_collections.cpp
+        src/interpreter/natives/native_regex.cpp
+        src/interpreter/natives/native_os.cpp
+        src/interpreter/natives/native_events.cpp
+        src/interpreter/natives/native_ecs.cpp
+        src/interpreter/natives/native_coroutine.cpp
+        src/interpreter/natives/native_ffi.cpp
+        src/interpreter/natives/native_http.cpp
+        src/interpreter/natives/native_thread.cpp
+        src/interpreter/natives/native_gfx.cpp
+        src/interpreter/natives/native_types.cpp
+        src/interpreter/natives/native_package.cpp
+        src/interpreter/natives/native_database.cpp
+        src/interpreter/natives/native_crypto.cpp
+        src/interpreter/natives/native_ai.cpp
+        src/interpreter/natives/native_websocket.cpp
+        src/interpreter/natives/native_audio.cpp
+        src/interpreter/natives/native_blockchain.cpp
+        src/interpreter/natives/native_vr.cpp
+        src/interpreter/natives/native_quantum.cpp
+        src/interpreter/natives/native_robotics.cpp
+        src/interpreter/natives/native_space.cpp
+        src/interpreter/natives/native_biotech.cpp
+        src/interpreter/natives/native_nanotech.cpp
+        src/interpreter/natives/native_climate.cpp
+        src/interpreter/natives/native_medical.cpp
+        src/interpreter/natives/native_physics.cpp
+        src/interpreter/natives/native_mathematics.cpp
+        src/interpreter/natives/native_optimization.cpp
+        src/interpreter/natives/native_cybersecurity.cpp
+        src/interpreter/natives/native_augmented_reality.cpp
+        src/interpreter/natives/native_blockchain_advanced.cpp
+        src/interpreter/natives/native_quantum_computing_advanced.cpp
         src/interpreter/gc_alloc.cpp
         src/observability/profiler.cpp
         src/features/array.cpp
@@ -635,6 +705,7 @@ if(BUILD_TESTS)
         src/interpreter/value.cpp
         src/interpreter/environment.cpp
         src/features/callable.cpp
+        src/features/coroutine.cpp
         src/interpreter/interpreter.cpp
         src/interpreter/natives/native_security.cpp
         src/interpreter/natives/native_math.cpp
@@ -643,6 +714,40 @@ if(BUILD_TESTS)
         src/interpreter/natives/native_io.cpp
         src/interpreter/natives/native_time.cpp
         src/interpreter/natives/native_json.cpp
+        src/interpreter/natives/native_gamemath.cpp
+        src/interpreter/natives/native_collections.cpp
+        src/interpreter/natives/native_regex.cpp
+        src/interpreter/natives/native_os.cpp
+        src/interpreter/natives/native_events.cpp
+        src/interpreter/natives/native_ecs.cpp
+        src/interpreter/natives/native_coroutine.cpp
+        src/interpreter/natives/native_ffi.cpp
+        src/interpreter/natives/native_http.cpp
+        src/interpreter/natives/native_thread.cpp
+        src/interpreter/natives/native_gfx.cpp
+        src/interpreter/natives/native_types.cpp
+        src/interpreter/natives/native_package.cpp
+        src/interpreter/natives/native_database.cpp
+        src/interpreter/natives/native_crypto.cpp
+        src/interpreter/natives/native_ai.cpp
+        src/interpreter/natives/native_websocket.cpp
+        src/interpreter/natives/native_audio.cpp
+        src/interpreter/natives/native_blockchain.cpp
+        src/interpreter/natives/native_vr.cpp
+        src/interpreter/natives/native_quantum.cpp
+        src/interpreter/natives/native_robotics.cpp
+        src/interpreter/natives/native_space.cpp
+        src/interpreter/natives/native_biotech.cpp
+        src/interpreter/natives/native_nanotech.cpp
+        src/interpreter/natives/native_climate.cpp
+        src/interpreter/natives/native_medical.cpp
+        src/interpreter/natives/native_physics.cpp
+        src/interpreter/natives/native_mathematics.cpp
+        src/interpreter/natives/native_optimization.cpp
+        src/interpreter/natives/native_cybersecurity.cpp
+        src/interpreter/natives/native_augmented_reality.cpp
+        src/interpreter/natives/native_blockchain_advanced.cpp
+        src/interpreter/natives/native_quantum_computing_advanced.cpp
         src/interpreter/gc_alloc.cpp
         src/observability/profiler.cpp
         src/features/array.cpp
@@ -771,6 +876,13 @@ add_executable(claw_lsp
     src/interpreter/natives/native_time.cpp
     src/interpreter/natives/native_json.cpp
     src/interpreter/natives/native_security.cpp
+    src/interpreter/natives/native_gamemath.cpp
+    src/interpreter/natives/native_collections.cpp
+    src/interpreter/natives/native_regex.cpp
+    src/interpreter/natives/native_os.cpp
+    src/interpreter/natives/native_events.cpp
+    src/interpreter/natives/native_ecs.cpp
+    src/interpreter/natives/native_coroutine.cpp
     src/interpreter/gc_alloc.cpp
     src/observability/profiler.cpp
     src/interpreter/module.cpp
@@ -778,6 +890,7 @@ add_executable(claw_lsp
     src/features/hashmap.cpp
     src/features/class.cpp
     src/features/callable.cpp
+    src/features/coroutine.cpp
     src/features/string_pool.cpp
     src/vm/vm.cpp
 )
@@ -897,12 +1010,20 @@ add_executable(claw_api_gen
     src/interpreter/natives/native_time.cpp
     src/interpreter/natives/native_json.cpp
     src/interpreter/natives/native_security.cpp
+    src/interpreter/natives/native_gamemath.cpp
+    src/interpreter/natives/native_collections.cpp
+    src/interpreter/natives/native_regex.cpp
+    src/interpreter/natives/native_os.cpp
+    src/interpreter/natives/native_events.cpp
+    src/interpreter/natives/native_ecs.cpp
+    src/interpreter/natives/native_coroutine.cpp
     src/interpreter/gc_alloc.cpp
     src/observability/profiler.cpp
     src/features/array.cpp
     src/features/hashmap.cpp
     src/features/class.cpp
     src/features/callable.cpp
+    src/features/coroutine.cpp
     src/features/string_pool.cpp
     src/vm/vm.cpp
 )

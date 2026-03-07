@@ -1,0 +1,20 @@
+class Vec2 {
+    fn init(x) {
+        this.x = x;
+    }
+    
+    fn __add(other) {
+        return Vec2(this.x + other.x);
+    }
+    
+    fn __str() {
+        return "Vec2(" + this.x + ")";
+    }
+}
+
+let v1 = Vec2(1);
+let v2 = Vec2(2);
+
+print v1;
+print v2;
+print v1 + v2;

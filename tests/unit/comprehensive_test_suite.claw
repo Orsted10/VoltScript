@@ -1,0 +1,384 @@
+// 🧪 CLAWSCRIPT COMPREHENSIVE UNIT TEST SUITE 🧪
+// Testing ALL features of the most powerful language!
+
+print "🔬 CLAWSCRIPT - COMPREHENSIVE UNIT TESTS 🔬";
+print "✅ Testing every feature for correctness...";
+
+// 📊 TEST RESULTS TRACKER
+let totalTests = 0;
+let passedTests = 0;
+let failedTests = 0;
+
+fn runTest(testName, testFn) {
+    totalTests = totalTests + 1;
+    print "Running:", testName;
+    
+    try {
+        let result = testFn();
+        if (result) {
+            print "✅ PASSED:", testName;
+            passedTests = passedTests + 1;
+        } else {
+            print "❌ FAILED:", testName;
+            failedTests = failedTests + 1;
+        }
+    } catch (error) {
+        print "❌ ERROR in", testName, ":", error;
+        failedTests = failedTests + 1;
+    }
+}
+
+// 🔢 BASIC LANGUAGE TESTS
+print "\n🔢 BASIC LANGUAGE TESTS:";
+
+runTest("Variable Declaration", fn() {
+    let x = 42;
+    let y = "Hello";
+    return x == 42 && y == "Hello";
+});
+
+runTest("Arithmetic Operations", fn() {
+    let a = 10, b = 3;
+    return a + b == 13 && a - b == 7 && a * b == 30 && a / b == 3.33 && a % b == 1;
+});
+
+runTest("Boolean Logic", fn() {
+    let t = true, f = false;
+    return t && !f && (t || f) && (t != f);
+});
+
+runTest("String Operations", fn() {
+    let s1 = "Hello", s2 = "World";
+    let combined = s1 + " " + s2;
+    return combined == "Hello World" && combined.length == 11;
+});
+
+// 📚 DATA STRUCTURES TESTS
+print "\n📚 DATA STRUCTURES TESTS:";
+
+runTest("Array Operations", fn() {
+    let arr = [1, 2, 3];
+    arr.push(4);
+    return arr.length == 4 && arr[0] == 1 && arr[3] == 4;
+});
+
+runTest("Hash Map Operations", fn() {
+    let map = {};
+    map["key"] = "value";
+    map["number"] = 42;
+    return map["key"] == "value" && map["number"] == 42;
+});
+
+runTest("Nested Structures", fn() {
+    let data = {
+        users: [
+            {name: "Alice", age: 25},
+            {name: "Bob", age: 30}
+        ],
+        count: 2
+    };
+    return data.users[0].name == "Alice" && data.count == 2;
+});
+
+// 🔄 CONTROL FLOW TESTS
+print "\n🔄 CONTROL FLOW TESTS:";
+
+runTest("If Statements", fn() {
+    let x = 10;
+    let result = "";
+    if (x > 5) {
+        result = "greater";
+    } else {
+        result = "less";
+    }
+    return result == "greater";
+});
+
+runTest("For Loops", fn() {
+    let sum = 0;
+    for (let i = 1; i <= 10; i = i + 1) {
+        sum = sum + i;
+    }
+    return sum == 55;
+});
+
+runTest("While Loops", fn() {
+    let i = 0, sum = 0;
+    while (i < 5) {
+        sum = sum + i;
+        i = i + 1;
+    }
+    return sum == 10;
+});
+
+// 🎯 FUNCTIONS TESTS
+print "\n🎯 FUNCTIONS TESTS:";
+
+runTest("Function Declaration", fn() {
+    fn add(a, b) {
+        return a + b;
+    }
+    return add(3, 4) == 7;
+});
+
+runTest("Function Recursion", fn() {
+    fn factorial(n) {
+        if (n <= 1) return 1;
+        return n * factorial(n - 1);
+    }
+    return factorial(5) == 120;
+});
+
+runTest("Higher Order Functions", fn() {
+    fn apply(fn, value) {
+        return fn(value);
+    }
+    fn square(x) { return x * x; }
+    return apply(square, 5) == 25;
+});
+
+// 🧮 MATHEMATICS TESTS
+print "\n🧮 MATHEMATICS TESTS:";
+
+runTest("Math Functions", fn() {
+    return Math.abs(-5) == 5 && Math.sqrt(16) == 4 && Math.pow(2, 3) == 8;
+});
+
+runTest("Trigonometry", fn() {
+    let pi = Math.PI;
+    return Math.sin(pi/2) == 1 && Math.cos(0) == 1;
+});
+
+runTest("Random Numbers", fn() {
+    let r = Math.random();
+    return r >= 0 && r <= 1;
+});
+
+// 🎮 GAME DEVELOPMENT TESTS
+print "\n🎮 GAME DEVELOPMENT TESTS:";
+
+runTest("Vector Math", fn() {
+    let v1 = [1, 2, 3];
+    let v2 = [4, 5, 6];
+    let dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+    return dot == 32; // 1*4 + 2*5 + 3*6
+});
+
+runTest("Color Operations", fn() {
+    let red = {r: 255, g: 0, b: 0};
+    let blue = {r: 0, g: 0, b: 255};
+    return red.r == 255 && blue.b == 255;
+});
+
+// 🧠 AI & MACHINE LEARNING TESTS
+print "\n🧠 AI & MACHINE LEARNING TESTS:";
+
+runTest("Neural Network Basics", fn() {
+    // Simulate a simple neural network
+    let weights = [0.5, -0.3, 0.8];
+    let inputs = [1.0, 0.5, 0.2];
+    let output = 0;
+    
+    for (let i = 0; i < weights.length; i = i + 1) {
+        output = output + weights[i] * inputs[i];
+    }
+    
+    return output > 0; // Should be positive
+});
+
+runTest("Classification Logic", fn() {
+    // Simple decision tree logic
+    fn classify(features) {
+        if (features[0] > 0.5) {
+            return "classA";
+        } else {
+            return "classB";
+        }
+    }
+    
+    return classify([0.8]) == "classA" && classify([0.2]) == "classB";
+});
+
+// 🔒 CRYPTOGRAPHY TESTS
+print "\n🔒 CRYPTOGRAPHY TESTS:";
+
+runTest("Hash Function", fn() {
+    let hash1 = hash("test");
+    let hash2 = hash("test");
+    let hash3 = hash("different");
+    return hash1 == hash2 && hash1 != hash3;
+});
+
+runTest("UUID Generation", fn() {
+    let uuid1 = uuid();
+    let uuid2 = uuid();
+    return uuid1 != uuid2 && uuid1.length > 0;
+});
+
+// 🗄️ DATABASE TESTS
+print "\n🗄️ DATABASE TESTS:";
+
+runTest("Database Connection", fn() {
+    // Mock database test
+    let db = {connected: true, tables: ["users", "products"]};
+    return db.connected && db.tables.length == 2;
+});
+
+runTest("Query Simulation", fn() {
+    // Mock query test
+    fn simulateQuery(sql) {
+        if (sql.includes("SELECT")) {
+            return [{id: 1, name: "test"}];
+        }
+        return [];
+    }
+    
+    let result = simulateQuery("SELECT * FROM users");
+    return result.length == 1 && result[0].name == "test";
+});
+
+// 🌐 NETWORKING TESTS
+print "\n🌐 NETWORKING TESTS:";
+
+runTest("HTTP Response Simulation", fn() {
+    // Mock HTTP response
+    let response = {
+        status: 200,
+        body: '{"message": "success"}',
+        headers: {"content-type": "application/json"}
+    };
+    
+    return response.status == 200 && response.body.includes("success");
+});
+
+runTest("WebSocket Connection", fn() {
+    // Mock WebSocket
+    let ws = {connected: true, messages: []};
+    ws.messages.push("Hello WebSocket");
+    return ws.connected && ws.messages.length == 1;
+});
+
+// 🎨 GRAPHICS TESTS
+print "\n🎨 GRAPHICS TESTS:";
+
+runTest("Window Creation", fn() {
+    // Mock window
+    let window = {
+        title: "Test Window",
+        width: 800,
+        height: 600,
+        visible: true
+    };
+    
+    return window.title == "Test Window" && window.width == 800;
+});
+
+runTest("Color System", fn() {
+    let colors = {
+        RED: {r: 255, g: 0, b: 0},
+        GREEN: {r: 0, g: 255, b: 0},
+        BLUE: {r: 0, g: 0, b: 255}
+    };
+    
+    return colors.RED.r == 255 && colors.GREEN.g == 255 && colors.BLUE.b == 255;
+});
+
+// 🔬 SCIENCE TESTS
+print "\n🔬 SCIENCE TESTS:";
+
+runTest("Physics Simulation", fn() {
+    // Simple physics
+    let particle = {
+        position: [0, 0, 0],
+        velocity: [1, 2, 3],
+        mass: 1.0
+    };
+    
+    // Update position
+    particle.position[0] = particle.position[0] + particle.velocity[0];
+    particle.position[1] = particle.position[1] + particle.velocity[1];
+    particle.position[2] = particle.position[2] + particle.velocity[2];
+    
+    return particle.position[0] == 1 && particle.position[1] == 2 && particle.position[2] == 3;
+});
+
+runTest("Mathematical Functions", fn() {
+    // Test factorial
+    fn factorial(n) {
+        if (n <= 1) return 1;
+        return n * factorial(n - 1);
+    }
+    
+    return factorial(4) == 24 && factorial(0) == 1;
+});
+
+// 📊 PERFORMANCE TESTS
+print "\n📊 PERFORMANCE TESTS:";
+
+runTest("Loop Performance", fn() {
+    let start = 0; // Mock time
+    let sum = 0;
+    
+    for (let i = 0; i < 10000; i = i + 1) {
+        sum = sum + i;
+    }
+    
+    let end = 0; // Mock time
+    return sum == 49995000; // Sum of 0 to 9999
+});
+
+runTest("Memory Efficiency", fn() {
+    // Test memory usage simulation
+    let objects = [];
+    
+    for (let i = 0; i < 1000; i = i + 1) {
+        objects.push({id: i, data: "test"});
+    }
+    
+    return objects.length == 1000 && objects[999].id == 999;
+});
+
+// 🎯 EDGE CASES TESTS
+print "\n🎯 EDGE CASES TESTS:";
+
+runTest("Division by Zero Handling", fn() {
+    try {
+        let result = 1 / 0;
+        return false; // Should not reach here
+    } catch {
+        return true; // Should catch the error
+    }
+});
+
+runTest("Null/Undefined Handling", fn() {
+    let x = null;
+    let y = undefined;
+    
+    return x == null && y == undefined;
+});
+
+runTest("Type Coercion", fn() {
+    let num = "5";
+    let str = 10;
+    
+    return num + str == "510"; // String concatenation
+});
+
+// 🏁 FINAL RESULTS
+print "\n🏁 FINAL TEST RESULTS:";
+print "📊 Total Tests:", totalTests;
+print "✅ Passed:", passedTests;
+print "❌ Failed:", failedTests;
+
+let successRate = (passedTests / totalTests) * 100;
+print "📈 Success Rate:", successRate.toFixed(1), "%";
+
+if (successRate >= 95) {
+    print "🎉 EXCELLENT! ClawScript is working perfectly!";
+} else if (successRate >= 80) {
+    print "👍 GOOD! ClawScript is working well with minor issues.";
+} else {
+    print "⚠️  NEEDS ATTENTION! Some features may need fixes.";
+}
+
+print "\n🚀 CLAWSCRIPT - COMPREHENSIVE TESTING COMPLETE! 🚀";

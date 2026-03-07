@@ -1,0 +1,4 @@
+let co = coroutine(fn() { return 42; });
+print(type(co));
+let r = co.resume();
+print(r);

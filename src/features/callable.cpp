@@ -4,6 +4,7 @@
 #include "environment.h"
 #include "stack_trace.h"
 #include "class.h"
+#include "interpreter/gc_alloc.h"
 #include <sstream>
 
 namespace claw {
@@ -29,9 +30,24 @@ Value ClawFunction::call(Interpreter& interpreter,
     // The closure is the parent (so we can access captured variables)
     auto environment = std::make_shared<Environment>(closure_);
     
-    // Bind parameters to arguments
-    for (size_t i = 0; i < declaration_->parameters.size(); i++) {
-        environment->define(declaration_->parameters[i], arguments[i]);
+    // Bind parameters to arguments — handle rest parameters
+    const auto& params = declaration_->params;
+    for (size_t i = 0; i < params.size(); i++) {
+        if (params[i].isRest) {
+            // Collect all remaining arguments into an array
+            auto restArr = gcNewArray();
+            for (size_t j = i; j < arguments.size(); j++) {
+                restArr->push(arguments[j]);
+            }
+            environment->define(params[i].name, arrayValue(restArr));
+            break; // rest must be last param
+        }
+        Value val = (i < arguments.size()) ? arguments[i] : nilValue();
+        // Apply default value if argument is nil and default exists
+        if (isNil(val) && params[i].defaultValue) {
+            val = interpreter.evaluate(params[i].defaultValue.get());
+        }
+        environment->define(params[i].name, val);
     }
     
     // Push to call stack
@@ -67,7 +83,11 @@ Value ClawFunction::call(Interpreter& interpreter,
 }
 
 int ClawFunction::arity() const {
-    return static_cast<int>(declaration_->parameters.size());
+    // If any parameter is a rest param, accept variable number of arguments
+    for (const auto& p : declaration_->params) {
+        if (p.isRest) return -1;
+    }
+    return static_cast<int>(declaration_->params.size());
 }
 
 std::string ClawFunction::toString() const {

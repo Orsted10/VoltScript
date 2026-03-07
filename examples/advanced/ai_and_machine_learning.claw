@@ -1,0 +1,417 @@
+// 🤖 AI & Machine Learning - Intelligence Made Simple!
+
+print "🧠 Welcome to ClawScript AI Laboratory! 🧠";
+
+// 🎯 Simple Neural Network
+class SimpleNeuralNetwork {
+    fn init(inputSize, hiddenSize, outputSize) {
+        this.inputSize = inputSize;
+        this.hiddenSize = hiddenSize;
+        this.outputSize = outputSize;
+        
+        // Initialize weights with random values
+        this.weightsIH = this.createMatrix(hiddenSize, inputSize);
+        this.weightsHO = this.createMatrix(outputSize, hiddenSize);
+        this.biasH = this.createMatrix(hiddenSize, 1);
+        this.biasO = this.createMatrix(outputSize, 1);
+        
+        print "🔗 Neural network created:";
+        print "  Input nodes:", inputSize;
+        print "  Hidden nodes:", hiddenSize;
+        print "  Output nodes:", outputSize;
+    }
+    
+    fn createMatrix(rows, cols) {
+        let matrix = [];
+        for (let i = 0; i < rows; i = i + 1) {
+            matrix[i] = [];
+            for (let j = 0; j < cols; j = j + 1) {
+                matrix[i][j] = Math.random() * 2 - 1; // Random between -1 and 1
+            }
+        }
+        return matrix;
+    }
+    
+    fn sigmoid(x) {
+        return 1 / (1 + Math.exp(-x));
+    }
+    
+    fn forward(inputs) {
+        // Convert inputs to matrix
+        let inputMatrix = [];
+        for (let i = 0; i < inputs.length; i = i + 1) {
+            inputMatrix[i] = [inputs[i]];
+        }
+        
+        // Calculate hidden layer
+        let hidden = this.matrixMultiply(this.weightsIH, inputMatrix);
+        hidden = this.matrixAdd(hidden, this.biasH);
+        hidden = this.matrixMap(hidden, x => this.sigmoid(x));
+        
+        // Calculate output layer
+        let output = this.matrixMultiply(this.weightsHO, hidden);
+        output = this.matrixAdd(output, this.biasO);
+        output = this.matrixMap(output, x => this.sigmoid(x));
+        
+        return this.matrixToVector(output);
+    }
+    
+    fn matrixMultiply(a, b) {
+        let result = [];
+        for (let i = 0; i < a.length; i = i + 1) {
+            result[i] = [];
+            for (let j = 0; j < b[0].length; j = j + 1) {
+                let sum = 0;
+                for (let k = 0; k < b.length; k = k + 1) {
+                    sum = sum + a[i][k] * b[k][j];
+                }
+                result[i][j] = sum;
+            }
+        }
+        return result;
+    }
+    
+    fn matrixAdd(a, b) {
+        let result = [];
+        for (let i = 0; i < a.length; i = i + 1) {
+            result[i] = [];
+            for (let j = 0; j < a[0].length; j = j + 1) {
+                result[i][j] = a[i][j] + b[i][j];
+            }
+        }
+        return result;
+    }
+    
+    fn matrixMap(matrix, fn) {
+        let result = [];
+        for (let i = 0; i < matrix.length; i = i + 1) {
+            result[i] = [];
+            for (let j = 0; j < matrix[0].length; j = j + 1) {
+                result[i][j] = fn(matrix[i][j]);
+            }
+        }
+        return result;
+    }
+    
+    fn matrixToVector(matrix) {
+        let vector = [];
+        for (let i = 0; i < matrix.length; i = i + 1) {
+            vector.push(matrix[i][0]);
+        }
+        return vector;
+    }
+    
+    fn predict(inputs) {
+        let outputs = this.forward(inputs);
+        let maxIndex = 0;
+        let maxValue = outputs[0];
+        
+        for (let i = 1; i < outputs.length; i = i + 1) {
+            if (outputs[i] > maxValue) {
+                maxValue = outputs[i];
+                maxIndex = i;
+            }
+        }
+        
+        return {
+            prediction: maxIndex,
+            confidence: maxValue,
+            outputs: outputs
+        };
+    }
+}
+
+// 🎯 Create and test a neural network
+print "\n🔬 Testing Neural Network:";
+
+let nn = SimpleNeuralNetwork(2, 4, 3);
+
+// Test with sample inputs
+let testInputs = [
+    [0.1, 0.2],
+    [0.8, 0.9],
+    [0.5, 0.5]
+];
+
+for (let i = 0; i < testInputs.length; i = i + 1) {
+    let result = nn.predict(testInputs[i]);
+    print "🎯 Test", i + 1 + ":";
+    print "  Input:", testInputs[i];
+    print "  Predicted class:", result.prediction;
+    print "  Confidence:", (result.confidence * 100).toFixed(1) + "%";
+}
+
+// 🌳 Decision Tree Classifier
+class DecisionTree {
+    fn init() {
+        this.root = null;
+        this.depth = 0;
+    }
+    
+    fn train(data, labels, maxDepth = 3) {
+        this.root = this.buildTree(data, labels, maxDepth);
+        print "🌳 Decision tree trained with depth", maxDepth;
+    }
+    
+    fn buildTree(data, labels, maxDepth, currentDepth = 0) {
+        if (currentDepth >= maxDepth || this.isPure(labels)) {
+            return {type: "leaf", prediction: this.majorityVote(labels)};
+        }
+        
+        let bestSplit = this.findBestSplit(data, labels);
+        
+        if (bestSplit.gain == 0) {
+            return {type: "leaf", prediction: this.majorityVote(labels)};
+        }
+        
+        let node = {
+            type: "decision",
+            feature: bestSplit.feature,
+            threshold: bestSplit.threshold,
+            left: this.buildTree(bestSplit.leftData, bestSplit.leftLabels, maxDepth, currentDepth + 1),
+            right: this.buildTree(bestSplit.rightData, bestSplit.rightLabels, maxDepth, currentDepth + 1)
+        };
+        
+        return node;
+    }
+    
+    fn isPure(labels) {
+        if (labels.length == 0) return true;
+        
+        let first = labels[0];
+        for (let i = 1; i < labels.length; i = i + 1) {
+            if (labels[i] != first) return false;
+        }
+        return true;
+    }
+    
+    fn majorityVote(labels) {
+        let counts = {};
+        for (let label of labels) {
+            counts[label] = (counts[label] || 0) + 1;
+        }
+        
+        let maxCount = 0;
+        let majority = null;
+        
+        for (let label in counts) {
+            if (counts[label] > maxCount) {
+                maxCount = counts[label];
+                majority = label;
+            }
+        }
+        
+        return majority;
+    }
+    
+    fn findBestSplit(data, labels) {
+        let bestGain = 0;
+        let bestSplit = null;
+        
+        for (let feature = 0; feature < data[0].length; feature = feature + 1) {
+            let values = [];
+            for (let i = 0; i < data.length; i = i + 1) {
+                values.push(data[i][feature]);
+            }
+            
+            let uniqueValues = [...new Set(values)];
+            
+            for (let value of uniqueValues) {
+                let leftData = [];
+                let leftLabels = [];
+                let rightData = [];
+                let rightLabels = [];
+                
+                for (let i = 0; i < data.length; i = i + 1) {
+                    if (data[i][feature] <= value) {
+                        leftData.push(data[i]);
+                        leftLabels.push(labels[i]);
+                    } else {
+                        rightData.push(data[i]);
+                        rightLabels.push(labels[i]);
+                    }
+                }
+                
+                let gain = this.calculateInformationGain(labels, leftLabels, rightLabels);
+                
+                if (gain > bestGain) {
+                    bestGain = gain;
+                    bestSplit = {
+                        feature: feature,
+                        threshold: value,
+                        leftData: leftData,
+                        leftLabels: leftLabels,
+                        rightData: rightData,
+                        rightLabels: rightLabels,
+                        gain: gain
+                    };
+                }
+            }
+        }
+        
+        return bestSplit || {gain: 0};
+    }
+    
+    fn calculateInformationGain(parentLabels, leftLabels, rightLabels) {
+        let parentEntropy = this.calculateEntropy(parentLabels);
+        let leftEntropy = this.calculateEntropy(leftLabels);
+        let rightEntropy = this.calculateEntropy(rightLabels);
+        
+        let leftWeight = leftLabels.length / parentLabels.length;
+        let rightWeight = rightLabels.length / parentLabels.length;
+        
+        return parentEntropy - (leftWeight * leftEntropy + rightWeight * rightEntropy);
+    }
+    
+    fn calculateEntropy(labels) {
+        if (labels.length == 0) return 0;
+        
+        let counts = {};
+        for (let label of labels) {
+            counts[label] = (counts[label] || 0) + 1;
+        }
+        
+        let entropy = 0;
+        for (let label in counts) {
+            let probability = counts[label] / labels.length;
+            entropy = entropy - probability * Math.log2(probability);
+        }
+        
+        return entropy;
+    }
+    
+    fn predict(features) {
+        return this.traverseTree(this.root, features);
+    }
+    
+    fn traverseTree(node, features) {
+        if (node.type == "leaf") {
+            return node.prediction;
+        }
+        
+        if (features[node.feature] <= node.threshold) {
+            return this.traverseTree(node.left, features);
+        } else {
+            return this.traverseTree(node.right, features);
+        }
+    }
+}
+
+// 🌳 Test Decision Tree
+print "\n🌳 Testing Decision Tree:";
+
+// Sample data: [age, income] -> classification
+let trainingData = [
+    [25, 30000],
+    [35, 45000],
+    [45, 60000],
+    [22, 25000],
+    [55, 80000],
+    [30, 35000],
+    [40, 50000],
+    [28, 32000]
+];
+
+let labels = ["low", "medium", "high", "low", "high", "medium", "medium", "low"];
+
+let tree = DecisionTree();
+tree.train(trainingData, labels);
+
+// Test predictions
+let testCases = [
+    [23, 28000], // Should be "low"
+    [38, 48000], // Should be "medium"
+    [50, 70000]  // Should be "high"
+];
+
+for (let i = 0; i < testCases.length; i = i + 1) {
+    let prediction = tree.predict(testCases[i]);
+    print "🎯 Test case", i + 1 + ":";
+    print "  Features:", testCases[i];
+    print "  Predicted class:", prediction;
+}
+
+// 🎯 K-Nearest Neighbors
+class KNN {
+    fn init(k = 3) {
+        this.k = k;
+        this.data = [];
+        this.labels = [];
+    }
+    
+    fn fit(data, labels) {
+        this.data = data;
+        this.labels = labels;
+        print "🎯 KNN trained with", data.length, "samples (k=", this.k + ")";
+    }
+    
+    fn predict(point) {
+        let distances = [];
+        
+        // Calculate distances to all training points
+        for (let i = 0; i < this.data.length; i = i + 1) {
+            let distance = this.euclideanDistance(point, this.data[i]);
+            distances.push({distance: distance, label: this.labels[i]});
+        }
+        
+        // Sort by distance
+        distances.sort((a, b) => a.distance - b.distance);
+        
+        // Get k nearest neighbors
+        let kNearest = distances.slice(0, this.k);
+        
+        // Vote
+        let votes = {};
+        for (let neighbor of kNearest) {
+            votes[neighbor.label] = (votes[neighbor.label] || 0) + 1;
+        }
+        
+        // Find majority vote
+        let maxVotes = 0;
+        let prediction = null;
+        
+        for (let label in votes) {
+            if (votes[label] > maxVotes) {
+                maxVotes = votes[label];
+                prediction = label;
+            }
+        }
+        
+        return {
+            prediction: prediction,
+            confidence: maxVotes / this.k,
+            neighbors: kNearest
+        };
+    }
+    
+    fn euclideanDistance(a, b) {
+        let sum = 0;
+        for (let i = 0; i < a.length; i = i + 1) {
+            sum = sum + (a[i] - b[i]) * (a[i] - b[i]);
+        }
+        return Math.sqrt(sum);
+    }
+}
+
+// 🎯 Test KNN
+print "\n🎯 Testing K-Nearest Neighbors:";
+
+let knn = KNN(3);
+knn.fit(trainingData, labels);
+
+let knnTestCases = [
+    [26, 31000],
+    [42, 55000],
+    [48, 65000]
+];
+
+for (let i = 0; i < knnTestCases.length; i = i + 1) {
+    let result = knn.predict(knnTestCases[i]);
+    print "🎯 KNN Test", i + 1 + ":";
+    print "  Point:", knnTestCases[i];
+    print "  Predicted:", result.prediction;
+    print "  Confidence:", (result.confidence * 100).toFixed(1) + "%";
+}
+
+print "\n🚀 AI & Machine Learning Demo Complete!";
+print "🧠 ClawScript makes AI accessible and fun!";

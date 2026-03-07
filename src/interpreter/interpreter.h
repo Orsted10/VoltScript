@@ -67,8 +67,9 @@ public:
     // Evaluate expressions
     Value evaluate(Expr* expr);
     
-    // Get current environment
+    // Get / set current environment (used by coroutine scope isolation)
     std::shared_ptr<Environment> getEnvironment() { return environment_; }
+    void setEnvironment(std::shared_ptr<Environment> env) { environment_ = std::move(env); }
 
     // Call stack for tracing
     CallStack& getCallStack() { return call_stack_; }
@@ -102,6 +103,23 @@ public:
     Value visitSuperExpr(SuperExpr* expr) override;
     Value visitFunctionExpr(FunctionExpr* expr) override;
 
+    // New ExprVisitor nodes
+    Value visitFStringExpr(FStringExpr* expr) override;
+    Value visitTemplateExpr(TemplateExpr* expr) override;
+    Value visitSpreadExpr(SpreadExpr* expr) override;
+    Value visitOptionalChainExpr(OptionalChainExpr* expr) override;
+    Value visitNullCoalesceExpr(NullCoalesceExpr* expr) override;
+    Value visitPipeExpr(PipeExpr* expr) override;
+    Value visitAwaitExpr(AwaitExpr* expr) override;
+    Value visitYieldExpr(YieldExpr* expr) override;
+    Value visitMatchExpr(MatchExpr* expr) override;
+    Value visitComprehensionExpr(ComprehensionExpr* expr) override;
+    Value visitDestructureArrayExpr(DestructureArrayExpr* expr) override;
+    Value visitDestructureObjectExpr(DestructureObjectExpr* expr) override;
+    Value visitTypeAnnotationExpr(TypeAnnotationExpr* expr) override;
+    Value visitNewExpr(NewExpr* expr) override;
+    Value visitMetaExpr(MetaExpr* expr) override;
+
     // StmtVisitor implementation
     void visitExprStmt(ExprStmt* stmt) override;
     void visitPrintStmt(PrintStmt* stmt) override;
@@ -120,7 +138,21 @@ public:
     void visitImportStmt(ImportStmt* stmt) override;
     void visitClassStmt(ClassStmt* stmt) override;
     void visitSwitchStmt(SwitchStmt* stmt) override;
-    
+
+    // New StmtVisitor nodes
+    void visitConstStmt(ConstStmt* stmt) override;
+    void visitEnumStmt(EnumStmt* stmt) override;
+    void visitInterfaceStmt(InterfaceStmt* stmt) override;
+    void visitForOfStmt(ForOfStmt* stmt) override;
+    void visitForInStmt(ForInStmt* stmt) override;
+    void visitDeferStmt(DeferStmt* stmt) override;
+    void visitAsyncFnStmt(AsyncFnStmt* stmt) override;
+    void visitWithStmt(WithStmt* stmt) override;
+    void visitLabeledStmt(LabeledStmt* stmt) override;
+    void visitMultiLetStmt(MultiLetStmt* stmt) override;
+    void visitExportStmt(ExportStmt* stmt) override;
+    void visitDecoratorStmt(DecoratorStmt* stmt) override;
+
     // Get global environment
     std::shared_ptr<Environment> getGlobals() const { return globals_; }
     
@@ -131,6 +163,15 @@ private:
     // Helper methods
     void checkNumberOperand(const Token& op, const Value& operand);
     void checkNumberOperands(const Token& op, const Value& left, const Value& right);
+
+    // Metamethod helpers — returns true and sets 'out' if metamethod found
+    bool tryMetamethod(Value obj, const std::string& name,
+                       const std::vector<Value>& args, Value& out);
+    // Display string — calls __str metamethod if present
+    std::string valueToDisplayString(Value v);
+    // String method dispatch — handles s.upper(), s.split(), etc.
+    Value stringMethodDispatch(const std::string& str, const std::string& member,
+                               const Token& tok);
     
     // Register built-in functions (like clock(), input(), etc.)
     void defineNatives();

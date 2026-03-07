@@ -1,496 +1,649 @@
-# ClawScript v2.0.0 API Reference
+# ClawScript API Reference
 
-This reference describes the core standard library available in ClawScript v2.0.0.
-It is based on the v0.8.6 APIs and extended with the features introduced up to v1.0.0
-such as the class system, JSON engine, and performance tools.
+## ClawScript v3.0.0 API Documentation
 
 ## Table of Contents
-1. [Global Functions](#global-functions)
+
+1. [Core Language API](#core-language-api)
 2. [Array Methods](#array-methods)
 3. [Hash Map Methods](#hash-map-methods)
-4. [String Functions](#string-functions)
-5. [Math Functions](#math-functions)
+4. [String Methods](#string-methods)
+5. [Mathematical Functions](#mathematical-functions)
 6. [File I/O Functions](#file-io-functions)
-7. [Date/Time Functions](#datetime-functions)
-8. [JSON Functions](#json-functions)
-9. [Class System](#class-system)
-10. [Functional Utilities](#functional-utilities)
-11. [Performance Tools](#performance-tools)
+7. [Type and Conversion Functions](#type-and-conversion-functions)
+8. [Utility Functions](#utility-functions)
+9. [Class System API](#class-system-api)
+10. [Error Handling](#error-handling)
 
-## Global Functions
+---
 
-### Control Flow
+## Core Language API
+
+### Global Functions
+
+#### `print(value)`
+Outputs a value to the console.
+
 ```claw
-print(value)                    // Print value to console
-exit()                          // Exit program
-type(value)                     // Get type of value as string
+print "Hello, World!";
+print 42;
+print [1, 2, 3];
 ```
 
-### Variable Operations
+#### `input(prompt)` → string
+Reads user input from the console.
+
 ```claw
-let name = value               // Declare variable
-name = newValue                // Reassign variable
+let name = input("Enter your name: ");
+print "Hello, " + name;
 ```
 
-### Control Structures
+#### `exit(code)` → void
+Exits the program with the specified exit code.
+
 ```claw
-if (condition) { ... }         // Conditional execution
-if (condition) { ... } else { ... }
-while (condition) { ... }      // Loop while condition is true
-for (init; condition; increment) { ... }  // C-style for loop
-run { ... } until (condition)  // Execute at least once
-break                          // Exit loop
-continue                       // Skip to next iteration
-return value                   // Return from function
+exit(0);  // Successful exit
+exit(1);  // Error exit
 ```
+
+---
 
 ## Array Methods
 
+### Creation and Access
+
+#### `[item1, item2, ...]` → array
+Creates a new array.
+
+```claw
+let numbers = [1, 2, 3, 4, 5];
+let mixed = [42, "hello", true, nil];
+```
+
 ### Properties
+
+#### `array.length` → number
+Returns the number of elements in the array.
+
 ```claw
-array.length                   // Number of elements in array
+let arr = [1, 2, 3];
+print arr.length;  // 3
 ```
 
-### Mutation Methods
+### Methods
+
+#### `array.push(item)` → number
+Adds an item to the end of the array and returns the new length.
+
 ```claw
-array.push(value)              // Add element to end, returns nil
-array.pop()                    // Remove and return last element
-array.reverse()                // Reverse array in-place, returns nil
+let arr = [1, 2, 3];
+arr.push(4);  // arr is now [1, 2, 3, 4]
 ```
 
-### Functional Methods
+#### `array.pop()` → value
+Removes and returns the last element of the array.
+
 ```claw
-array.map(function)            // Transform each element
-// Example: [1,2,3].map(fun(x) { return x * 2; }) → [2,4,6]
-
-array.filter(function)         // Select elements matching predicate
-// Example: [1,2,3,4].filter(fun(x) { return x % 2 == 0; }) → [2,4]
-
-array.reduce(function, initial) // Combine elements into single value
-// Example: [1,2,3].reduce(fun(acc, x) { return acc + x; }, 0) → 6
-
-array.join(separator)          // Join elements into string
-// Example: [1,2,3].join("-") → "1-2-3"
-
-array.concat(otherArray)       // Combine two arrays
-// Example: [1,2].concat([3,4]) → [1,2,3,4]
-
-array.slice(start, end)        // Extract portion of array
-// Example: [1,2,3,4,5].slice(1, 4) → [2,3,4]
-
-array.flat()                   // Flatten nested arrays
-// Example: [[1,2],[3,4]].flat() → [1,2,3,4]
-
-array.flatMap(function)        // Map then flatten results
-// Example: [1,2].flatMap(fun(x) { return [x, x*2]; }) → [1,2,2,4]
+let arr = [1, 2, 3];
+let last = arr.pop();  // last is 3, arr is [1, 2]
 ```
+
+#### `array.reverse()` → array
+Reverses the array in place and returns it.
+
+```claw
+let arr = [1, 2, 3];
+arr.reverse();  // arr is [3, 2, 1]
+```
+
+#### `array.map(function)` → array
+Creates a new array by applying a function to each element.
+
+```claw
+let numbers = [1, 2, 3, 4, 5];
+let doubled = numbers.map(fn(x) { return x * 2; });
+// doubled is [2, 4, 6, 8, 10]
+```
+
+#### `array.filter(function)` → array
+Creates a new array with elements that pass the test function.
+
+```claw
+let numbers = [1, 2, 3, 4, 5, 6];
+let evens = numbers.filter(fn(x) { return x % 2 === 0; });
+// evens is [2, 4, 6]
+```
+
+#### `array.reduce(function, initialValue)` → value
+Reduces the array to a single value using a function.
+
+```claw
+let numbers = [1, 2, 3, 4, 5];
+let sum = numbers.reduce(fn(acc, x) { return acc + x; }, 0);
+// sum is 15
+```
+
+#### `array.join(separator)` → string
+Joins all array elements into a string.
+
+```claw
+let words = ["Hello", "World", "ClawScript"];
+let sentence = words.join(" ");
+// sentence is "Hello World ClawScript"
+```
+
+---
 
 ## Hash Map Methods
 
+### Creation and Access
+
+#### `{key1: value1, key2: value2, ...}` → object
+Creates a new hash map.
+
+```claw
+let person = {
+    "name": "Alice",
+    "age": 25,
+    "active": true
+};
+```
+
 ### Properties
+
+#### `object.size` → number
+Returns the number of key-value pairs.
+
 ```claw
-hashMap.size                   // Number of key-value pairs
+let obj = {"a": 1, "b": 2};
+print obj.size;  // 2
 ```
 
-### Access Methods
+### Methods
+
+#### `keys(object)` → array
+Returns an array of all keys.
+
 ```claw
-hashMap.keys()                 // Get array of all keys
-hashMap.values()               // Get array of all values
-hashMap.has(key)               // Check if key exists
-hashMap.remove(key)            // Remove key-value pair
+let obj = {"name": "Alice", "age": 25};
+let allKeys = keys(obj);  // ["name", "age"]
 ```
 
-### Global Functions for Hash Maps
+#### `values(object)` → array
+Returns an array of all values.
+
 ```claw
-keys(hashMap)                  // Get array of keys
-values(hashMap)                // Get array of values
-has(hashMap, key)              // Check if key exists
-remove(hashMap, key)           // Remove key-value pair and return value
+let obj = {"name": "Alice", "age": 25};
+let allValues = values(obj);  // ["Alice", 25]
 ```
 
-## String Functions
+#### `has(object, key)` → boolean
+Checks if the object has the specified key.
 
-### Basic Operations
 ```claw
-len(string)                    // Get string length
-str(value)                     // Convert value to string
-toUpper(string)                // Convert to uppercase
-toLower(string)                // Convert to lowercase
-upper(string)                  // Alias for toUpper
-lower(string)                  // Alias for toLower
+let obj = {"name": "Alice"};
+let hasName = has(obj, "name");     // true
+let hasAge = has(obj, "age");       // false
 ```
 
-### Substring Operations
+#### `remove(object, key)` → void
+Removes a key-value pair from the object.
+
 ```claw
-substr(string, start, length)  // Extract substring
-indexOf(string, substring)     // Find substring position
+let obj = {"name": "Alice", "age": 25};
+remove(obj, "age");  // obj is now {"name": "Alice"}
 ```
 
-### Formatting
+---
+
+## String Methods
+
+### Properties
+
+#### `string.length` → number
+Returns the length of the string.
+
 ```claw
-trim(string)                   // Remove whitespace from ends
-padStart(string, length, pad)  // Pad string at start
-padEnd(string, length, pad)    // Pad string at end
-repeat(string, count)          // Repeat string
+let text = "Hello";
+print text.length;  // 5
 ```
 
-### Splitting and Joining
+### Methods
+
+#### `substring(string, start, end)` → string
+Extracts a substring from start to end (exclusive).
+
 ```claw
-split(string, delimiter)       // Split string into array
-replace(string, search, replacement)  // Replace substring
+let text = "Hello, World!";
+let sub = substring(text, 0, 5);  // "Hello"
 ```
 
-### Pattern Matching
+#### `indexOf(string, searchValue)` → number
+Returns the index of the first occurrence, or -1 if not found.
+
 ```claw
-startsWith(string, prefix)     // Check if string starts with prefix
-endsWith(string, suffix)       // Check if string ends with suffix
+let text = "Hello, World!";
+let index = indexOf(text, "World");  // 7
 ```
 
-### Character Operations
+#### `toUpper(string)` → string
+Converts the string to uppercase.
+
 ```claw
-charCodeAt(string, index)      // Get character code at index
-fromCharCode(code)             // Create string from character code
+let text = "hello";
+let upper = toUpper(text);  // "HELLO"
 ```
 
-## Math Functions
+#### `toLower(string)` → string
+Converts the string to lowercase.
 
-### Basic Operations
 ```claw
-abs(x)                         // Absolute value
-sqrt(x)                        // Square root
-pow(base, exponent)            // Power function
-min(a, b)                      // Minimum of two values
-max(a, b)                      // Maximum of two values
+let text = "HELLO";
+let lower = toLower(text);  // "hello"
 ```
 
-### Rounding
+#### `trim(string)` → string
+Removes whitespace from both ends.
+
 ```claw
-round(x)                       // Round to nearest integer
-floor(x)                       // Round down
-ceil(x)                        // Round up
+let text = "  hello  ";
+let trimmed = trim(text);  // "hello"
+```
+
+#### `split(string, separator)` → array
+Splits the string into an array of substrings.
+
+```claw
+let text = "hello world test";
+let words = split(text, " ");  // ["hello", "world", "test"]
+```
+
+#### `replace(string, searchValue, replaceValue)` → string
+Replaces all occurrences of searchValue with replaceValue.
+
+```claw
+let text = "hello world";
+let replaced = replace(text, "world", "ClawScript");  // "hello ClawScript"
+```
+
+#### `startsWith(string, prefix)` → boolean
+Checks if the string starts with the specified prefix.
+
+```claw
+let text = "hello world";
+let starts = startsWith(text, "hello");  // true
+```
+
+#### `endsWith(string, suffix)` → boolean
+Checks if the string ends with the specified suffix.
+
+```claw
+let text = "hello world";
+let ends = endsWith(text, "world");  // true
+```
+
+---
+
+## Mathematical Functions
+
+### Basic Arithmetic
+
+#### `abs(number)` → number
+Returns the absolute value.
+
+```claw
+print abs(-5);    // 5
+print abs(3.14);  // 3.14
+```
+
+#### `sqrt(number)` → number
+Returns the square root.
+
+```claw
+print sqrt(16);   // 4
+print sqrt(2);    // 1.4142135623730951
+```
+
+#### `pow(base, exponent)` → number
+Returns base raised to the power of exponent.
+
+```claw
+print pow(2, 3);  // 8
+print pow(10, 2); // 100
+```
+
+#### `min(a, b)` → number
+Returns the smaller of two numbers.
+
+```claw
+print min(5, 3);  // 3
+print min(-1, 2); // -1
+```
+
+#### `max(a, b)` → number
+Returns the larger of two numbers.
+
+```claw
+print max(5, 3);  // 5
+print max(-1, 2); // 2
 ```
 
 ### Trigonometry
+
+#### `sin(number)` → number
+Returns the sine of an angle in radians.
+
 ```claw
-sin(x)                         // Sine (radians)
-cos(x)                         // Cosine (radians)
-tan(x)                         // Tangent (radians)
+print sin(0);     // 0
+print sin(3.141592653589793); // ~0
 ```
 
-### Logarithms and Exponents
+#### `cos(number)` → number
+Returns the cosine of an angle in radians.
+
 ```claw
-log(x)                         // Natural logarithm
-exp(x)                         // Exponential (e^x)
+print cos(0);     // 1
+print cos(3.141592653589793); // -1
 ```
 
-### Performance Helpers
+#### `tan(number)` → number
+Returns the tangent of an angle in radians.
+
 ```claw
-fibFast(n)                     // Fast Fibonacci
-arraySumFast(n)                // Sum 0..n-1
+print tan(0);     // 0
 ```
 
-### Random Numbers
+### Rounding
+
+#### `round(number)` → number
+Rounds to the nearest integer.
+
 ```claw
-random()                       // Random float between 0 and 1
+print round(3.7);  // 4
+print round(3.2);  // 3
 ```
+
+#### `floor(number)` → number
+Rounds down to the nearest integer.
+
+```claw
+print floor(3.7);  // 3
+print floor(3.2);  // 3
+```
+
+#### `ceil(number)` → number
+Rounds up to the nearest integer.
+
+```claw
+print ceil(3.7);   // 4
+print ceil(3.2);   // 4
+```
+
+### Random
+
+#### `random()` → number
+Returns a random number between 0 (inclusive) and 1 (exclusive).
+
+```claw
+let r = random();  // Random number like 0.123456789
+```
+
+---
 
 ## File I/O Functions
 
-### File Operations
+#### `readFile(filename)` → string
+Reads the entire contents of a file.
+
 ```claw
-readFile(path)                 // Read entire file as string
-writeFile(path, content)       // Write content to file
-appendFile(path, content)      // Append content to file
-fileExists(path)               // Check if file exists
-exists(path)                   // Alias for fileExists
-deleteFile(path)               // Delete file
-fileSize(path)                 // Get file size in bytes
+let content = readFile("data.txt");
+print content;
 ```
 
-## Security & Logging
+#### `writeFile(filename, content)` → void
+Writes content to a file (overwrites if exists).
 
-### Policy
 ```claw
-policyReload()                 // Reload sandbox/logging policy from .voltsec
+writeFile("output.txt", "Hello, World!");
 ```
 
-Supported `.voltsec` keys:
-- output=allow|deny            // Allow or block console output
-- log.path=<path>              // Log file path (default: claw.log)
-- log.hmac=<key>               // Enable HMAC-SHA256 for log lines
-- log.meta.required=true|false // Require metadata for logWrite
-
-### Logging
-```claw
-logWrite(message[, metadata])  // Append a log line with optional metadata
-// When HMAC key is set:
-//   Writes: message|hex(HMAC)|metadata?
-// When no HMAC:
-//   Writes: message|metadata?
-```
-
-## Date/Time Functions
+#### `fileExists(filename)` → boolean
+Checks if a file exists.
 
 ```claw
-now()                          // Current timestamp in milliseconds
-formatDate(timestamp, format)  // Format timestamp (placeholder)
-```
-
-## JSON Functions
-
-```claw
-jsonEncode(value)              // Convert value to JSON string
-jsonDecode(jsonString)         // Parse JSON string to value
-```
-
-## Class System
-
-### Class Declaration
-```claw
-class Name {
-    init(args) { ... }         // Constructor
-    method() { ... }           // Instance method
+if (fileExists("data.txt")) {
+    print "File exists";
 }
 ```
 
-### Inheritance
+#### `fileSize(filename)` → number
+Returns the file size in bytes.
+
 ```claw
-class Child extends Parent {
-    method() {
-        super.method();        // Call parent method
+let size = fileSize("data.txt");
+print "File size: " + size + " bytes";
+```
+
+#### `deleteFile(filename)` → void
+Deletes a file.
+
+```claw
+deleteFile("temp.txt");
+```
+
+---
+
+## Type and Conversion Functions
+
+#### `type(value)` → string
+Returns the type of the value as a string.
+
+```claw
+print type("hello");  // "string"
+print type(42);       // "number"
+print type(true);     // "boolean"
+print type(nil);      // "null"
+print type([1, 2]);   // "array"
+print type({});       // "object"
+```
+
+#### `str(value)` → string
+Converts a value to a string.
+
+```claw
+print str(42);        // "42"
+print str(3.14);      // "3.14"
+print str(true);      // "true"
+print str(nil);       // "null"
+```
+
+#### `num(string)` → number
+Converts a string to a number.
+
+```claw
+print num("42");      // 42
+print num("3.14");    // 3.14
+```
+
+---
+
+## Utility Functions
+
+#### `clock()` → number
+Returns the current time in milliseconds.
+
+```claw
+let start = clock();
+// ... some code ...
+let elapsed = clock() - start;
+print "Elapsed time: " + elapsed + " ms";
+```
+
+#### `sleep(milliseconds)` → void
+Pauses execution for the specified number of milliseconds.
+
+```claw
+print "Starting...";
+sleep(1000);  // Sleep for 1 second
+print "Done!";
+```
+
+---
+
+## Class System API
+
+### Class Definition
+
+```claw
+class ClassName {
+    init(param1, param2) {
+        this.property1 = param1;
+        this.property2 = param2;
+    }
+    
+    methodName() {
+        // Method implementation
+        return this.property1;
     }
 }
 ```
 
-### Instance Operations
-```claw
-let instance = ClassName(args) // Create instance
-instance.property = value      // Set property
-print instance.property        // Get property
-instance.method()              // Call method
-```
-
-## Functional Utilities
-
-### Function Composition
-```claw
-compose(f1, f2, ...)           // Compose functions (right to left)
-// Example: compose(f, g)(x) = f(g(x))
-
-pipe(f1, f2, ...)              // Pipe value through functions (left to right)
-// Example: pipe(f, g)(x) = g(f(x))
-```
-
-### Array Transformation
-```claw
-map(array, function)           // Apply function to each element
-// Example: map([1,2,3], fun(x) { return x * 2; }) → [2,4,6]
-
-filter(array, function)        // Select elements matching predicate
-// Example: filter([1,2,3,4], fun(x) { return x % 2 == 0; }) → [2,4]
-
-reverse(array)                 // Reverse array elements
-// Example: reverse([1,2,3]) → [3,2,1]
-```
-
-## Performance Tools
+### Inheritance
 
 ```claw
-sleep(milliseconds)            // Pause execution
-benchmark(function, ...args)   // Measure execution time
-profilePause()                 // Pause sampling profiler
-profileResume()                // Resume sampling profiler
-// Returns object with timeMicroseconds property
+class ChildClass extends ParentClass {
+    init(param) {
+        super.init();  // Call parent constructor
+        this.childProperty = param;
+    }
+    
+    overrideMethod() {
+        // Override parent method
+        return super.overrideMethod() + " (child)";
+    }
+}
 ```
 
-### Profiling CLI and Environment
+### Object Creation
 
-- CLI:
-  - --profile[=file] — enable profiling and write HTML
-  - --profile-hz=NUM — set sampling frequency (Hz)
-- Environment:
-- CLAW_PROFILE=1 — enables profiling without CLI
-- CLAW_PROFILE_HZ=100 — sets sampling frequency
-- CLAW_PROFILE_OUT=claw_profile.html — sets output base path
-
-Outputs:
-- HTML flame graph (profile.html or claw_profile.html)
-- Folded stacks (cpu/heap)
-- Speedscope JSON (.speedscope.json)
-## Operators
-
-### Arithmetic
 ```claw
-+ - * / %                      // Basic arithmetic
-+= -= *= /= %=                 // Compound assignment
-++ --                          // Increment/decrement
+let obj = ClassName("value1", "value2");
+let result = obj.methodName();
 ```
 
-### Comparison
-```claw
-== != < > <= >=                // Comparison operators
-```
-
-### Logical
-```claw
-&& || !                        // Logical operators
-? :                            // Ternary operator
-```
-
-### Data Access
-```claw
-array[index]                   // Array indexing
-hashMap[key]                   // Hash map access
-object.property                // Property access
-```
-
-## Data Types
-
-### Primitive Types
-```claw
-nil                            // Null value
-true/false                     // Boolean values
-42, 3.14                       // Number literals
-"hello"                        // String literals
-```
-
-### Collection Types
-```claw
-[1, 2, 3]                      // Array literal
-{"key": "value"}               // Hash map literal
-```
-
-### Function Types
-```claw
-fn name(params) { body }       // Function declaration
-fun(params) { body }           // Anonymous function expression
-```
+---
 
 ## Error Handling
 
-### Runtime Errors
-Errors are thrown for various conditions:
-- Division by zero
-- Invalid array indices
-- Undefined variables
-- Type mismatches
-- File operation failures
+### Error Types
 
-### Error Information
-Errors include:
-- Error message
-- Line number
-- Column number
-- Source file information
+#### Division by Zero
+Attempting to divide by zero will throw a runtime error.
 
-## Best Practices
-
-### Naming Conventions
-- Use `camelCase` for variables and functions
-- Use `PascalCase` for constructors (future feature)
-- Use descriptive names that indicate purpose
-
-### Function Design
 ```claw
-// ✅ Good: Pure functions with clear parameters
-fn calculateArea(width, height) {
-    return width * height;
-}
-
-// ✅ Good: Functions that do one thing well
-fn isValidEmail(email) {
-    return indexOf(email, "@") != -1;
-}
+// This will cause an error
+let result = 1 / 0;
 ```
 
-### Array Operations
-```claw
-// ✅ Good: Use functional methods for data transformation
-let doubled = numbers.map(fun(x) { return x * 2; });
+#### Type Errors
+Using incompatible types in operations will cause errors.
 
-// ✅ Good: Chain operations for readability
-let result = data
-    .filter(isValid)
-    .map(transform)
-    .reduce(combine, 0);
+```claw
+// This will cause an error
+let result = "hello" + 42;
+```
+
+#### Out of Bounds Access
+Accessing array indices that don't exist will cause errors.
+
+```claw
+let arr = [1, 2, 3];
+// This will cause an error
+let value = arr[5];
 ```
 
 ### Error Prevention
+
 ```claw
-// ✅ Good: Check preconditions
-fn divide(a, b) {
-    if (b == 0) {
+// Safe division
+fn safeDivide(a, b) {
+    if (b === 0) {
         print "Error: Division by zero";
         return nil;
     }
     return a / b;
 }
 
-// ✅ Good: Validate input types
-fn processArray(arr) {
-    if (type(arr) != "array") {
-        print "Error: Expected array";
+// Safe array access
+fn safeGet(arr, index) {
+    if (index < 0 || index >= arr.length) {
+        print "Error: Index out of bounds";
         return nil;
     }
-    // Process array...
-}
-```
-
-## Examples
-
-### Complete Program Structure
-```claw
-// Import statements (future feature)
-// Main function
-fn main() {
-    // Program logic here
-    print "Hello, World!";
-}
-
-// Call main function
-main();
-```
-
-### Data Processing Pipeline
-```claw
-// Process sales data
-let sales = [
-    {"product": "A", "amount": 100},
-    {"product": "B", "amount": 150},
-    {"product": "A", "amount": 200}
-];
-
-// Calculate total sales by product
-let totals = sales
-    .filter(fun(sale) { return sale.amount > 100; })
-    .reduce(fun(acc, sale) {
-        if (!has(acc, sale.product)) {
-            acc[sale.product] = 0;
-        }
-        acc[sale.product] += sale.amount;
-        return acc;
-    }, {});
-
-print totals;  // {"B": 150, "A": 200}
-```
-
-### File Processing
-```claw
-// Read and process file
-if (exists("data.txt")) {
-    let content = readFile("data.txt");
-    let lines = split(content, "\n");
-    let processed = lines
-        .map(trim)
-        .filter(fun(line) { return len(line) > 0; });
-    
-    print "Processed " + str(processed.length) + " lines";
-} else {
-    print "File not found";
+    return arr[index];
 }
 ```
 
 ---
 
-**Last Updated:** February 12, 2026  
-**Version:** 0.8.6
+## Usage Examples
+
+### Complete API Usage Example
+
+```claw
+// File processing example
+fn processFile(filename) {
+    if (!fileExists(filename)) {
+        print "Error: File not found: " + filename;
+        return;
+    }
+    
+    let content = readFile(filename);
+    let lines = split(content, "\n");
+    
+    print "Processing " + lines.length + " lines...";
+    
+    let wordCount = 0;
+    for (let i = 0; i < lines.length; i = i + 1) {
+        let words = split(trim(lines[i]), " ");
+        wordCount = wordCount + words.length;
+    }
+    
+    print "Total words: " + wordCount;
+}
+
+// Data processing example
+fn processData(data) {
+    // Filter numeric values
+    let numbers = data.filter(fn(x) { return type(x) === "number"; });
+    
+    // Calculate statistics
+    let sum = numbers.reduce(fn(acc, x) { return acc + x; }, 0);
+    let avg = sum / numbers.length;
+    let max = numbers.reduce(fn(acc, x) { return max(acc, x); }, numbers[0]);
+    let min = numbers.reduce(fn(acc, x) { return min(acc, x); }, numbers[0]);
+    
+    return {
+        "count": numbers.length,
+        "sum": sum,
+        "average": avg,
+        "max": max,
+        "min": min
+    };
+}
+
+// Example usage
+let sampleData = [1, 2, 3, 4, 5, "hello", true, nil];
+let stats = processData(sampleData);
+
+print "Statistics:";
+print "Count: " + stats.count;
+print "Sum: " + stats.sum;
+print "Average: " + stats.average;
+print "Max: " + stats.max;
+print "Min: " + stats.min;
+```
+
+---
+
+This API reference covers all built-in functions and methods available in ClawScript v3.0.0. For more detailed examples and usage patterns, see the main documentation.

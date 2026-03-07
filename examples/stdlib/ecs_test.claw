@@ -1,0 +1,100 @@
+// ECS (Entity Component System) Test
+// Tests the native ECS module for game development
+
+print("=== ECS Test ===");
+
+// Create a world
+let world = ecsCreateWorld();
+print("World created: " + world);
+
+// Create entities
+let player = ecsCreateEntity(world);
+let enemy1 = ecsCreateEntity(world);
+let enemy2 = ecsCreateEntity(world);
+let bullet = ecsCreateEntity(world);
+
+print("Entities created: " + player + ", " + enemy1 + ", " + enemy2 + ", " + bullet);
+
+// Add components to player
+ecsSetComponent(world, player, "position", 100);
+ecsSetComponent(world, player, "health", 100);
+ecsSetComponent(world, player, "speed", 5);
+ecsSetComponent(world, player, "tag", 1);  // 1 = player
+
+// Add components to enemies
+ecsSetComponent(world, enemy1, "position", 200);
+ecsSetComponent(world, enemy1, "health", 50);
+ecsSetComponent(world, enemy1, "speed", 2);
+ecsSetComponent(world, enemy1, "tag", 2);  // 2 = enemy
+
+ecsSetComponent(world, enemy2, "position", 300);
+ecsSetComponent(world, enemy2, "health", 75);
+ecsSetComponent(world, enemy2, "speed", 3);
+ecsSetComponent(world, enemy2, "tag", 2);
+
+// Add components to bullet
+ecsSetComponent(world, bullet, "position", 105);
+ecsSetComponent(world, bullet, "speed", 15);
+ecsSetComponent(world, bullet, "damage", 25);
+ecsSetComponent(world, bullet, "tag", 3);  // 3 = bullet
+
+// Test component retrieval
+let playerHealth = ecsGetComponent(world, player, "health");
+print("Player health: " + playerHealth);
+
+let enemy1Health = ecsGetComponent(world, enemy1, "health");
+print("Enemy1 health: " + enemy1Health);
+
+// Test hasComponent
+let hasHealth = ecsHasComponent(world, player, "health");
+let hasArmor = ecsHasComponent(world, player, "armor");
+print("Player has health: " + hasHealth);
+print("Player has armor: " + hasArmor);
+
+// Test query - find all entities with "health" component
+let healthEntities = ecsQuery(world, "health");
+print("Entities with health: " + healthEntities);
+
+// Test query - find all entities with "speed" component
+let speedEntities = ecsQuery(world, "speed");
+print("Entities with speed: " + speedEntities);
+
+// Simulate a game loop step
+print("\n--- Simulating game tick ---");
+
+// Move all entities with speed
+let allEntities = ecsGetAllEntities(world);
+print("All entities: " + allEntities);
+
+// Apply damage from bullet to enemy1
+let bulletDamage = ecsGetComponent(world, bullet, "damage");
+let currentHealth = ecsGetComponent(world, enemy1, "health");
+let newHealth = currentHealth - bulletDamage;
+ecsSetComponent(world, enemy1, "health", newHealth);
+print("Enemy1 health after bullet hit: " + ecsGetComponent(world, enemy1, "health"));
+
+// Remove bullet after hit
+ecsRemoveComponent(world, bullet, "damage");
+let hasDamage = ecsHasComponent(world, bullet, "damage");
+print("Bullet still has damage component: " + hasDamage);
+
+// Destroy dead enemy
+if (newHealth <= 0) {
+    ecsDestroyEntity(world, enemy1);
+    print("Enemy1 destroyed!");
+} else {
+    print("Enemy1 survived with " + newHealth + " health");
+}
+
+// Check remaining entities
+let remaining = ecsGetAllEntities(world);
+print("Remaining entities: " + remaining);
+
+// Test entity count via query
+let remainingWithHealth = ecsQuery(world, "health");
+print("Entities still with health: " + remainingWithHealth);
+
+// Cleanup
+ecsDestroyWorld(world);
+print("\nWorld destroyed.");
+print("=== ECS Test PASSED ===");

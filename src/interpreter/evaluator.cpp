@@ -1,4 +1,5 @@
 #include "evaluator.h"
+#include "stmt.h"
 #include <cmath>
 #include <sstream>
 #include "features/string_pool.h"
@@ -49,21 +50,7 @@ Value Evaluator::evaluate(Expr* expr) {
 }
 
 Value Evaluator::evaluateLiteral(LiteralExpr* expr) {
-    switch (expr->type) {
-        case LiteralExpr::Type::Number:
-            return numberToValue(expr->numberValue);
-        
-        case LiteralExpr::Type::String:
-            return stringValue(StringPool::intern(expr->stringValue).data());
-        
-        case LiteralExpr::Type::Bool:
-            return boolValue(expr->boolValue);
-        
-        case LiteralExpr::Type::Nil:
-            return nilValue();
-    }
-    
-    return nilValue();
+    return expr->value;
 }
 
 Value Evaluator::evaluateVariable(VariableExpr* expr) {
@@ -174,7 +161,7 @@ Value Evaluator::evaluateLogical(LogicalExpr* expr) {
 }
 
 Value Evaluator::evaluateGrouping(GroupingExpr* expr) {
-    return evaluate(expr->expr.get());
+    return evaluate(expr->expression.get());
 }
 
 Value Evaluator::evaluateCall(CallExpr* expr) {

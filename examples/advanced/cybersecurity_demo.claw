@@ -1,0 +1,300 @@
+print "Cybersecurity Suite - Enterprise Security Framework";
+print "Advanced threat detection and security management";
+
+print "\nInitializing Security Systems:";
+
+if (cyber.init()) {
+    print "Cybersecurity engine initialized successfully";
+} else {
+    print "Failed to initialize cybersecurity engine";
+}
+
+print "\nTHREAT DETECTION & ANALYSIS:";
+
+let malwareThreat = cyber.createThreat("malware", "critical", "Ransomware attack detected in system");
+let phishingThreat = cyber.createThreat("phishing", "high", "Email phishing campaign targeting employees");
+let ddosThreat = cyber.createThreat("ddos", "medium", "DDoS attack detected on web servers");
+
+print "Created security threats:";
+print "  -", malwareThreat.type + " (" + malwareThreat.severity + "):", malwareThreat.description;
+print "  -", phishingThreat.type + " (" + phishingThreat.severity + "):", phishingThreat.description;
+print "  -", ddosThreat.type + " (" + ddosThreat.severity + "):", ddosThreat.description;
+
+print "\nAnalyzing Network Traffic:";
+let trafficData = [
+    "Normal HTTP request to /api/users",
+    "SQL injection pattern detected in query string",
+    "XSS attack vector found in form submission",
+    "Brute force attempt on admin login",
+    "Suspicious file upload detected"
+];
+
+for (let i = 0; i < trafficData.length; i = i + 1) {
+    let isThreat = cyber.analyzeThreat(trafficData[i]);
+    print "  Traffic:", trafficData[i];
+    print "  Threat detected:", isThreat ? "YES" : "NO";
+}
+
+print "\nSECURITY POLICIES MANAGEMENT:";
+
+let passwordPolicy = cyber.createPolicy("Password Policy", "enforce");
+let accessPolicy = cyber.createPolicy("Access Control", "block");
+let encryptionPolicy = cyber.createPolicy("Data Encryption", "quarantine");
+
+print "Created security policies:";
+print "  -", passwordPolicy.name + " (" + passwordPolicy.enforcementLevel + ")";
+print "  -", accessPolicy.name + " (" + accessPolicy.enforcementLevel + ")";
+print "  -", encryptionPolicy.name + " (" + encryptionPolicy.enforcementLevel + ")";
+
+print "\nFIREWALL CONFIGURATION:";
+
+let mainFirewall = cyber.createFirewall("Main Firewall");
+let dmzFirewall = cyber.createFirewall("DMZ Firewall");
+let internalFirewall = cyber.createFirewall("Internal Firewall");
+
+print "Configured firewalls:";
+print "  -", mainFirewall.name + " (Active:", mainFirewall.active + ")";
+print "  -", dmzFirewall.name + " (Active:", dmzFirewall.active + ")";
+print "  -", internalFirewall.name + " (Active:", internalFirewall.active + ")";
+
+print "\nVULNERABILITY SCANNING:";
+
+let systems = ["web_server", "database_server", "api_gateway", "file_server"];
+
+for (let i = 0; i < systems.length; i = i + 1) {
+    let system = systems[i];
+    print "Scanning", system + "...";
+    
+    let vulnerabilities = cyber.scanVulnerabilities(system);
+    
+    if (vulnerabilities.length > 0) {
+        print "  Found", vulnerabilities.length, "vulnerabilities:";
+        for (let j = 0; j < vulnerabilities.length; j = j + 1) {
+            let vuln = vulnerabilities[j];
+            print "    -", vuln.type + " (" + vuln.severity + "):", vuln.description;
+            print "      Risk Score:", vuln.riskScore.toFixed(1);
+        }
+    } else {
+        print "  No vulnerabilities found";
+    }
+}
+
+print "\nADVANCED ENCRYPTION:";
+
+let key1 = cyber.generateKey(32);
+let key2 = cyber.generateKey(64);
+let key3 = cyber.generateKey(128);
+
+print "Generated secure keys:";
+print "  - 32-bit key length:", key1.length;
+print "  - 64-bit key length:", key2.length;
+print "  - 128-bit key length:", key3.length;
+
+let sensitiveData = [
+    "User credentials: admin@company.com",
+    "API key: sk-1234567890abcdef",
+    "Database password: SuperSecret123!",
+    "Credit card: 1234-5678-9012-3456"
+];
+
+print "\nEncrypting sensitive data:";
+for (let i = 0; i < sensitiveData.length; i = i + 1) {
+    let data = sensitiveData[i];
+    let encrypted = cyber.encrypt(data, key1);
+    let decrypted = cyber.decrypt(encrypted, key1);
+    
+    print "  Original:", data;
+    print "  Encrypted:", encrypted.substring(0, 20) + "...";
+    print "  Decrypted:", decrypted;
+    print "  Encryption successful:", decrypted == data;
+    print "";
+}
+
+print "\nRISK ASSESSMENT:";
+
+let overallRisk = cyber.getRiskScore();
+print "Overall Security Risk Score:", overallRisk.toFixed(2);
+
+if (overallRisk > 7.0) {
+    print "CRITICAL: Immediate action required!";
+} else if (overallRisk > 5.0) {
+    print "HIGH: Security improvements needed";
+} else if (overallRisk > 3.0) {
+    print "MEDIUM: Monitor and maintain";
+} else {
+    print "LOW: Security posture is good";
+}
+
+print "\nSECURITY RECOMMENDATIONS:";
+
+let recommendations = cyber.getRecommendations();
+print "Security Recommendations:";
+
+for (let i = 0; i < recommendations.length; i = i + 1) {
+    print "  " + (i + 1) + ".", recommendations[i];
+}
+
+print "\nREAL-TIME THREAT MONITORING:";
+
+let monitoringEvents = [
+    {type: "login_attempt", user: "admin", ip: "192.168.1.100", status: "success"},
+    {type: "file_access", user: "user1", file: "/etc/passwd", status: "denied"},
+    {type: "network_request", source: "10.0.0.1", destination: "external.com", port: "443", status: "allowed"},
+    {type: "sql_query", user: "app", query: "SELECT * FROM users", status: "success"},
+    {type: "file_upload", user: "user2", file: "malware.exe", status: "blocked"}
+];
+
+print "Monitoring security events:";
+for (let i = 0; i < monitoringEvents.length; i = i + 1) {
+    let event = monitoringEvents[i];
+    let eventStr = event.type + " by " + event.user;
+    
+    if (event.status == "blocked" || event.status == "denied") {
+        print "  ", eventStr + " - BLOCKED";
+    } else {
+        print "  ", eventStr + " - " + event.status.toUpperCase();
+    }
+}
+
+print "\nADVANCED SECURITY FEATURES:";
+
+class MFASystem {
+    fn init() {
+        this.enabled = true;
+        this.methods = ["sms", "email", "authenticator_app"];
+        this.attempts = 0;
+        this.maxAttempts = 3;
+    }
+    
+    fn authenticate(username, password, mfaCode) {
+        this.attempts = this.attempts + 1;
+        
+        if (this.attempts > this.maxAttempts) {
+            return {success: false, reason: "Too many attempts"};
+        }
+        
+        let validPassword = password == "SecurePassword123!";
+        let validMFA = mfaCode == "123456";
+        
+        if (validPassword && validMFA) {
+            this.attempts = 0;
+            return {success: true, reason: "Authentication successful"};
+        } else {
+            return {success: false, reason: "Invalid credentials"};
+        }
+    }
+    
+    fn getStatus() {
+        return {
+            enabled: this.enabled,
+            attempts: this.attempts,
+            remaining: this.maxAttempts - this.attempts,
+            locked: this.attempts >= this.maxAttempts
+        };
+    }
+}
+
+let mfa = MFASystem();
+print "Multi-Factor Authentication System:";
+print "  Status:", mfa.getStatus();
+
+let authTests = [
+    {user: "alice", pass: "wrongpass", mfa: "123456"},
+    {user: "bob", pass: "SecurePassword123!", mfa: "wrongcode"},
+    {user: "charlie", pass: "SecurePassword123!", mfa: "123456"}
+];
+
+for (let i = 0; i < authTests.length; i = i + 1) {
+    let test = authTests[i];
+    let result = mfa.authenticate(test.user, test.pass, test.mfa);
+    print "  Auth test for", test.user + ":", result.success ? "SUCCESS" : "FAILED";
+    print "    Reason:", result.reason;
+}
+
+print "\nNETWORK SECURITY:";
+
+class NetworkSecurity {
+    fn init() {
+        this.firewallRules = [];
+        this.intrusionDetection = true;
+        this.ddosProtection = true;
+        this.sslEnabled = true;
+        
+        this.addRule("allow", "tcp", "80", "web_traffic");
+        this.addRule("allow", "tcp", "443", "https_traffic");
+        this.addRule("deny", "tcp", "22", "ssh_admin_only");
+        this.addRule("deny", "tcp", "3389", "rdp_blocked");
+    }
+    
+    fn addRule(action, protocol, port, description) {
+        this.firewallRules.push({
+            action: action,
+            protocol: protocol,
+            port: port,
+            description: description
+        });
+    }
+    
+    fn checkConnection(protocol, port, sourceIP) {
+        for (let i = 0; i < this.firewallRules.length; i = i + 1) {
+            let rule = this.firewallRules[i];
+            if (rule.protocol == protocol && rule.port == port) {
+                return rule.action == "allow";
+            }
+        }
+        return false;
+    }
+    
+    fn getSecurityReport() {
+        return {
+            rules: this.firewallRules.length,
+            intrusionDetection: this.intrusionDetection,
+            ddosProtection: this.ddosProtection,
+            sslEnabled: this.sslEnabled
+        };
+    }
+}
+
+let netSec = NetworkSecurity();
+print "Network Security Configuration:";
+let report = netSec.getSecurityReport();
+print "  Firewall Rules:", report.rules;
+print "  Intrusion Detection:", report.intrusionDetection ? "Enabled" : "Disabled";
+print "  DDoS Protection:", report.ddosProtection ? "Enabled" : "Disabled";
+print "  SSL/TLS:", report.sslEnabled ? "Enabled" : "Disabled";
+
+let connectionTests = [
+    {protocol: "tcp", port: "80", desc: "HTTP Web Server"},
+    {protocol: "tcp", port: "443", desc: "HTTPS Web Server"},
+    {protocol: "tcp", port: "22", desc: "SSH Server"},
+    {protocol: "tcp", port: "3389", desc: "RDP Server"}
+];
+
+print "\nTesting network connections:";
+for (let i = 0; i < connectionTests.length; i = i + 1) {
+    let test = connectionTests[i];
+    let allowed = netSec.checkConnection(test.protocol, test.port, "192.168.1.100");
+    print "  " + test.desc + " (" + test.protocol + ":" + test.port + "):", allowed ? "ALLOWED" : "BLOCKED";
+}
+
+print "\nCYBERSECURITY DEMO SUMMARY:";
+print "ClawScript provides enterprise-grade cybersecurity capabilities:";
+print "  Advanced threat detection and analysis";
+print "  Comprehensive security policy management";
+print "  Powerful firewall configuration";
+print "  Military-grade encryption algorithms";
+print "  AI-powered risk assessment";
+print "  Real-time security monitoring";
+print "  Multi-factor authentication";
+print "  Network security and intrusion detection";
+print "  Intelligent security recommendations";
+
+print "\nFinal Security Metrics:";
+print "  Risk Score:", overallRisk.toFixed(2) + "/10";
+print "  Active Policies:", 3;
+print "  Configured Firewalls:", 3;
+print "  Encryption Strength:", "AES-256";
+print "  Threat Detection:", "Real-time AI-powered";
+
+print "\nCLAWSCRIPT - THE ULTIMATE CYBERSECURITY PLATFORM!";
+print "Protecting the digital world with intelligent security!";

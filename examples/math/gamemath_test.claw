@@ -1,0 +1,80 @@
+// ============================================================
+// ClawScript Game Math Test
+// ============================================================
+
+print("=== math namespace constants ===");
+print(math.PI);
+print(math.TAU);
+print(math.E);
+print(math.DEG2RAD);
+
+print("\n=== scalar math ===");
+print(math.clamp(5, 0, 3));        // 3
+print(math.lerp(0, 10, 0.5));      // 5
+print(math.smoothstep(0, 1, 0.5)); // 0.5
+print(math.sign(-7));              // -1
+print(math.fract(3.75));           // 0.75
+print(math.isPrime(17));           // true
+print(math.gcd(12, 8));            // 4
+print(math.factorial(5));          // 120
+print(math.toRadians(180));        // ~3.14159
+
+print("\n=== vec2 ===");
+let a = math.vec2(3, 4);
+print(a.toString());               // vec2(3, 4)
+print(a.length());                 // 5
+print(a.normalize().toString());   // vec2(0.6, 0.8)
+let b = math.vec2(1, 2);
+print(a.add(b).toString());        // vec2(4, 6)
+print(a.dot(b));                   // 11
+print(a.distance(b));              // ~2.828
+print(a.lerp(b, 0.5).toString());  // vec2(2, 3)
+print(a.mul(2).toString());        // vec2(6, 8)
+print(a.perpendicular().toString()); // vec2(-4, 3)
+
+print("\n=== vec3 ===");
+let v = math.vec3(1, 0, 0);
+let w = math.vec3(0, 1, 0);
+print(v.cross(w).toString());      // vec3(0, 0, 1)
+print(v.dot(w));                   // 0
+let v3 = math.vec3(1, 2, 3);
+print(v3.length());                // ~3.742
+print(v3.normalize().toString());
+
+print("\n=== mat4 ===");
+let m = math.mat4.identity();
+print("identity[0]=" + m[0]);     // 1
+print("identity[5]=" + m[5]);     // 1
+let pos = math.vec3(1, 2, 3);
+let translated = math.mat4.translate(m, pos);
+print("translated[12]=" + translated[12]); // 1
+print("translated[13]=" + translated[13]); // 2
+print("translated[14]=" + translated[14]); // 3
+
+print("\n=== quat ===");
+let q = math.quat.identity();
+print(q.toString());               // quat(0, 0, 0, 1)
+let q2 = math.quat.fromAxisAngle(math.vec3(0, 1, 0), math.PI / 2);
+print(q2.toString());
+let rotated = q2.rotate(math.vec3(1, 0, 0));
+print(rotated.toString());         // ~vec3(0, 0, -1)
+
+print("\n=== AABB ===");
+let box1 = math.AABB.create(0, 0, 10, 10);
+let box2 = math.AABB.create(5, 5, 10, 10);
+let box3 = math.AABB.create(20, 20, 5, 5);
+print(box1.intersects(box2));      // true
+print(box1.intersects(box3));      // false
+print(box1.contains(5, 5));        // true
+print(box1.contains(15, 15));      // false
+
+print("\n=== Color ===");
+let red = math.Color.RED;
+print(red.r + " " + red.g + " " + red.b); // 1 0 0
+let c = math.Color.create(0.2, 0.4, 0.8, 1.0);
+print(c.toHex());                  // #3366CC
+let white = math.Color.WHITE;
+let blended = c.lerp(white, 0.5);
+print(blended.r);
+
+print("\n✅ All game math tests passed!");

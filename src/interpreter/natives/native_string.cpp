@@ -63,21 +63,26 @@ void registerNativeString(const std::shared_ptr<Environment>& globals) {
     ));
 
     globals->define("substr", std::make_shared<NativeFunction>(
-        3,
+        -1,
         [](const std::vector<Value>& args) -> Value {
+            if (args.size() < 2) throw std::runtime_error("substr() requires at least 2 arguments");
             if (!isString(args[0])) throw std::runtime_error("substr() requires a string as first argument");
             if (!isNumber(args[1])) throw std::runtime_error("substr() requires a number as start position");
-            if (!isNumber(args[2])) throw std::runtime_error("substr() requires a number as length");
             std::string s = asString(args[0]);
             int start = static_cast<int>(asNumber(args[1]));
-            int length = static_cast<int>(asNumber(args[2]));
             if (start < 0) start = 0;
             if (start >= static_cast<int>(s.length())) {
                 auto sv = StringPool::intern(std::string(""));
                 return stringValue(sv.data());
             }
-            if (length < 0) length = 0;
-            if (start + length > static_cast<int>(s.length())) {
+            // Length is optional — default to rest of string
+            int length;
+            if (args.size() >= 3 && isNumber(args[2])) {
+                length = static_cast<int>(asNumber(args[2]));
+                if (length < 0) length = 0;
+                if (start + length > static_cast<int>(s.length()))
+                    length = static_cast<int>(s.length()) - start;
+            } else {
                 length = static_cast<int>(s.length()) - start;
             }
             auto sv = StringPool::intern(s.substr(start, length));
@@ -210,13 +215,134 @@ void registerNativeString(const std::shared_ptr<Environment>& globals) {
             int count = static_cast<int>(asNumber(args[1]));
             if (count < 0) count = 0;
             std::ostringstream oss;
-            for (int i = 0; i < count; i++) {
-                oss << s;
-            }
+            for (int i = 0; i < count; i++) oss << s;
             auto sv = StringPool::intern(oss.str());
             return stringValue(sv.data());
         },
         "repeat"
+    ));
+
+    // padStart(str, targetLen, padChar=" ") — pad from the left
+    globals->define("padStart", std::make_shared<NativeFunction>(
+        -1,
+        [](const std::vector<Value>& args) -> Value {
+            if (args.size() < 2) throw std::runtime_error("padStart() requires at least 2 arguments");
+            if (!isString(args[0])) throw std::runtime_error("padStart() requires a string as first argument");
+            if (!isNumber(args[1])) throw std::runtime_error("padStart() requires a number as target length");
+            std::string s = asString(args[0]);
+            int target = static_cast<int>(asNumber(args[1]));
+            std::string pad = (args.size() >= 3 && isString(args[2])) ? asString(args[2]) : " ";
+            if (pad.empty()) pad = " ";
+            while (static_cast<int>(s.length()) < target) {
+                s = pad + s;
+            }
+            if (static_cast<int>(s.length()) > target) {
+                s = s.substr(s.length() - static_cast<size_t>(target));
+            }
+            auto sv = StringPool::intern(s);
+            return stringValue(sv.data());
+        },
+        "padStart"
+    ));
+
+    // padEnd(str, targetLen, padChar=" ") — pad from the right
+    globals->define("padEnd", std::make_shared<NativeFunction>(
+        -1,
+        [](const std::vector<Value>& args) -> Value {
+            if (args.size() < 2) throw std::runtime_error("padEnd() requires at least 2 arguments");
+            if (!isString(args[0])) throw std::runtime_error("padEnd() requires a string as first argument");
+            if (!isNumber(args[1])) throw std::runtime_error("padEnd() requires a number as target length");
+            std::string s = asString(args[0]);
+            int target = static_cast<int>(asNumber(args[1]));
+            std::string pad = (args.size() >= 3 && isString(args[2])) ? asString(args[2]) : " ";
+            if (pad.empty()) pad = " ";
+            while (static_cast<int>(s.length()) < target) {
+                s = s + pad;
+            }
+            if (static_cast<int>(s.length()) > target) {
+                s = s.substr(0, static_cast<size_t>(target));
+            }
+            auto sv = StringPool::intern(s);
+            return stringValue(sv.data());
+        },
+        "padEnd"
+    ));
+
+    // trimStart(str) — remove leading whitespace
+    globals->define("trimStart", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) throw std::runtime_error("trimStart() requires a string");
+            std::string s = asString(args[0]);
+            size_t start = 0;
+            while (start < s.length() && std::isspace(static_cast<unsigned char>(s[start]))) start++;
+            auto sv = StringPool::intern(s.substr(start));
+            return stringValue(sv.data());
+        },
+        "trimStart"
+    ));
+
+    // trimEnd(str) — remove trailing whitespace
+    globals->define("trimEnd", std::make_shared<NativeFunction>(
+        1,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) throw std::runtime_error("trimEnd() requires a string");
+            std::string s = asString(args[0]);
+            size_t end = s.length();
+            while (end > 0 && std::isspace(static_cast<unsigned char>(s[end - 1]))) end--;
+            auto sv = StringPool::intern(s.substr(0, end));
+            return stringValue(sv.data());
+        },
+        "trimEnd"
+    ));
+
+    // includes(str, substr) — check if string contains substring
+    globals->define("includes", std::make_shared<NativeFunction>(
+        2,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) throw std::runtime_error("includes() requires a string as first argument");
+            if (!isString(args[1])) throw std::runtime_error("includes() requires a string as second argument");
+            std::string s = asString(args[0]);
+            std::string sub = asString(args[1]);
+            return boolValue(s.find(sub) != std::string::npos);
+        },
+        "includes"
+    ));
+
+    // replaceFirst(str, search, replacement) — replace only first occurrence
+    globals->define("replaceFirst", std::make_shared<NativeFunction>(
+        3,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) throw std::runtime_error("replaceFirst() requires a string");
+            if (!isString(args[1])) throw std::runtime_error("replaceFirst() requires a search string");
+            if (!isString(args[2])) throw std::runtime_error("replaceFirst() requires a replacement string");
+            std::string s = asString(args[0]);
+            std::string search = asString(args[1]);
+            std::string repl = asString(args[2]);
+            size_t pos = s.find(search);
+            if (pos != std::string::npos) s.replace(pos, search.length(), repl);
+            auto sv = StringPool::intern(s);
+            return stringValue(sv.data());
+        },
+        "replaceFirst"
+    ));
+
+    // charAt(str, index) — get character at index
+    globals->define("charAt", std::make_shared<NativeFunction>(
+        2,
+        [](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) throw std::runtime_error("charAt() requires a string");
+            if (!isNumber(args[1])) throw std::runtime_error("charAt() requires a number index");
+            std::string s = asString(args[0]);
+            int idx = static_cast<int>(asNumber(args[1]));
+            if (idx < 0 || idx >= static_cast<int>(s.length())) {
+                auto sv = StringPool::intern(std::string(""));
+                return stringValue(sv.data());
+            }
+            auto sv = StringPool::intern(std::string(1, s[idx]));
+            return stringValue(sv.data());
+        },
+        "charAt"
     ));
 }
 

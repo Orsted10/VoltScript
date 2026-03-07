@@ -1,0 +1,107 @@
+// ── ClawScript Language Features Test ────────────────────────────────────────
+print("=== Language Features Test ===");
+
+// ── 1. Null Coalescing (??) ───────────────────────────────────────────────────
+print("--- Null Coalescing ---");
+let a = nil;
+let b = a ?? "default";
+print(b);
+
+let c = 42;
+let d = c ?? 99;
+print(d);
+
+let e = 0;
+let f = e ?? 99;
+print(f);
+
+// ── 2. Optional Chaining (?.) ─────────────────────────────────────────────────
+print("--- Optional Chaining ---");
+let obj = {"x": 10, "y": 20};
+print(obj?.x);
+
+let nilObj = nil;
+print(nilObj?.x);
+
+// ── 3. Pipe Operator (|>) ─────────────────────────────────────────────────────
+print("--- Pipe Operator ---");
+fn double(x) { return x * 2; }
+fn addOne(x) { return x + 1; }
+
+let result = 5 |> double;
+print(result);
+
+let result2 = 5 |> double |> addOne;
+print(result2);
+
+// ── 4. For-of loop ────────────────────────────────────────────────────────────
+print("--- For-of ---");
+let arr = [10, 20, 30];
+let sum = 0;
+for (let x of arr) {
+    sum = sum + x;
+}
+print(sum);
+
+let chars = "";
+for (let ch of "abc") {
+    chars = chars + ch + "-";
+}
+print(chars);
+
+// ── 5. For-in loop ────────────────────────────────────────────────────────────
+print("--- For-in ---");
+let mymap = {"a": 1, "b": 2, "c": 3};
+let keyCount = 0;
+for (let k in mymap) {
+    keyCount = keyCount + 1;
+}
+print(keyCount);
+
+// ── 6. Match Expression ───────────────────────────────────────────────────────
+print("--- Match Expression ---");
+fn classify(n) {
+    return match(n) {
+        case 0: "zero",
+        case 1: "one",
+        case 2: "two",
+        default: "many"
+    };
+}
+print(classify(0));
+print(classify(1));
+print(classify(5));
+
+// ── 7. List Comprehension ─────────────────────────────────────────────────────
+print("--- Comprehension ---");
+let nums = [1, 2, 3, 4, 5];
+let doubled = [x * 2 for x in nums];
+print(doubled.length);
+print(doubled[0]);
+print(doubled[4]);
+
+let evens = [x for x in nums if x % 2 == 0];
+print(evens.length);
+print(evens[0]);
+
+// ── 8. Array Destructuring ────────────────────────────────────────────────────
+print("--- Array Destructuring ---");
+let [p, q, r] = [100, 200, 300];
+print(p);
+print(q);
+print(r);
+
+// ── 9. Object Destructuring ───────────────────────────────────────────────────
+print("--- Object Destructuring ---");
+let {x, y} = {"x": 5, "y": 10};
+print(x);
+print(y);
+
+// ── 10. With Statement ────────────────────────────────────────────────────────
+print("--- With Statement ---");
+let resource = {"value": 42};
+with (resource as res) {
+    print(res.value);
+}
+
+print("=== All Language Features OK ===");

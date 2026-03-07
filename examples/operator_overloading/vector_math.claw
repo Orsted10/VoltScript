@@ -1,0 +1,138 @@
+// Vector Math with Operator Overloading Demo
+// Shows ClawScript's metamethod capabilities for math types
+
+class Vec2 {
+    fn init(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    // Addition operator
+    fn __add(other) {
+        return Vec2(this.x + other.x, this.y + other.y);
+    }
+    
+    // Subtraction operator
+    fn __sub(other) {
+        return Vec2(this.x - other.x, this.y - other.y);
+    }
+    
+    // Multiplication operator (scalar)
+    fn __mul(scalar) {
+        return Vec2(this.x * scalar, this.y * scalar);
+    }
+    
+    // Division operator (scalar)
+    fn __div(scalar) {
+        return Vec2(this.x / scalar, this.y / scalar);
+    }
+    
+    // Equality comparison
+    fn __eq(other) {
+        return this.x == other.x and this.y == other.y;
+    }
+    
+    // String representation
+    fn __str() {
+        return "Vec2(" + this.x + ", " + this.y + ")";
+    }
+    
+    // Length/magnitude
+    fn __len() {
+        return sqrt(this.x * this.x + this.y * this.y);
+    }
+    
+    // Negation
+    fn __unm() {
+        return Vec2(-this.x, -this.y);
+    }
+}
+
+class Vec3 {
+    fn init(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    
+    fn __add(other) {
+        return Vec3(this.x + other.x, this.y + other.y, this.z + other.z);
+    }
+    
+    fn __sub(other) {
+        return Vec3(this.x - other.x, this.y - other.y, this.z - other.z);
+    }
+    
+    fn __mul(scalar) {
+        return Vec3(this.x * scalar, this.y * scalar, this.z * scalar);
+    }
+    
+    fn __eq(other) {
+        return this.x == other.x and this.y == other.y and this.z == other.z;
+    }
+    
+    fn __str() {
+        return "Vec3(" + this.x + ", " + this.y + ", " + this.z + ")";
+    }
+    
+    fn __len() {
+        return sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+    }
+}
+
+// Test the operator overloading
+print "=== Operator Overloading Demo ===";
+
+// Create vectors
+let v1 = Vec2(1, 2);
+let v2 = Vec2(3, 4);
+let v3 = Vec3(1, 2, 3);
+let v4 = Vec3(4, 5, 6);
+
+print "\nVec2 Operations:";
+print "v1 =", v1;
+print "v2 =", v2;
+
+// Test addition
+let sum = v1 + v2;
+print "v1 + v2 =", sum;
+
+// Test subtraction
+let diff = v2 - v1;
+print "v2 - v1 =", diff;
+
+// Test scalar multiplication
+let scaled = v1 * 3;
+print "v1 * 3 =", scaled;
+
+// Test scalar division
+let divided = v2 / 2;
+print "v2 / 2 =", divided;
+
+// Test negation
+let negated = -v1;
+print "-v1 =", negated;
+
+// Test equality
+print "v1 == v2:", v1 == v2;
+print "v1 == Vec2(1, 2):", v1 == Vec2(1, 2);
+
+// Test length
+print "#v1 (length):", #v1;
+print "#v2 (length):", #v2;
+
+print "\nVec3 Operations:";
+print "v3 =", v3;
+print "v4 =", v4;
+
+print "v3 + v4 =", v3 + v4;
+print "v4 - v3 =", v4 - v3;
+print "v3 * 2 =", v3 * 2;
+print "#v3 (length):", #v3;
+
+// Complex expression
+print "\nComplex expression:";
+let result = (v1 + v2) * 2 - v1;
+print "(v1 + v2) * 2 - v1 =", result;
+
+print "\n=== Demo Complete ===";

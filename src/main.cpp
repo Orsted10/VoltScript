@@ -22,12 +22,10 @@
 #include "observability/profiler.h"
 #include <map>
 
-/******  FOR UTF-8 In Window Terminal or Powershell. ***********/
+// UTF-8 support for Windows Terminal and PowerShell
 #ifdef _WIN32
     #include <windows.h>
 #endif
-
-/***************************************************************/
 
 static claw::Environment::SandboxMode g_cliSandboxMode = claw::Environment::SandboxMode::Full;
 static std::map<std::string, std::string> g_policyKVs;
@@ -160,9 +158,9 @@ void dumpStatements(const std::vector<claw::StmtPtr>& statements) {
             std::cout << "ForStmt";
         } else if (auto* fnStmt = dynamic_cast<claw::FnStmt*>(statements[i].get())) {
             std::cout << "FnStmt: " << fnStmt->name << "(";
-            for (size_t j = 0; j < fnStmt->parameters.size(); j++) {
+            for (size_t j = 0; j < fnStmt->params.size(); j++) {
                 if (j > 0) std::cout << ", ";
-                std::cout << fnStmt->parameters[j];
+                std::cout << fnStmt->params[j].name;
             }
             std::cout << ")";
         } else if (dynamic_cast<claw::ReturnStmt*>(statements[i].get())) {
@@ -305,6 +303,17 @@ bool isIncomplete(const std::string& input) {
     return braces > 0 || parens > 0 || inString;
 }
 
+void runFileVM(const std::string& path, bool debugMode) {
+    std::unique_ptr<claw::Chunk> chunk;
+    if (!compileFileToChunk(path, chunk, debugMode)) {
+        exit(65);
+    }
+    claw::VM vm;
+    auto result = vm.interpret(*chunk);
+    if (result == claw::InterpretResult::CompileError) exit(65);
+    if (result == claw::InterpretResult::RuntimeError)  exit(70);
+}
+
 void runPrompt() {
     claw::Interpreter interpreter;
     loadVoltsecPolicy(std::filesystem::current_path());
@@ -313,7 +322,7 @@ void runPrompt() {
     std::vector<std::string> history;
     std::string buffer;
     
-    std::cout << "\n⚡ ClawScript v" << claw::CLAW_VERSION << " REPL\n";
+    std::cout << "\nClawScript v" << claw::CLAW_VERSION << " REPL\n";
     std::cout << "Type 'exit' to quit, 'history' to show command history\n";
     std::cout << "Commands: clear (reset environment), help (show this message)\n\n";
     
@@ -420,6 +429,9 @@ int main(int argc, char** argv) {
     std::string scriptPath;
     std::string aotOutputPath;
     bool jitAggressive = false;
+    bool useVM = false;
+
+
     bool disableCallIC = false;
     bool icDiagnostics = false;
     bool enableProfile = false;
@@ -511,7 +523,7 @@ int main(int argc, char** argv) {
         if (arg == "--debug" || arg == "-d") {
             debugMode = true;
         } else if (arg == "--help" || arg == "-h") {
-            std::cout << "⚡ ClawScript v" << claw::CLAW_VERSION << "\n";
+            std::cout << "ClawScript v" << claw::CLAW_VERSION << "\n";
             std::cout << "Usage: claw [options] [script]\n\n";
             std::cout << "Options:\n";
             std::cout << "  --debug, -d    Print tokens and AST before execution\n";
@@ -534,6 +546,12 @@ int main(int argc, char** argv) {
             return 0;
         } else if (arg == "--jit=aggressive") {
             jitAggressive = true;
+        } else if (arg == "--vm") {
+            useVM = true;
+        } else if (arg == "--interpreter") {
+            useVM = false;
+
+
         } else if (arg == "--disable-call-ic") {
             disableCallIC = true;
         } else if (arg == "--ic-diagnostics") {
@@ -659,12 +677,18 @@ int main(int argc, char** argv) {
     }
     
     if (!scriptPath.empty()) {
-        // Run file
-        runFile(scriptPath, interpreter, debugMode);
+        if (useVM) {
+            runFileVM(scriptPath, debugMode);
+        } else {
+            // Tree-walk interpreter (default)
+            runFile(scriptPath, interpreter, debugMode);
+        }
     } else {
         // Interactive REPL
         runPrompt();
     }
+
+
     if (enableProfile || claw::profilerEnabled()) {
         claw::profilerStop();
         claw::Profiler::instance().writeHtml(profileOutput);

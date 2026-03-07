@@ -1,0 +1,479 @@
+print "Advanced Blockchain Demo - Web3 & DeFi Platform";
+print "Enterprise-grade blockchain and DeFi solutions";
+
+print "\nBLOCKCHAIN TRANSACTIONS:";
+
+let tx1 = blockchain.createTransaction("alice", "bob", 1.5, 0.001);
+let tx2 = blockchain.createTransaction("bob", "charlie", 0.75, 0.001);
+let tx3 = blockchain.createTransaction("charlie", "alice", 2.0, 0.002);
+let tx4 = blockchain.createTransaction("alice", "dave", 0.5, 0.001);
+
+print "Created blockchain transactions:";
+print "  ", tx1.sender, "→", tx1.receiver + ":", tx1.amount, "ETH (Fee:", tx1.fee + ")";
+print "  ", tx2.sender, "→", tx2.receiver + ":", tx2.amount, "ETH (Fee:", tx2.fee + ")";
+print "  ", tx3.sender, "→", tx3.receiver + ":", tx3.amount, "ETH (Fee:", tx3.fee + ")";
+print "  ", tx4.sender, "→", tx4.receiver + ":", tx4.amount, "ETH (Fee:", tx4.fee + ")";
+
+print "\nCONFIRMING TRANSACTIONS:";
+blockchain.confirmTransaction(tx1.id);
+blockchain.confirmTransaction(tx2.id);
+blockchain.confirmTransaction(tx3.id);
+
+print "Confirmed transactions:", tx1.id, tx2.id, tx3.id;
+print "Pending transactions:", tx4.id;
+
+print "\nACCOUNT BALANCES:";
+
+let users = ["alice", "bob", "charlie", "dave"];
+for (let i = 0; i < users.length; i = i + 1) {
+    let user = users[i];
+    let balance = blockchain.getBalance(user);
+    print "  ", user + ":", balance.toFixed(4), "ETH";
+}
+
+print "\nSMART CONTRACTS DEPLOYMENT:";
+
+let erc20Contract = blockchain.deployContract(
+    "0x606060405234801561001057600080fd5b50",
+    "[{\"name\":\"transfer\",\"inputs\":[{\"name\":\"to\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}]}]",
+    "alice"
+);
+
+let nftContract = blockchain.deployContract(
+    "0x608060405234801561001057600080fd5b50",
+    "[{\"name\":\"mint\",\"inputs\":[{\"name\":\"to\",\"type\":\"address\"},{\"name\":\"tokenId\",\"type\":\"uint256\"}]}]",
+    "bob"
+);
+
+let defiContract = blockchain.deployContract(
+    "0x606060405234801561001057600080fd5b50",
+    "[{\"name\":\"deposit\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\"}]}]",
+    "charlie"
+);
+
+print "Deployed smart contracts:";
+print "  ERC-20 Token:", erc20Contract.address;
+print "  NFT Collection:", nftContract.address;
+print "  DeFi Protocol:", defiContract.address;
+
+print "\nNFT MINTING & MANAGEMENT:";
+
+let nft1 = blockchain.mintNFT(nftContract.address, "alice", "{\"name\":\"Cosmic Cat\",\"description\":\"A cat from space\",\"image\":\"ipfs://QmHash1\"}");
+let nft2 = blockchain.mintNFT(nftContract.address, "bob", "{\"name\":\"Digital Dragon\",\"description\":\"Legendary dragon NFT\",\"image\":\"ipfs://QmHash2\"}");
+let nft3 = blockchain.mintNFT(nftContract.address, "charlie", "{\"name\":\"Pixel Punk\",\"description\":\"Retro pixel art\",\"image\":\"ipfs://QmHash3\"}");
+let nft4 = blockchain.mintNFT(nftContract.address, "alice", "{\"name\":\"Crystal Gem\",\"description\":\"Shining gem NFT\",\"image\":\"ipfs://QmHash4\"}");
+
+print "Minted NFTs:";
+print "  Cosmic Cat (Token:", nft1.tokenId + ") → Owner:", nft1.owner;
+print "  Digital Dragon (Token:", nft2.tokenId + ") → Owner:", nft2.owner;
+print "  Pixel Punk (Token:", nft3.tokenId + ") → Owner:", nft3.owner;
+print "  Crystal Gem (Token:", nft4.tokenId + ") → Owner:", nft4.owner;
+
+print "\nNFT COLLECTIONS:";
+for (let i = 0; i < users.length; i = i + 1) {
+    let user = users[i];
+    let userNFTs = blockchain.getNFTs(user);
+    print "  ", user + "'s NFTs:", userNFTs.length;
+    for (let j = 0; j < userNFTs.length; j = j + 1) {
+        print "    Token", userNFTs[j].tokenId;
+    }
+}
+
+print "\nDEFI PROTOCOLS:";
+
+let uniswap = blockchain.createDeFiProtocol("Uniswap V3", "exchange");
+let compound = blockchain.createDeFiProtocol("Compound Finance", "lending");
+let aave = blockchain.createDeFiProtocol("Aave", "yield_farming");
+
+print "Created DeFi protocols:";
+print "  ", uniswap.name + " (" + uniswap.type + ")";
+print "  ", compound.name + " (" + compound.type + ")";
+print "  ", aave.name + " (" + aave.type + ")";
+
+print "\nDECENTRALIZED AUTONOMOUS ORGANIZATIONS:";
+
+let clawDAO = blockchain.createDAO("ClawScript DAO", "CLAW", 51.0);
+let devDAO = blockchain.createDAO("Developer DAO", "DEV", 60.0);
+let artDAO = blockchain.createDAO("Art DAO", "ART", 40.0);
+
+print "Created DAOs:";
+print "  ", clawDAO.name + " (Token:", clawDAO.token + ", Quorum:", clawDAO.quorum + "%)";
+print "  ", devDAO.name + " (Token:", devDAO.token + ", Quorum:", devDAO.quorum + "%)";
+print "  ", artDAO.name + " (Token:", artDAO.token + ", Quorum:", artDAO.quorum + "%)";
+
+print "\nBLOCKCHAIN MARKET STATISTICS:";
+
+let marketStats = blockchain.getMarketStats();
+print "Current Market Data:";
+for (let i = 0; i < marketStats.length; i = i + 1) {
+    print "  ", marketStats[i];
+}
+
+print "\nADVANCED DEFI OPERATIONS:";
+
+class DeFiOperations {
+    fn init() {
+        this.portfolios = {};
+        this.strategies = ["conservative", "balanced", "aggressive"];
+        this.yieldFarming = {};
+    }
+    
+    fn createPortfolio(user, strategy) {
+        this.portfolios[user] = {
+            strategy: strategy,
+            assets: {},
+            totalValue: 0,
+            riskLevel: strategy == "conservative" ? "low" : strategy == "balanced" ? "medium" : "high"
+        };
+        
+        print "Created portfolio for", user + ":", strategy, "strategy";
+    }
+    
+    fn addAsset(user, token, amount, protocol) {
+        if (!this.portfolios[user]) {
+            this.createPortfolio(user, "balanced");
+        }
+        
+        this.portfolios[user].assets[token] = {
+            amount: amount,
+            protocol: protocol,
+            value: this.calculateTokenValue(token, amount)
+        };
+        
+        this.updatePortfolioValue(user);
+        print "Added", amount, token, "to", user + "'s portfolio via", protocol;
+    }
+    
+    fn calculateTokenValue(token, amount) {
+        let prices = {
+            "ETH": 2000,
+            "USDC": 1,
+            "USDT": 1,
+            "DAI": 1,
+            "WBTC": 50000,
+            "CLAW": 10
+        };
+        
+        return amount * (prices[token] || 1);
+    }
+    
+    fn updatePortfolioValue(user) {
+        let portfolio = this.portfolios[user];
+        portfolio.totalValue = 0;
+        
+        for (let token in portfolio.assets) {
+            portfolio.totalValue = portfolio.totalValue + portfolio.assets[token].value;
+        }
+    }
+    
+    fn getYield(user, protocol, token) {
+        let apys = {
+            "conservative": 0.05,
+            "balanced": 0.12,
+            "aggressive": 0.25
+        };
+        
+        let portfolio = this.portfolios[user];
+        let apy = apys[portfolio.strategy] || 0.1;
+        let asset = portfolio.assets[token];
+        
+        if (asset) {
+            return asset.value * apy;
+        }
+        return 0;
+    }
+    
+    fn showPortfolio(user) {
+        let portfolio = this.portfolios[user];
+        if (!portfolio) {
+            print "Portfolio not found for", user;
+            return;
+        }
+        
+        print "Portfolio for", user + ":";
+        print "  Strategy:", portfolio.strategy;
+        print "  Risk Level:", portfolio.riskLevel;
+        print "  Total Value: $" + portfolio.totalValue.toFixed(2);
+        print "  Assets:";
+        
+        for (let token in portfolio.assets) {
+            let asset = portfolio.assets[token];
+            let yield = this.getYield(user, asset.protocol, token);
+            print "    ", token + ":", asset.amount, "($", asset.value.toFixed(2) + ") via", asset.protocol;
+            print "       Yield: $" + yield.toFixed(2) + "/year";
+        }
+    }
+    
+    fn rebalancePortfolio(user, targetStrategy) {
+        let portfolio = this.portfolios[user];
+        if (!portfolio) return;
+        
+        print "Rebalancing", user + "'s portfolio to", targetStrategy;
+        portfolio.strategy = targetStrategy;
+        portfolio.riskLevel = targetStrategy == "conservative" ? "low" : targetStrategy == "balanced" ? "medium" : "high";
+        
+        print "Portfolio rebalanced successfully";
+    }
+}
+
+let defiOps = DeFiOperations();
+
+print "Creating portfolios for users";
+defiOps.createPortfolio("alice", "aggressive");
+defiOps.createPortfolio("bob", "balanced");
+defiOps.createPortfolio("charlie", "conservative");
+
+defiOps.addAsset("alice", "ETH", 5.0, "Uniswap V3");
+defiOps.addAsset("alice", "CLAW", 1000.0, "Aave");
+defiOps.addAsset("bob", "ETH", 2.5, "Compound Finance");
+defiOps.addAsset("bob", "USDC", 5000.0, "Uniswap V3");
+defiOps.addAsset("charlie", "USDC", 10000.0, "Compound Finance");
+defiOps.addAsset("charlie", "DAI", 8000.0, "Aave");
+
+print "\nUSER PORTFOLIOS:";
+defiOps.showPortfolio("bob");
+defiOps.showPortfolio("charlie");
+
+print "\nYIELD FARMING SIMULATION:";
+
+class YieldFarming {
+    fn init() {
+        this.pools = {};
+        this.liquidityProviders = {};
+        this.rewards = {};
+    }
+    
+    fn createPool(token1, token2, apr) {
+        let poolId = token1 + "-" + token2;
+        this.pools[poolId] = {
+            token1: token1,
+            token2: token2,
+            apr: apr,
+            totalLiquidity: 0,
+            providers: []
+        };
+        
+        print "Created liquidity pool:", poolId, "(APR:", apr + "%)";
+    }
+    
+    fn addLiquidity(user, poolId, amount1, amount2) {
+        if (!this.pools[poolId]) {
+            print "Pool not found:", poolId;
+            return;
+        }
+        
+        let pool = this.pools[poolId];
+        pool.totalLiquidity = pool.totalLiquidity + amount1 + amount2;
+        
+        if (!this.liquidityProviders[user]) {
+            this.liquidityProviders[user] = {};
+        }
+        
+        this.liquidityProviders[user][poolId] = {
+            amount1: amount1,
+            amount2: amount2,
+            share: (amount1 + amount2) / pool.totalLiquidity
+        };
+        
+        print user, "added liquidity to", poolId + ":", amount1, pool.token1 + " +", amount2, pool.token2;
+    }
+    
+    fn calculateRewards(user, poolId, days) {
+        if (!this.liquidityProviders[user] || !this.liquidityProviders[user][poolId]) {
+            return 0;
+        }
+        
+        let pool = this.pools[poolId];
+        let provider = this.liquidityProviders[user][poolId];
+        let dailyReward = (provider.amount1 + provider.amount2) * (pool.apr / 100) / 365;
+        
+        return dailyReward * days;
+    }
+    
+    fn showPoolInfo(poolId) {
+        let pool = this.pools[poolId];
+        if (!pool) {
+            print "Pool not found:", poolId;
+            return;
+        }
+        
+        print "Pool Information:", poolId;
+        print "  Tokens:", pool.token1, "+", pool.token2;
+        print "  APR:", pool.apr + "%";
+        print "  Total Liquidity: $" + pool.totalLiquidity.toFixed(2);
+        print "  Providers:", pool.providers.length;
+    }
+    
+    fn showUserRewards(user, days) {
+        if (!this.liquidityProviders[user]) {
+            print "No liquidity provided by", user;
+            return;
+        }
+        
+        print user + "'s Yield Farming Rewards (" + days + " days):";
+        
+        for (let poolId in this.liquidityProviders[user]) {
+            let rewards = this.calculateRewards(user, poolId, days);
+            print "  ", poolId + ": $" + rewards.toFixed(2);
+        }
+    }
+}
+
+let yieldFarming = YieldFarming();
+
+yieldFarming.createPool("ETH", "USDC", 8.5);
+yieldFarming.createPool("CLAW", "ETH", 15.2);
+yieldFarming.createPool("USDC", "USDT", 4.8);
+
+yieldFarming.addLiquidity("alice", "ETH-USDC", 2.0, 4000.0);
+yieldFarming.addLiquidity("bob", "CLAW-ETH", 500.0, 1.0);
+yieldFarming.addLiquidity("charlie", "USDC-USDT", 3000.0, 3000.0);
+
+print "\nLIQUIDITY POOLS:";
+yieldFarming.showPoolInfo("ETH-USDC");
+yieldFarming.showPoolInfo("CLAW-ETH");
+yieldFarming.showPoolInfo("USDC-USDT");
+
+print "\nDAO GOVERNANCE SIMULATION:";
+
+class DAOGovernance {
+    fn init() {
+        this.proposals = {};
+        this.votes = {};
+        this.quorum = 51.0;
+    }
+    
+    fn createProposal(dao, title, description) {
+        let proposalId = "prop_" + Object.keys(this.proposals).length;
+        this.proposals[proposalId] = {
+            dao: dao,
+            title: title,
+            description: description,
+            votesFor: 0,
+            votesAgainst: 0,
+            status: "active",
+            created: Date.now()
+        };
+        
+        print "Created proposal in", dao + ":", title;
+        return proposalId;
+    }
+    
+    fn vote(user, proposalId, voteType, votingPower) {
+        if (!this.proposals[proposalId]) {
+            print "Proposal not found:", proposalId;
+            return;
+        }
+        
+        if (!this.votes[user]) {
+            this.votes[user] = {};
+        }
+        
+        if (this.votes[user][proposalId]) {
+            print user, "has already voted on proposal", proposalId;
+            return;
+        }
+        
+        let proposal = this.proposals[proposalId];
+        
+        if (voteType == "for") {
+            proposal.votesFor = proposal.votesFor + votingPower;
+        } else {
+            proposal.votesAgainst = proposal.votesAgainst + votingPower;
+        }
+        
+        this.votes[user][proposalId] = voteType;
+        
+        print user, "voted", voteType, "proposal", proposalId + " with", votingPower, "votes";
+    }
+    
+    fn executeProposal(proposalId) {
+        let proposal = this.proposals[proposalId];
+        if (!proposal) return;
+        
+        let totalVotes = proposal.votesFor + proposal.votesAgainst;
+        let turnout = (totalVotes / 1000) * 100;
+        
+        if (turnout < this.quorum) {
+            print "Proposal", proposalId, "failed: Quorum not met (" + turnout.toFixed(1) + "% < " + this.quorum + "%)";
+            proposal.status = "failed";
+            return;
+        }
+        
+        if (proposal.votesFor > proposal.votesAgainst) {
+            print "Proposal", proposalId, "passed:", proposal.title;
+            proposal.status = "passed";
+        } else {
+            print "Proposal", proposalId, "rejected:", proposal.title;
+            proposal.status = "rejected";
+        }
+    }
+    
+    fn showProposal(proposalId) {
+        let proposal = this.proposals[proposalId];
+        if (!proposal) {
+            print "Proposal not found:", proposalId;
+            return;
+        }
+        
+        print "Proposal Details:";
+        print "  ID:", proposalId;
+        print "  DAO:", proposal.dao;
+        print "  Title:", proposal.title;
+        print "  Description:", proposal.description;
+        print "  Votes For:", proposal.votesFor;
+        print "  Votes Against:", proposal.votesAgainst;
+        print "  Status:", proposal.status;
+    }
+}
+
+let daoGov = DAOGovernance();
+
+let prop1 = daoGov.createProposal("ClawScript DAO", "Increase Treasury Funding", "Allocate 1000 CLAW tokens to development fund");
+let prop2 = daoGov.createProposal("Developer DAO", "New Grant Program", "Create 500 CLAW grant program for new developers");
+let prop3 = daoGov.createProposal("Art DAO", "NFT Marketplace Integration", "Integrate with major NFT marketplaces");
+
+daoGov.vote("alice", prop1, "for", 1000);
+daoGov.vote("bob", prop1, "for", 500);
+daoGov.vote("charlie", prop1, "against", 200);
+
+daoGov.vote("alice", prop2, "for", 800);
+daoGov.vote("bob", prop2, "against", 300);
+daoGov.vote("dave", prop2, "for", 400);
+
+daoGov.vote("bob", prop3, "for", 600);
+daoGov.vote("charlie", prop3, "for", 750);
+daoGov.vote("alice", prop3, "against", 100);
+
+print "\nEXECUTING DAO PROPOSALS:";
+daoGov.executeProposal(prop1);
+daoGov.executeProposal(prop2);
+daoGov.executeProposal(prop3);
+
+print "\nPROPOSAL DETAILS:";
+daoGov.showProposal(prop1);
+daoGov.showProposal(prop2);
+daoGov.showProposal(prop3);
+
+print "\nADVANCED BLOCKCHAIN DEMO SUMMARY:";
+print "ClawScript provides comprehensive blockchain capabilities:";
+print "  Advanced transaction management";
+print "  Smart contract deployment and execution";
+print "  NFT minting and marketplace integration";
+print "  DeFi protocol creation and management";
+print "  DAO governance and voting systems";
+print "  Yield farming and liquidity provision";
+print "  Real-time market statistics and analytics";
+print "  Enterprise-grade security and scalability";
+
+print "\nFinal Blockchain Statistics:";
+print "  Total Transactions:", 4;
+print "  Smart Contracts:", 3;
+print "  NFTs Minted:", 4;
+print "  DeFi Protocols:", 3;
+print "  DAOs Created:", 3;
+print "  Proposals:", 3;
+print "  Total Votes:", 9;
+
+print "\nCLAWSCRIPT - THE ULTIMATE BLOCKCHAIN PLATFORM!";
+print "Building future of decentralized finance!";

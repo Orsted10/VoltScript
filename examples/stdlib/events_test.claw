@@ -1,0 +1,42 @@
+// ── Events stdlib test ───────────────────────────────────────────────────────
+print("=== Events Tests ===");
+
+let results = [];
+let id1 = eventOn("greet", fn(name) {
+    results.push("hello " + name);
+});
+print("Listener id > 0: " + (id1 > 0));
+
+eventEmit("greet", "world");
+eventEmit("greet", "claw");
+print("Results length 2: " + (results.length == 2));
+print("First: " + results[0]);
+print("Second: " + results[1]);
+
+eventOff(id1);
+eventEmit("greet", "nobody");
+print("After off, length still 2: " + (results.length == 2));
+
+let log = [];
+let idA = eventOn("data", fn(x) { log.push("A:" + x); });
+let idB = eventOn("data", fn(x) { log.push("B:" + x); });
+eventEmit("data", "42");
+print("Both fired: " + (log.length == 2));
+
+eventOffAll("data");
+eventEmit("data", "ignored");
+print("After offAll, still 2: " + (log.length == 2));
+
+let idC = eventOn("count_test", fn() {});
+let idD = eventOn("count_test", fn() {});
+print("Count 2: " + (eventListenerCount("count_test") == 2));
+eventOff(idC);
+print("Count 1: " + (eventListenerCount("count_test") == 1));
+
+let names = eventNames();
+print("Has events: " + (names.length > 0));
+
+eventClear();
+print("After clear, count=0: " + (eventListenerCount("count_test") == 0));
+
+print("=== Events Tests PASSED ===");

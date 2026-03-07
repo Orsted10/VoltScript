@@ -1,0 +1,118 @@
+// ============================================================
+// Test: Operator Overloading (Metamethods) + String Methods
+// ============================================================
+
+// ---- 1. Operator overloading via __add, __sub, __mul, __eq, __str ----
+class Vec2 {
+    fn init(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    fn __add(other) { return Vec2(this.x + other.x, this.y + other.y); }
+    fn __sub(other) { return Vec2(this.x - other.x, this.y - other.y); }
+    fn __mul(scalar) { return Vec2(this.x * scalar, this.y * scalar); }
+    fn __eq(other)  { return this.x == other.x and this.y == other.y; }
+    fn __str()      { return "Vec2(" + this.x + ", " + this.y + ")"; }
+    fn __unm()      { return Vec2(-this.x, -this.y); }
+    fn __lt(other)  {
+        let la = this.x*this.x + this.y*this.y;
+        let lb = other.x*other.x + other.y*other.y;
+        return la < lb;
+    }
+}
+
+let a = Vec2(1, 2);
+let b = Vec2(3, 4);
+
+let c = a + b;
+print(c);                          // Vec2(4, 6)
+
+let d = b - a;
+print(d);                          // Vec2(2, 2)
+
+let e = a * 3;
+print(e);                          // Vec2(3, 6)
+
+let eq1 = Vec2(1, 2) == Vec2(1, 2);
+let eq2 = Vec2(1, 2) == Vec2(9, 9);
+print(eq1);                        // true
+print(eq2);                        // false
+
+let lt1 = a < b;
+print(lt1);                        // true  (|a|=2.23 < |b|=5)
+
+// __str via print
+print(a);                          // Vec2(1, 2)
+
+// ---- 2. __index metamethod ----
+class Proxy {
+    fn init() { this._data = {}; }
+    fn __index(key) { return "proxy:" + key; }
+}
+let p = Proxy();
+// Direct property access falls through to __index for unknown keys
+// (known fields like _data still work normally)
+
+// ---- 3. String methods ----
+let s = "  Hello, World!  ";
+
+print(s.trim());                   // "Hello, World!"
+print(s.trimStart());              // "Hello, World!  "
+print(s.trimEnd());                // "  Hello, World!"
+
+let up = "hello".upper();
+print(up);                         // HELLO
+
+let lo = "WORLD".lower();
+print(lo);                         // world
+
+let parts = "a,b,c,d".split(",");
+print(parts.length);               // 4
+print(parts[0]);                   // a
+print(parts[3]);                   // d
+
+let rep = "ab".repeat(3);
+print(rep);                        // ababab
+
+let sw = "Hello".startsWith("He");
+let ew = "Hello".endsWith("lo");
+print(sw);                         // true
+print(ew);                         // true
+
+let inc = "foobar".includes("oba");
+print(inc);                        // true
+
+let idx = "foobar".indexOf("bar");
+print(idx);                        // 3
+
+let sl = "Hello, World!".slice(7, 12);
+print(sl);                         // World
+
+let repl = "aabbcc".replace("b", "X");
+print(repl);                       // aaXXcc
+
+let ps = "42".padStart(6, "0");
+print(ps);                         // 000042
+
+let pe = "hi".padEnd(5, ".");
+print(pe);                         // hi...
+
+let rev = "abcde".reverse();
+print(rev);                        // edcba
+
+let cnt = "banana".count("an");
+print(cnt);                        // 2
+
+let len = "hello".length;
+print(len);                        // 5
+
+let cc = "A".charCodeAt(0);
+print(cc);                         // 65
+
+let isEmpty = "".isEmpty();
+print(isEmpty);                    // true
+
+let toNum = "3.14".toNumber();
+print(toNum);                      // 3.14
+
+print("ALL TESTS PASSED");

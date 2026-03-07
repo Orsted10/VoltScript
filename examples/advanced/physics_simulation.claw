@@ -1,0 +1,354 @@
+// ⚛️ Physics Simulation - Real World Physics Made Easy!
+
+print "🌌 Welcome to ClawScript Physics Laboratory! 🌌";
+
+// 🎯 Particle System
+class Particle {
+    fn init(x, y, mass = 1.0) {
+        this.position = {x: x, y: y};
+        this.velocity = {x: 0, y: 0};
+        this.acceleration = {x: 0, y: 0};
+        this.mass = mass;
+        this.radius = Math.sqrt(mass) * 5;
+        this.color = this.generateColor();
+        this.trail = [];
+        this.maxTrailLength = 20;
+    }
+    
+    fn generateColor() {
+        let colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD"];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+    
+    fn applyForce(force) {
+        // F = ma, so a = F/m
+        this.acceleration.x = this.acceleration.x + force.x / this.mass;
+        this.acceleration.y = this.acceleration.y + force.y / this.mass;
+    }
+    
+    fn update(dt) {
+        // Update velocity
+        this.velocity.x = this.velocity.x + this.acceleration.x * dt;
+        this.velocity.y = this.velocity.y + this.acceleration.y * dt;
+        
+        // Update position
+        this.position.x = this.position.x + this.velocity.x * dt;
+        this.position.y = this.position.y + this.velocity.y * dt;
+        
+        // Add to trail
+        this.trail.push({x: this.position.x, y: this.position.y});
+        if (this.trail.length > this.maxTrailLength) {
+            this.trail.shift();
+        }
+        
+        // Reset acceleration
+        this.acceleration.x = 0;
+        this.acceleration.y = 0;
+    }
+    
+    fn checkBoundaries(width, height) {
+        if (this.position.x - this.radius < 0) {
+            this.position.x = this.radius;
+            this.velocity.x = -this.velocity.x * 0.8; // Energy loss
+        }
+        if (this.position.x + this.radius > width) {
+            this.position.x = width - this.radius;
+            this.velocity.x = -this.velocity.x * 0.8;
+        }
+        if (this.position.y - this.radius < 0) {
+            this.position.y = this.radius;
+            this.velocity.y = -this.velocity.y * 0.8;
+        }
+        if (this.position.y + this.radius > height) {
+            this.position.y = height - this.radius;
+            this.velocity.y = -this.velocity.y * 0.8;
+        }
+    }
+    
+    fn getKineticEnergy() {
+        let speed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+        return 0.5 * this.mass * speed * speed;
+    }
+    
+    fn getMomentum() {
+        return {
+            x: this.mass * this.velocity.x,
+            y: this.mass * this.velocity.y
+        };
+    }
+}
+
+// 🌍 Physics World
+class PhysicsWorld {
+    fn init(width, height, gravity = 9.81) {
+        this.width = width;
+        this.height = height;
+        this.gravity = gravity;
+        this.particles = [];
+        this.forces = [];
+        this.time = 0;
+        this.dt = 0.016; // 60 FPS
+        this.totalEnergy = 0;
+    }
+    
+    fn addParticle(particle) {
+        this.particles.push(particle);
+        print "🎯 Added particle at (" + particle.position.x.toFixed(1) + ", " + particle.position.y.toFixed(1) + ")";
+    }
+    
+    fn addForce(force) {
+        this.forces.push(force);
+    }
+    
+    fn applyGravity() {
+        let gravityForce = {x: 0, y: this.gravity * 10}; // Scale for visualization
+        for (let particle of this.particles) {
+            particle.applyForce(gravityForce);
+        }
+    }
+    
+    fn applyWind() {
+        let windForce = {x: Math.sin(this.time * 0.5) * 5, y: 0};
+        for (let particle of this.particles) {
+            particle.applyForce(windForce);
+        }
+    }
+    
+    fn checkCollisions() {
+        for (let i = 0; i < this.particles.length; i = i + 1) {
+            for (let j = i + 1; j < this.particles.length; j = j + 1) {
+                let p1 = this.particles[i];
+                let p2 = this.particles[j];
+                
+                let dx = p2.position.x - p1.position.x;
+                let dy = p2.position.y - p1.position.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                let minDistance = p1.radius + p2.radius;
+                
+                if (distance < minDistance) {
+                    this.resolveCollision(p1, p2, dx, dy, distance);
+                }
+            }
+        }
+    }
+    
+    fn resolveCollision(p1, p2, dx, dy, distance) {
+        // Normalize collision vector
+        let nx = dx / distance;
+        let ny = dy / distance;
+        
+        // Relative velocity
+        let dvx = p2.velocity.x - p1.velocity.x;
+        let dvy = p2.velocity.y - p1.velocity.y;
+        
+        // Relative velocity in collision normal direction
+        let dvn = dvx * nx + dvy * ny;
+        
+        // Do not resolve if velocities are separating
+        if (dvn > 0) return;
+        
+        // Collision impulse
+        let restitution = 0.8; // Elasticity
+        let impulse = 2 * dvn / (1/p1.mass + 1/p2.mass);
+        
+        // Update velocities
+        p1.velocity.x = p1.velocity.x + impulse * nx / p1.mass * restitution;
+        p1.velocity.y = p1.velocity.y + impulse * ny / p1.mass * restitution;
+        p2.velocity.x = p2.velocity.x - impulse * nx / p2.mass * restitution;
+        p2.velocity.y = p2.velocity.y - impulse * ny / p2.mass * restitution;
+        
+        // Separate particles
+        let overlap = (p1.radius + p2.radius) - distance;
+        let separationX = nx * overlap / 2;
+        let separationY = ny * overlap / 2;
+        
+        p1.position.x = p1.position.x - separationX;
+        p1.position.y = p1.position.y - separationY;
+        p2.position.x = p2.position.x + separationX;
+        p2.position.y = p2.position.y + separationY;
+    }
+    
+    fn update() {
+        // Apply forces
+        this.applyGravity();
+        this.applyWind();
+        
+        // Update particles
+        for (let particle of this.particles) {
+            particle.update(this.dt);
+            particle.checkBoundaries(this.width, this.height);
+        }
+        
+        // Check collisions
+        this.checkCollisions();
+        
+        // Calculate total energy
+        this.calculateTotalEnergy();
+        
+        this.time = this.time + this.dt;
+    }
+    
+    fn calculateTotalEnergy() {
+        this.totalEnergy = 0;
+        
+        for (let particle of this.particles) {
+            // Kinetic energy
+            this.totalEnergy = this.totalEnergy + particle.getKineticEnergy();
+            
+            // Potential energy (gravitational)
+            this.totalEnergy = this.totalEnergy + particle.mass * this.gravity * (this.height - particle.position.y);
+        }
+    }
+    
+    fn getStatus() {
+        return {
+            particles: this.particles.length,
+            time: this.time.toFixed(2),
+            totalEnergy: this.totalEnergy.toFixed(2),
+            averageSpeed: this.getAverageSpeed().toFixed(2)
+        };
+    }
+    
+    fn getAverageSpeed() {
+        if (this.particles.length == 0) return 0;
+        
+        let totalSpeed = 0;
+        for (let particle of this.particles) {
+            let speed = Math.sqrt(particle.velocity.x * particle.velocity.x + particle.velocity.y * particle.velocity.y);
+            totalSpeed = totalSpeed + speed;
+        }
+        
+        return totalSpeed / this.particles.length;
+    }
+    
+    fn createExplosion(x, y, force) {
+        print "💥 Creating explosion at (" + x + ", " + y + ") with force", force;
+        
+        for (let particle of this.particles) {
+            let dx = particle.position.x - x;
+            let dy = particle.position.y - y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 0) {
+                let explosionForce = force / (distance * distance); // Inverse square law
+                let fx = (dx / distance) * explosionForce;
+                let fy = (dy / distance) * explosionForce;
+                particle.applyForce({x: fx, y: fy});
+            }
+        }
+    }
+    
+    fn createVortex(centerX, centerY, strength) {
+        print "🌪️ Creating vortex at (" + centerX + ", " + centerY + ") with strength", strength;
+        
+        for (let particle of this.particles) {
+            let dx = particle.position.x - centerX;
+            let dy = particle.position.y - centerY;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 0) {
+                // Tangential force for rotation
+                let fx = -dy / distance * strength / distance;
+                let fy = dx / distance * strength / distance;
+                particle.applyForce({x: fx, y: fy});
+                
+                // Centripetal force
+                let pullForce = strength * 0.1;
+                let pullX = -dx / distance * pullForce;
+                let pullY = -dy / distance * pullForce;
+                particle.applyForce({x: pullX, y: pullY});
+            }
+        }
+    }
+}
+
+// 🎮 Physics Simulation Demo
+print "\n🎮 Starting Physics Simulation Demo:";
+
+let world = PhysicsWorld(800, 600, 9.81);
+
+// Add particles with different properties
+world.addParticle(Particle(100, 100, 2.0));
+world.addParticle(Particle(200, 150, 1.5));
+world.addParticle(Particle(300, 100, 3.0));
+world.addParticle(Particle(400, 200, 1.0));
+world.addParticle(Particle(500, 150, 2.5));
+world.addParticle(Particle(600, 100, 1.8));
+
+// Simulate for a few seconds
+print "\n⏱️ Running simulation...";
+for (let frame = 0; frame < 300; frame = frame + 1) { // 5 seconds at 60 FPS
+    world.update();
+    
+    // Add some interesting events
+    if (frame == 60) {
+        world.createExplosion(400, 300, 500);
+    }
+    
+    if (frame == 180) {
+        world.createVortex(400, 300, 100);
+    }
+    
+    // Print status every 60 frames (1 second)
+    if (frame % 60 == 0) {
+        let status = world.getStatus();
+        print "📊 Second", (frame / 60) + ":";
+        print "  Particles:", status.particles;
+        print "  Total Energy:", status.totalEnergy;
+        print "  Average Speed:", status.averageSpeed;
+    }
+}
+
+print "\n🎯 Final Statistics:";
+let finalStatus = world.getStatus();
+print "⏱️ Simulation Time:", finalStatus.time + "s";
+print "🎯 Particles:", finalStatus.particles;
+print "⚡ Total Energy:", finalStatus.totalEnergy;
+print "🚀 Average Speed:", finalStatus.averageSpeed;
+
+// 🧪 Advanced Physics Calculations
+print "\n🧪 Advanced Physics Demonstrations:";
+
+// Calculate momentum conservation
+let totalMomentum = {x: 0, y: 0};
+for (let particle of world.particles) {
+    let momentum = particle.getMomentum();
+    totalMomentum.x = totalMomentum.x + momentum.x;
+    totalMomentum.y = totalMomentum.y + momentum.y;
+}
+
+print "📊 Total System Momentum:";
+print "  X:", totalMomentum.x.toFixed(2);
+print "  Y:", totalMomentum.y.toFixed(2);
+print "  Magnitude:", Math.sqrt(totalMomentum.x * totalMomentum.x + totalMomentum.y * totalMomentum.y).toFixed(2);
+
+// Calculate center of mass
+let totalMass = 0;
+let centerOfMass = {x: 0, y: 0};
+
+for (let particle of world.particles) {
+    totalMass = totalMass + particle.mass;
+    centerOfMass.x = centerOfMass.x + particle.position.x * particle.mass;
+    centerOfMass.y = centerOfMass.y + particle.position.y * particle.mass;
+}
+
+centerOfMass.x = centerOfMass.x / totalMass;
+centerOfMass.y = centerOfMass.y / totalMass;
+
+print "🎯 Center of Mass:";
+print "  X:", centerOfMass.x.toFixed(2);
+print "  Y:", centerOfMass.y.toFixed(2);
+
+// Calculate moment of inertia
+let momentOfInertia = 0;
+for (let particle of world.particles) {
+    let dx = particle.position.x - centerOfMass.x;
+    let dy = particle.position.y - centerOfMass.y;
+    let distanceSquared = dx * dx + dy * dy;
+    momentOfInertia = momentOfInertia + particle.mass * distanceSquared;
+}
+
+print "🔄 Moment of Inertia:", momentOfInertia.toFixed(2);
+
+print "\n🚀 Physics Simulation Complete!";
+print "⚛️ ClawScript makes complex physics intuitive and fun!";

@@ -1,572 +1,629 @@
 # ClawScript Migration Guide
 
-## v2.0.0 Migration
+## Migrating to ClawScript v3.0.0
 
-### Overview
-ClawScript v2.0.0 refines security policy handling and logging:
-- `.voltsec` controls output gating and log configuration
-- `logWrite(message[, metadata])` supports optional metadata
-- HMAC-SHA256 is enabled when `log.hmac` is set; Windows uses BCrypt keyed mode
-- Tests expanded (703 passing), packaging configured via CPack ZIP
+This guide helps you migrate your code from previous versions of ClawScript to v3.0.0.
 
-### New Features to Adopt
+## Table of Contents
 
-#### 1. Configure Logging via Policy
-```claw
-// Set log path, HMAC key, and allow output
-writeFile(".voltsec", "log.path=app.log\nlog.hmac=abc123\nlog.meta.required=true\noutput=allow");
-policyReload();
-```
+1. [Overview of Changes](#overview-of-changes)
+2. [Breaking Changes](#breaking-changes)
+3. [New Features](#new-features)
+4. [Deprecated Features](#deprecated-features)
+5. [Step-by-Step Migration](#step-by-step-migration)
+6. [Common Migration Issues](#common-migration-issues)
+7. [Code Examples](#code-examples)
+8. [Testing Your Migration](#testing-your-migration)
 
-#### 2. Write Logs (Optional Metadata)
-```claw
-// Required metadata example
-logWrite("user-login", {"user":"alice","ok":true,"id":42});
+---
 
-// Optional metadata (when log.meta.required=false)
-writeFile(".voltsec", "log.path=events.log\nlog.hmac=abc123\nlog.meta.required=false\noutput=allow");
-policyReload();
-logWrite("heartbeat");
-```
+## Overview of Changes
 
-### Breaking Changes
-- None. `logWrite` now accepts optional metadata; if policy requires metadata, calls without it raise a runtime error.
+ClawScript v3.0.0 introduces significant improvements while maintaining backward compatibility where possible. Key changes include:
 
-### Migration Notes
-- Existing scripts using `print` may need `output=allow` in `.voltsec` if output gating is enabled.
-- To verify logs, use `print readFile("<path>")` in a controlled environment.
-- Windows HMAC requires no action; the runtime configures BCrypt correctly.
+- **Professional Documentation**: Complete overhaul of all documentation
+- **Enhanced API**: Improved function naming and consistency
+- **Better Error Handling**: More descriptive error messages
+- **Performance Improvements**: Optimized core runtime
+- **New Standard Library Functions**: Expanded built-in functionality
+- **Improved Type System**: Better type checking and conversion
 
-## v0.9.6 Migration
+---
 
-### Overview
-ClawScript v0.9.6 introduces built-in profiling and observability:
-- Sampling CPU profiler with configurable frequency
-- Heap allocation growth attribution for arrays and hash maps
-- Flame graph HTML output, folded stacks, and Speedscope JSON
-- Pause/resume controls and environment toggles
+## Breaking Changes
 
-### New Features to Adopt
+### 1. File Extension Changes
 
-#### 1. Enable Profiling via CLI
-```bash
-build\bin\Release\claw.exe --profile=profile.html script.claw
-build\bin\Release\claw.exe --profile --profile-hz=200 script.claw
-```
-
-#### 2. Control Profiling via Environment
-```
-CLAW_PROFILE=1
-CLAW_PROFILE_HZ=100
-CLAW_PROFILE_OUT=claw_profile.html
-```
-
-#### 3. Pause/Resume from Scripts
-```claw
-profilePause();
-/* do some setup work */
-profileResume();
-/* hot loop */
-```
-
-### Outputs
-- HTML flame graph (profile.html or claw_profile.html)
-- Folded stacks (.cpu.folded and .heap.folded)
-- Speedscope JSON (.speedscope.json)
-
-### Breaking Changes
-None in v0.9.6.
-
-## v0.9.5 Migration
-
-### Overview
-ClawScript v0.9.5 focuses on production runtime stability and performance. It adds ephemeral arenas for non-escaping aggregations, a benchmark mode to minimize timing jitter, SIMD-native helpers, and improves AoT vectorization while remaining backward compatible with v0.9.0 scripts.
-
-### New Features to Adopt
-
-#### 1. Optional LLVM AoT Builds
-Enable AoT builds to emit native object files and link binaries directly.
-
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DCLAW_ENABLE_AOT=ON
-cmake --build build --config Release
-./build/bin/Release/claw --aot-output=main.o script.claw
-```
-
-#### 2. Performance Math Helpers
-Use native helpers for benchmark-focused workloads.
+**Old**: `.volt` files  
+**New**: `.claw` files
 
 ```claw
-print fibFast(35);
-print arraySumFast(1000000);
+// Old filename: program.volt
+// New filename: program.claw
 ```
 
-### Automatic Performance Gains
-Your existing code benefits from:
-- **Inline caches**: Monomorphic caches for globals, properties, and calls.
-- **Call-site caching**: Reduced overhead in hot call paths.
+### 2. Removed Emojis from CLI Output
 
-### Breaking Changes
-None in v0.9.5.
+**Old**: `⚡ ClawScript v2.0.0`  
+**New**: `ClawScript v3.0.0`
 
-### Migration Notes
-- AoT builds require LLVM 16+ and an available system linker (lld-link on Windows, ld on Linux/macOS).
-- If AoT is not enabled, the VM path remains the default behavior.
+This affects REPL output and help messages.
 
-## v0.9.0 Migration
+### 3. Function Name Changes
 
-### Overview
+Some functions have been renamed for consistency:
 
-### Overview
-ClawScript v0.9.0 focuses on runtime performance and maintainability. It extends the v0.8.6 class and VM work with NaN-boxed values, optimized bytecode execution, and improved profiling, while remaining backward compatible with v0.8.0+.
+| Old Name | New Name | Status |
+|----------|----------|---------|
+| `len()` | `length` property | Changed |
+| `size()` | `size` property | Changed |
+| `substring()` | `substring()` | Unchanged |
+| `indexOf()` | `indexOf()` | Unchanged |
 
-### New Features to Adopt
+### 4. Array Method Changes
 
-#### 1. Class-Based Object-Oriented Programming
-You can now transition from hash-map based objects to proper classes.
+Array methods are now called on the array instance:
 
-**Old approach (Hash Map):**
 ```claw
-fn makePerson(name, age) {
-    let self = {
-        "name": name,
-        "age": age
-    };
-    
-    fn speak() {
-        print self["name"] + " says hello";
+// Old way (if applicable)
+let length = len(array);
+
+// New way
+let length = array.length;
+```
+
+---
+
+## New Features
+
+### 1. Enhanced Class System
+
+```claw
+// New inheritance support
+class Animal {
+    init(name) {
+        this.name = name;
     }
     
-    self["speak"] = speak;
-    return self;
+    speak() {
+        return this.name + " makes a sound";
+    }
 }
 
-let alice = makePerson("Alice", 30);
-alice["speak"]();
+class Dog extends Animal {
+    speak() {
+        return this.name + " barks!";
+    }
+}
 ```
 
-**New approach (v0.8.6 Classes):**
+### 2. Improved String Methods
+
 ```claw
+let text = "Hello, World!";
+
+// New methods
+print text.startsWith("Hello");   // true
+print text.endsWith("World!");    // true
+print text.replace("World", "ClawScript"); // "Hello, ClawScript!"
+```
+
+### 3. Better Object Methods
+
+```claw
+let obj = {"key1": "value1", "key2": "value2"};
+
+// New utility functions
+let keys = keys(obj);        // ["key1", "key2"]
+let values = values(obj);    // ["value1", "value2"]
+let hasKey = has(obj, "key1"); // true
+```
+
+### 4. Enhanced Error Messages
+
+Error messages are now more descriptive:
+
+```claw
+// Old: Generic error
+// New: "Division by zero prevented"
+// New: "Array index out of bounds (0-2)"
+// New: "Both operands must be numbers"
+```
+
+---
+
+## Deprecated Features
+
+### 1. Old Array Functions
+
+The following functions are deprecated in favor of property access:
+
+- `len(array)` → use `array.length`
+- `size(object)` → use `object.size`
+
+### 2. Legacy Comment Styles
+
+While still supported, the following comment style is discouraged:
+
+```claw
+// Still works but not recommended:
+/******/ Legacy comment style /******/
+
+// Recommended:
+// Standard single-line comment
+/* Standard multi-line comment */
+```
+
+---
+
+## Step-by-Step Migration
+
+### Step 1: Backup Your Code
+
+Before starting the migration, create a backup of your existing code:
+
+```bash
+cp -r /path/to/your/project /path/to/your/project.backup
+```
+
+### Step 2: Update File Extensions
+
+Rename all `.volt` files to `.claw`:
+
+```bash
+# On Unix systems
+find . -name "*.volt" -exec rename 's/\.volt$/.claw/' {} \;
+
+# Manually on any system
+mv program.volt program.claw
+mv script.volt script.claw
+```
+
+### Step 3: Update Function Calls
+
+Replace deprecated function calls:
+
+```claw
+// Find and replace in your code:
+// len(array) → array.length
+// size(object) → object.size
+```
+
+### Step 4: Update Import Statements
+
+If you have any import statements, update them:
+
+```claw
+// Old (if applicable)
+import "module.volt"
+
+// New
+import "module.claw"
+```
+
+### Step 5: Test Basic Functionality
+
+Create a simple test to ensure basic functionality works:
+
+```claw
+// test_migration.claw
+print "Testing migration...";
+
+// Test basic operations
+let arr = [1, 2, 3];
+print "Array length: " + arr.length;
+
+let obj = {"key": "value"};
+print "Object size: " + obj.size;
+
+print "Migration test completed successfully!";
+```
+
+### Step 6: Run Your Tests
+
+Execute your existing test suite:
+
+```bash
+./clawscript test_migration.claw
+./clawscript --run your_existing_tests.claw
+```
+
+---
+
+## Common Migration Issues
+
+### Issue 1: Array Length Access
+
+**Problem**: Code using `len(array)` fails
+
+**Solution**: Replace with property access:
+
+```claw
+// Old
+let length = len(myArray);
+
+// New
+let length = myArray.length;
+```
+
+### Issue 2: Object Size Access
+
+**Problem**: Code using `size(object)` fails
+
+**Solution**: Replace with property access:
+
+```claw
+// Old
+let size = size(myObject);
+
+// New
+let size = myObject.size;
+```
+
+### Issue 3: File Extension References
+
+**Problem**: Code references old `.volt` files
+
+**Solution**: Update all file references:
+
+```claw
+// Old
+let content = readFile("config.volt");
+
+// New
+let content = readFile("config.claw");
+```
+
+### Issue 4: CLI Script Changes
+
+**Problem**: Build scripts or automation using old CLI output
+
+**Solution**: Update scripts to handle new output format:
+
+```bash
+# Old grep pattern
+clawscript --version | grep "⚡"
+
+# New grep pattern
+clawscript --version | grep "ClawScript"
+```
+
+---
+
+## Code Examples
+
+### Before and After Migration
+
+#### Example 1: Basic Array Operations
+
+```claw
+// Before (v2.0.0)
+let numbers = [1, 2, 3, 4, 5];
+let arrayLength = len(numbers);
+print "Array has " + arrayLength + " elements";
+
+for (let i = 0; i < len(numbers); i = i + 1) {
+    print numbers[i];
+}
+
+// After (v3.0.0)
+let numbers = [1, 2, 3, 4, 5];
+let arrayLength = numbers.length;
+print "Array has " + arrayLength + " elements";
+
+for (let i = 0; i < numbers.length; i = i + 1) {
+    print numbers[i];
+}
+```
+
+#### Example 2: Object Operations
+
+```claw
+// Before (v2.0.0)
+let person = {"name": "Alice", "age": 25};
+let objectSize = size(person);
+print "Object has " + objectSize + " properties";
+
+// After (v3.0.0)
+let person = {"name": "Alice", "age": 25};
+let objectSize = person.size;
+print "Object has " + objectSize + " properties";
+
+// Additional new functionality
+let keys = keys(person);
+let values = values(person);
+print "Keys: " + join(keys, ", ");
+print "Values: " + join(values, ", ");
+```
+
+#### Example 3: String Operations
+
+```claw
+// Before (v2.0.0)
+let text = "Hello, World!";
+let sub = substring(text, 0, 5);
+print "Substring: " + sub;
+
+// After (v3.0.0) - same functionality plus new methods
+let text = "Hello, World!";
+let sub = substring(text, 0, 5);
+print "Substring: " + sub;
+
+// New string methods
+print "Starts with 'Hello': " + text.startsWith("Hello");
+print "Ends with 'World!': " + text.endsWith("World!");
+print "Replaced: " + text.replace("World", "ClawScript");
+```
+
+#### Example 4: Class Usage
+
+```claw
+// Before (v2.0.0) - basic classes
 class Person {
     init(name, age) {
         this.name = name;
         this.age = age;
     }
     
-    speak() {
-        print this.name + " says hello";
+    introduce() {
+        return "Hi, I'm " + this.name;
     }
 }
 
-let alice = Person("Alice", 30);
-alice.speak();
-```
-
-#### 2. Class Inheritance
-Leverage code reuse through class inheritance.
-
-```claw
-class Employee extends Person {
-    init(name, age, id) {
-        super.init(name, age);
-        this.id = id;
+// After (v3.0.0) - enhanced with inheritance
+class Person {
+    init(name, age) {
+        this.name = name;
+        this.age = age;
     }
     
-    work() {
-        print this.name + " is working";
+    introduce() {
+        return "Hi, I'm " + this.name + " and I'm " + this.age;
     }
 }
-```
 
-### Performance Benefits (Automatic)
-Your existing code will automatically benefit from:
-- **NaN-Boxed Value Representation**: Compact tagged values for numbers, booleans, nil, strings, and objects.
-- **Stack-based Bytecode VM**: Further tuned for tight loops and arithmetic-heavy workloads.
-- **Thread-safe String Interning**: Drastically reduced memory usage for duplicate strings and O(1) string comparisons.
-- **Cached Environment Lookups with Profiling**: Faster variable access in nested functions and recursive calls with hit counters for hot paths.
-- **Optimized Math**: Faster `pow()` calls for integer exponents and refined math natives.
-- **Improved JSON**: More robust and faster `jsonEncode`/`jsonDecode`.
+class Student extends Person {
+    init(name, age, grade) {
+        super.init(name, age);
+        this.grade = grade;
+    }
+    
+    introduce() {
+        return super.introduce() + ". I'm in grade " + this.grade;
+    }
+}
+
+let student = Student("Alice", 15, 10);
+print student.introduce();
+```
 
 ---
 
-## v0.8.0 Migration (Historical)
+## Testing Your Migration
 
-### 1. Array Method Chaining
+### Migration Test Suite
 
-**Old approach:**
+Create a comprehensive test to verify your migration:
+
 ```claw
-// Traditional approach with separate operations
-let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+// migration_test.claw
+print "Running migration tests...";
 
-// Step 1: Double each number
-let doubled = [];
-for (let i = 0; i < numbers.length; i++) {
-    doubled.push(numbers[i] * 2);
-}
+let testResults = [];
+let totalTests = 0;
+let passedTests = 0;
 
-// Step 2: Filter multiples of 4
-let filtered = [];
-for (let i = 0; i < doubled.length; i++) {
-    if (doubled[i] % 4 == 0) {
-        filtered.push(doubled[i]);
+fn runTest(testName, testFunction) {
+    totalTests = totalTests + 1;
+    try {
+        let result = testFunction();
+        if (result) {
+            passedTests = passedTests + 1;
+            print "✓ " + testName;
+        } else {
+            print "✗ " + testName + " (test failed)";
+        }
+    } catch (error) {
+        print "✗ " + testName + " (error: " + error + ")";
     }
 }
 
-// Step 3: Sum them up
-let sum = 0;
-for (let i = 0; i < filtered.length; i++) {
-    sum += filtered[i];
-}
+// Test 1: Array operations
+runTest("Array length property", fn() {
+    let arr = [1, 2, 3, 4, 5];
+    return arr.length === 5;
+});
 
-print sum;  // 30
-```
+// Test 2: Object operations
+runTest("Object size property", fn() {
+    let obj = {"a": 1, "b": 2, "c": 3};
+    return obj.size === 3;
+});
 
-**New approach (v0.8.0):**
-```claw
-// Modern functional approach with method chaining
-let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-let result = numbers
-    .map(fun(x) { return x * 2; })
-    .filter(fun(x) { return x % 4 == 0; })
-    .reduce(fun(acc, x) { return acc + x; }, 0);
+// Test 3: String operations
+runTest("String new methods", fn() {
+    let text = "Hello, World!";
+    return text.startsWith("Hello") && 
+           text.endsWith("World!") &&
+           text.replace("World", "ClawScript") === "Hello, ClawScript!";
+});
 
-print result;  // 30
-```
+// Test 4: Object utility functions
+runTest("Object utility functions", fn() {
+    let obj = {"name": "Alice", "age": 25};
+    let keys = keys(obj);
+    let values = values(obj);
+    return keys.length === 2 && 
+           values.length === 2 &&
+           has(obj, "name");
+});
 
-### 2. Anonymous Functions
-
-**Old approach:**
-```claw
-// Named function for callbacks
-fn double(x) {
-    return x * 2;
-}
-
-let numbers = [1, 2, 3, 4, 5];
-let doubled = map(numbers, double);
-```
-
-**New approach (v0.8.0):**
-```claw
-// Anonymous function for cleaner code
-let numbers = [1, 2, 3, 4, 5];
-let doubled = map(numbers, fun(x) { return x * 2; });
-```
-
-### 3. Built-in Functional Utilities
-
-**Old approach:**
-```claw
-// Manual implementation
-fn filterEven(arr) {
-    let result = [];
-    for (let i = 0; i < arr.length; i++) {
-        if (arr[i] % 2 == 0) {
-            result.push(arr[i]);
+// Test 5: Class inheritance
+runTest("Class inheritance", fn() {
+    class Animal {
+        init(name) {
+            this.name = name;
+        }
+        speak() {
+            return this.name + " makes a sound";
         }
     }
-    return result;
-}
-
-let numbers = [1, 2, 3, 4, 5];
-let evens = filterEven(numbers);
-```
-
-**New approach (v0.8.0):**
-```claw
-// Using built-in filter function
-let numbers = [1, 2, 3, 4, 5];
-let evens = filter(numbers, fun(x) { return x % 2 == 0; });
-```
-
-## Performance Optimization Tips
-
-### 1. Use Method Chaining for Data Processing
-```claw
-// Instead of multiple loops, chain operations
-// This is more readable and often more efficient
-let processed = data
-    .map(transform)
-    .filter(validate)
-    .reduce(combine, initialValue);
-```
-
-### 2. Leverage Anonymous Functions
-```claw
-// For simple operations, anonymous functions are cleaner
-let squares = map(numbers, fun(x) { return x * x; });
-
-// For complex operations, named functions are still better
-fn complexTransformation(item) {
-    // Complex logic here
-    return transformedItem;
-}
-
-let results = map(data, complexTransformation);
-```
-
-### 3. Use Built-in Functions When Available
-```claw
-// Prefer built-in functions over manual implementations
-let reversed = reverse(array);           // ✅ Preferred
-// vs
-let reversed = [];                       // ❌ Manual approach
-for (let i = array.length - 1; i >= 0; i--) {
-    reversed.push(array[i]);
-}
-```
-
-## Code Modernization Examples
-
-### Example 1: Data Processing Pipeline
-
-**Before (v0.7.9):**
-```claw
-// Process student grades
-let students = [
-    {"name": "Alice", "grade": 85},
-    {"name": "Bob", "grade": 92},
-    {"name": "Charlie", "grade": 78},
-    {"name": "Diana", "grade": 96}
-];
-
-// Find honor students (grade >= 90)
-let honorStudents = [];
-for (let i = 0; i < students.length; i++) {
-    if (students[i].grade >= 90) {
-        honorStudents.push(students[i].name);
+    
+    class Dog extends Animal {
+        speak() {
+            return this.name + " barks!";
+        }
     }
-}
+    
+    let dog = Dog("Buddy");
+    return dog.speak() === "Buddy barks!";
+});
 
-// Calculate average grade
-let total = 0;
-for (let i = 0; i < students.length; i++) {
-    total += students[i].grade;
-}
-let average = total / students.length;
+// Test 6: File operations
+runTest("File operations", fn() {
+    let testContent = "Hello, Migration Test!";
+    writeFile("test_migration.txt", testContent);
+    let readContent = readFile("test_migration.txt");
+    deleteFile("test_migration.txt");
+    return readContent === testContent;
+});
 
-print "Honor students: " + str(honorStudents);
-print "Class average: " + str(average);
+// Results
+print "\nMigration Test Results:";
+print "Tests run: " + totalTests;
+print "Tests passed: " + passedTests;
+print "Success rate: " + ((passedTests / totalTests) * 100) + "%";
+
+if (passedTests === totalTests) {
+    print "✓ All migration tests passed!";
+} else {
+    print "✗ Some tests failed. Review migration.";
+}
 ```
 
-**After (v0.8.0):**
+### Performance Comparison Test
+
 ```claw
-// Modern approach with functional methods
-let students = [
-    {"name": "Alice", "grade": 85},
-    {"name": "Bob", "grade": 92},
-    {"name": "Charlie", "grade": 78},
-    {"name": "Diana", "grade": 96}
-];
+// performance_test.claw
+print "Running performance comparison...";
 
-// Find honor students using filter
-let honorStudents = students
-    .filter(fun(student) { return student.grade >= 90; })
-    .map(fun(student) { return student.name; });
+fn measureTime(description, testFunction) {
+    let start = clock();
+    testFunction();
+    let end = clock();
+    let duration = end - start;
+    print description + ": " + duration + " ms";
+    return duration;
+}
 
-// Calculate average using reduce
-let total = students.reduce(fun(sum, student) { 
-    return sum + student.grade; 
-}, 0);
-let average = total / students.length;
-
-print "Honor students: " + str(honorStudents);
-print "Class average: " + str(average);
-```
-
-### Example 2: Array Transformations
-
-**Before (v0.7.9):**
-```claw
-// Transform and filter data manually
-let rawData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-// Square even numbers
-let squaredEvens = [];
-for (let i = 0; i < rawData.length; i++) {
-    if (rawData[i] % 2 == 0) {
-        squaredEvens.push(rawData[i] * rawData[i]);
+// Test array operations
+measureTime("Array creation", fn() {
+    let arr = [];
+    for (let i = 0; i < 10000; i = i + 1) {
+        arr.push(i);
     }
-}
-
-// Sum the results
-let sum = 0;
-for (let i = 0; i < squaredEvens.length; i++) {
-    sum += squaredEvens[i];
-}
-
-print sum;  // 220
-```
-
-**After (v0.8.0):**
-```claw
-// Clean functional approach
-let rawData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-let result = rawData
-    .filter(fun(x) { return x % 2 == 0; })
-    .map(fun(x) { return x * x; })
-    .reduce(fun(acc, x) { return acc + x; }, 0);
-
-print result;  // 220
-```
-
-## Best Practices for v0.8.0
-
-### 1. Function Expression Guidelines
-```claw
-// ✅ Good: Simple anonymous functions
-let doubled = map(numbers, fun(x) { return x * 2; });
-
-// ✅ Good: Multi-line anonymous functions for clarity
-let processed = data.map(fun(item) {
-    let transformed = transform(item);
-    return validate(transformed) ? transformed : null;
 });
 
-// ❌ Avoid: Complex logic in anonymous functions
-let badExample = data.map(fun(item) {
-    // Too much logic here - use named function instead
-    complexProcessing(item);
-    additionalValidation(item);
-    return finalTransformation(item);
-});
-```
-
-### 2. Method Chaining Best Practices
-```claw
-// ✅ Good: Clear, readable chains
-let result = data
-    .filter(isValid)
-    .map(transform)
-    .reduce(combine, initialValue);
-
-// ✅ Good: Break long chains for readability
-let filtered = data.filter(isValid);
-let transformed = filtered.map(transform);
-let result = transformed.reduce(combine, initialValue);
-
-// ❌ Avoid: Excessively long chains
-let result = data.filter(...).map(...).filter(...).map(...).reduce(...);
-```
-
-### 3. Performance Considerations
-```claw
-// ✅ Good: Use built-in functions for common operations
-let reversed = reverse(array);
-
-// ✅ Good: Method chaining for data pipelines
-let processed = data.map(transform).filter(isValid);
-
-// ⚠️ Caution: Be mindful of intermediate arrays
-// Each chained method creates a new array
-let inefficient = data
-    .map(step1)
-    .map(step2)  // Creates intermediate array
-    .map(step3); // Creates another intermediate array
-
-// Better approach when possible:
-let efficient = data.map(fun(item) {
-    return step3(step2(step1(item)));
-});
-```
-
-## Testing Your Migrated Code
-
-### 1. Verify Existing Functionality
-```bash
-# Run existing tests to ensure backward compatibility
-./build/bin/Release/claw_tests
-```
-
-### 2. Test New Features
-```claw
-// Test array method chaining
-let testArray = [1, 2, 3, 4, 5];
-let result = testArray
-    .map(fun(x) { return x * 2; })
-    .filter(fun(x) { return x > 5; })
-    .reduce(fun(acc, x) { return acc + x; }, 0);
-
-assert(result == 18);  // 6 + 8 + 10 = 24? Wait, let me recalculate...
-
-// Actually: [1,2,3,4,5] -> [2,4,6,8,10] -> [6,8,10] -> 6+8+10 = 24
-assert(result == 24);
-```
-
-### 3. Performance Testing
-```claw
-// Compare performance between old and new approaches
-let largeArray = [];
-for (let i = 0; i < 10000; i++) {
-    largeArray.push(i);
-}
-
-// Old approach timing
-let start1 = now();
-let result1 = [];
-for (let i = 0; i < largeArray.length; i++) {
-    if (largeArray[i] % 2 == 0) {
-        result1.push(largeArray[i] * 2);
+measureTime("Array iteration", fn() {
+    let arr = [1, 2, 3, 4, 5];
+    let sum = 0;
+    for (let i = 0; i < arr.length; i = i + 1) {
+        sum = sum + arr[i];
     }
-}
-let time1 = now() - start1;
-
-// New approach timing
-let start2 = now();
-let result2 = largeArray
-    .filter(fun(x) { return x % 2 == 0; })
-    .map(fun(x) { return x * 2; });
-let time2 = now() - start2;
-
-print "Old approach: " + str(time1) + "ms";
-print "New approach: " + str(time2) + "ms";
-```
-
-## Troubleshooting Common Issues
-
-### Issue 1: Function Expression Not Working
-```claw
-// ❌ Wrong: Missing return statement
-let doubler = fun(x) { x * 2; };  // Returns nil!
-
-// ✅ Correct: Explicit return
-let doubler = fun(x) { return x * 2; };
-```
-
-### Issue 2: Method Chaining Errors
-```claw
-// ❌ Wrong: Calling method on non-array
-let notArray = "string";
-let result = notArray.map(fun(x) { return x; });  // Error!
-
-// ✅ Correct: Ensure array type
-let dataArray = [1, 2, 3];
-let result = dataArray.map(fun(x) { return x * 2; });
-```
-
-### Issue 3: Performance Concerns
-```claw
-// ❌ Inefficient: Creating many intermediate arrays
-let result = data
-    .map(step1)
-    .map(step2)
-    .map(step3)
-    .map(step4);
-
-// ✅ Better: Combine operations when possible
-let result = data.map(fun(item) {
-    return step4(step3(step2(step1(item))));
 });
+
+// Test string operations
+measureTime("String concatenation", fn() {
+    let result = "";
+    for (let i = 0; i < 1000; i = i + 1) {
+        result = result + "x";
+    }
+});
+
+print "Performance testing completed.";
 ```
-
-## Resources
-
-- [Language Documentation](DOCUMENTATION.md)
-- [API Documentation](API_REFERENCE.md)
-- [Examples Directory](../examples/)
-- [Test Suite](../tests/)
 
 ---
 
-**Happy coding with ClawScript v2.0.0! 🚀**
+## Automated Migration Script
+
+For large projects, you can use this script to help with migration:
+
+```claw
+// migrate.claw - Automated migration helper
+print "ClawScript Migration Helper v3.0.0";
+
+fn migrateFile(filename) {
+    if (!fileExists(filename)) {
+        print "File not found: " + filename;
+        return false;
+    }
+    
+    let content = readFile(filename);
+    let migrated = content;
+    let changes = 0;
+    
+    // Replace len(array) with array.length
+    migrated = replace(migrated, "len(", ".length");
+    changes = changes + 1;
+    
+    // Replace size(object) with object.size  
+    migrated = replace(migrated, "size(", ".size");
+    changes = changes + 1;
+    
+    // Update file extensions in content
+    migrated = replace(migrated, ".volt", ".claw");
+    changes = changes + 1;
+    
+    if (changes > 0) {
+        let newFilename = replace(filename, ".volt", ".claw");
+        writeFile(newFilename, migrated);
+        print "Migrated: " + filename + " → " + newFilename + " (" + changes + " changes)";
+        return true;
+    } else {
+        print "No changes needed for: " + filename;
+        return false;
+    }
+}
+
+// Usage
+let filesToMigrate = ["program.volt", "utils.volt", "tests.volt"];
+let migratedCount = 0;
+
+for (let i = 0; i < filesToMigrate.length; i = i + 1) {
+    if (migrateFile(filesToMigrate[i])) {
+        migratedCount = migratedCount + 1;
+    }
+}
+
+print "\nMigration completed. Files migrated: " + migratedCount;
+```
+
+---
+
+## Getting Help with Migration
+
+If you encounter issues during migration:
+
+1. **Check the Documentation**: Review the API Reference and User Guide
+2. **Run Tests**: Use the migration test suite to identify problems
+3. **Check Error Messages**: New error messages are more descriptive
+4. **Simplify**: Test problematic code in isolation
+5. **Community Support**: Use GitHub Issues for migration-specific questions
+
+### Migration Checklist
+
+- [ ] Backup all source code
+- [ ] Rename `.volt` files to `.claw`
+- [ ] Update `len()` calls to `.length` property
+- [ ] Update `size()` calls to `.size` property
+- [ ] Update file references in code
+- [ ] Update build scripts and automation
+- [ ] Run migration test suite
+- [ ] Test all existing functionality
+- [ ] Update documentation
+- [ ] Update deployment scripts
+
+---
+
+This migration guide should help you transition smoothly to ClawScript v3.0.0. The changes are designed to improve the language while minimizing disruption to existing code.

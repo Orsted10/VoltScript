@@ -1,0 +1,93 @@
+// 🎯 Functions and Logic - Write Code That Reads Like English!
+
+// Functions - declare them naturally
+fn sayHello(name) {
+    return "Hello, " + name + "! 👋";
+}
+
+fn addNumbers(a, b) {
+    return a + b;
+}
+
+fn calculateAge(birthYear) {
+    let currentYear = 2024;
+    return currentYear - birthYear;
+}
+
+// Use functions
+print sayHello("World");
+print "5 + 3 =", addNumbers(5, 3);
+print "If born in 1990, you are", calculateAge(1990), "years old";
+
+// Arrow functions - short and sweet
+let multiply = (a, b) => a * b;
+let square = x => x * x;
+
+print "7 × 8 =", multiply(7, 8);
+print "5² =", square(5);
+
+// If statements - natural logic
+let score = 85;
+
+if (score >= 90) {
+    print "🏆 Excellent! You got an A!";
+} else if (score >= 80) {
+    print "👍 Great job! You got a B!";
+} else if (score >= 70) {
+    print "😊 Good work! You got a C!";
+} else {
+    print "📚 Keep studying!";
+}
+
+// Ternary operator - compact decisions
+let weather = "sunny";
+let activity = weather == "sunny" ? "go to the beach" : "stay inside";
+print "Weather:", weather, "→ Activity:", activity;
+
+// For loops - count and iterate
+print "\nCounting to 5:";
+for (let i = 1; i <= 5; i = i + 1) {
+    print "  Count:", i;
+}
+
+print "\nFruits in my basket:";
+let fruits = ["apple", "banana", "orange"];
+for (let i = 0; i < fruits.length; i = i + 1) {
+    print "  Fruit", i + 1 + ":", fruits[i];
+}
+
+// While loops - continue while condition is true
+print "\nCounting down from 3:";
+let countdown = 3;
+while (countdown > 0) {
+    print "  Countdown:", countdown;
+    countdown = countdown - 1;
+}
+print "🚀 Launch!";
+
+// For-each loops (simplified)
+print "\nEnjoying fruits:";
+for (let fruit of fruits) {
+    print "  🍎 Eating:", fruit;
+}
+
+// Switch statements - multiple choices
+let day = "Monday";
+let message;
+
+switch (day) {
+    case "Monday":
+        message = "☕ Coffee time!";
+        break;
+    case "Friday":
+        message = "🎉 TGIF!";
+        break;
+    case "Saturday":
+    case "Sunday":
+        message = "🏖️ Weekend!";
+        break;
+    default:
+        message = "💪 Work hard!";
+}
+
+print "Today is", day + " - " + message;

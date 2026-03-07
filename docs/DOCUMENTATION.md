@@ -1,2016 +1,414 @@
-# ClawScript Language Documentation
+# ClawScript Documentation
 
-<div align="center">
+## ClawScript v3.0.0 Complete Documentation
 
-## ⚡ ClawScript v2.0.0 ⚡
-### *A Modern Programming Language Built from Scratch*
+## Table of Contents
 
-[![Tests](https://img.shields.io/badge/tests-602%2B-brightgreen)]()
-[![C++](https://img.shields.io/badge/C%2B%2B-20-blue)]()
-[![License](https://img.shields.io/badge/license-MIT-blue)]()
-
-</div>
-
----
-
-## 📚 Table of Contents
-
-1. [Introduction](#introduction)
-2. [Getting Started](#getting-started)
-3. [Language Basics](#language-basics)
-4. [Data Types](#data-types)
-5. [Control Flow](#control-flow)
-6. [Functions](#functions)
-7. [Arrays](#arrays)
-8. [Hash Maps](#hash-maps)
-9. [File I/O](#file-io)
-10. [String Operations](#string-operations)
-11. [Mathematical Functions](#mathematical-functions)
-12. [Functional Programming](#functional-programming)
-13. [Performance Tools](#performance-tools)
-14. [Error Handling](#error-handling)
-15. [Built-in Functions](#built-in-functions)
-16. [Best Practices](#best-practices)
-17. [Examples](#examples)
-18. [Project Structure](#project-structure)
-19. [Development Workflow](#development-workflow)
-20. [FAQ](#faq)
+1. [Overview](#overview)
+2. [Installation](#installation)
+3. [Language Reference](#language-reference)
+4. [Standard Library](#standard-library)
+5. [API Reference](#api-reference)
+6. [User Guide](#user-guide)
+7. [Migration Guide](#migration-guide)
+8. [Performance Guide](#performance-guide)
+9. [Examples](#examples)
+10. [Contributing](#contributing)
 
 ---
 
-## 🧠 Introduction
+## Overview
 
-### What is ClawScript?
-
-ClawScript is a dynamically-typed programming language designed to be both powerful and educational. Built entirely from scratch in C++20, it demonstrates how programming languages work under the hood while providing practical features for real-world programming.
+ClawScript is a high-performance programming language implemented in C++20, designed for professional software development. It provides a complete execution environment with optimized bytecode virtual machine, comprehensive standard library, and enterprise-grade features.
 
 ### Key Features
 
-- **Dynamic Typing**: Variables can hold any type of value
-- **First-Class Functions**: Functions are values that can be assigned and passed around
-- **Closures**: Functions that capture their surrounding environment
-- **Dynamic Arrays**: Resizable collections with built-in methods
-- **Hash Maps**: Key-value data structures
-- **Lexical Scoping**: Variables are scoped to their blocks
-- **Precise Error Reporting**: Errors point to exact source locations
+- **Dynamic Typing**: Flexible type system with runtime type checking
+- **Object-Oriented Programming**: Classes, inheritance, and polymorphism
+- **Functional Programming**: First-class functions, closures, and higher-order functions
+- **Comprehensive Standard Library**: Built-in functions for common operations
+- **Performance Optimizations**: JIT compilation and optimized bytecode VM
+- **Memory Management**: Automatic garbage collection with manual control options
+- **Error Handling**: Robust error reporting and exception handling
+- **File I/O**: Comprehensive file system operations
+- **Cross-Platform**: Runs on Windows, Linux, and macOS
 
-### Design Philosophy
+### Architecture
 
-ClawScript follows these principles:
-
-1. **Clarity over cleverness** - Code should be readable and understandable
-2. **Explicit behavior** - No hidden magic or implicit conversions
-3. **Educational value** - Every feature demonstrates a fundamental concept
-4. **Practical utility** - Real-world programming capabilities
+```
+┌─────────────────┐
+│   ClawScript    │ Source Code (.claw)
+└─────────┬───────┘
+          │
+┌─────────▼───────┐
+│   Lexer         │ Tokenization
+└─────────┬───────┘
+          │
+┌─────────▼───────┐
+│   Parser        │ AST Generation
+└─────────┬───────┘
+          │
+┌─────────▼───────┐
+│   Compiler      │ Bytecode Generation
+└─────────┬───────┘
+          │
+┌─────────▼───────┐
+│   VM            │ Bytecode Execution
+└─────────┬───────┘
+          │
+┌─────────▼───────┐
+│   Runtime       │ Memory Management, I/O
+└─────────────────┘
+```
 
 ---
 
-## 🚀 Getting Started
+## Installation
 
-### Installation
+### System Requirements
 
-#### Requirements
+- **Operating System**: Windows 10+, Linux (Ubuntu 18.04+), macOS 10.15+
+- **Compiler**: C++20 compatible (GCC 10+, Clang 12+, MSVC 2019+)
+- **Memory**: Minimum 512MB RAM, 2GB+ recommended
+- **Storage**: 100MB for installation, 500MB+ for development
 
-- C++ compiler with C++20 support
-- CMake 3.14 or higher
-- Git (for cloning the repository)
-
-#### Building from Source
+### Quick Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/clawscript.git
+# Clone repository
+git clone https://github.com/your-org/clawscript.git
 cd clawscript
 
-# Create build directory
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+# Build
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
 
-# Build the project
-cmake --build build
-
-# Run the interpreter
-./build/bin/claw
+# Test installation
+./clawscript --version
 ```
 
-#### LLVM AoT Build (Optional)
+### Installation Options
 
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DCLAW_ENABLE_AOT=ON
-cmake --build build --config Release
-./build/bin/Release/claw --aot-output=main.o script.claw
-```
-
-### Running ClawScript
-
-#### Interactive Mode (REPL)
-
-```bash
-./build/bin/claw
-```
-
-This starts an interactive session where you can type and execute ClawScript code directly:
-
-```
-⚡ ClawScript v2.0.0 REPL
-Type 'exit' to quit
->> let x = 42;
->> print x;
-42
->> 
-```
-
-#### Running Script Files
-
-```bash
-./build/bin/claw script.claw
-```
-
-Create a file called `hello.claw`:
-
-```claw
-print "Hello, ClawScript!";
-```
-
-Then run it:
-
-```bash
-./build/bin/claw hello.claw
-# Output: Hello, ClawScript!
-```
+| Option | Description | Default |
+|--------|-------------|---------|
+| `DCMAKE_BUILD_TYPE` | Build configuration | Release |
+| `DCLAW_ENABLE_JIT` | Enable JIT compilation | OFF |
+| `DCLAW_ENABLE_AOT` | Enable AOT compilation | OFF |
+| `DCLAW_ENABLE_PROFILER` | Enable profiler | OFF |
 
 ---
 
-## 📖 Language Basics
+## Language Reference
 
-### Variables and Assignment
-
-Variables are declared using the `let` keyword:
+### Basic Syntax
 
 ```claw
-let name = "Alice";
-let age = 25;
-let isActive = true;
-let score = 95.5;
-let nothing = nil;
-```
+// Variables
+let name = "ClawScript";
+let version = 3.0;
+let isReady = true;
+let data = nil;
 
-Variables can be reassigned:
+// Comments
+// Single line comment
+/* Multi-line comment */
 
-```claw
-let x = 10;
-x = 20;  // Valid - reassignment
-print x; // 20
-```
-
-### Comments
-
-Single-line comments start with `//`:
-
-```claw
-// This is a comment
-let x = 42; // This is also a comment
-```
-
-### Basic Operations
-
-```claw
-// Arithmetic
-let sum = 10 + 5;        // 15
-let diff = 10 - 3;       // 7
-let product = 4 * 6;     // 24
-let quotient = 15 / 3;   // 5
-let remainder = 17 % 5;  // 2
-
-// Comparison
-let isEqual = (5 == 5);     // true
-let isNotEqual = (5 != 3);  // true
-let isGreater = (10 > 5);   // true
-let isLess = (3 < 7);       // true
-
-// Logical operations
-let andResult = (true && false);  // false
-let orResult = (true || false);   // true
-let notResult = !true;            // false
-```
-
----
-
-## 📊 Data Types
-
-### Nil
-
-Represents the absence of a value:
-
-```claw
-let empty = nil;
-print empty;  // nil
-```
-
-### Boolean
-
-Logical true/false values:
-
-```claw
-let isTrue = true;
-let isFalse = false;
-print isTrue;   // true
-print isFalse;  // false
-```
-
-### Number
-
-64-bit floating-point numbers:
-
-```claw
-let integer = 42;
-let float = 3.14159;
-let negative = -17;
-let scientific = 1.5e-3;  // 0.0015
-```
-
-### String
-
-Immutable sequences of characters:
-
-```claw
-let singleQuote = 'Hello';
-let doubleQuote = "World";
-let multiline = "This is a
-multiline string";
-
-// String concatenation
-let greeting = "Hello" + " " + "World";  // "Hello World"
-```
-
-### Array
-
-Ordered collections of values:
-
-```claw
-let emptyArray = [];
-let numbers = [1, 2, 3, 4, 5];
-let mixed = [42, "hello", true, nil];
-let nested = [[1, 2], [3, 4]];
-```
-
-### Hash Map
-
-Key-value collections:
-
-```claw
-let emptyMap = {};
-let person = {
-    "name": "Alice",
-    "age": 25,
-    "active": true
-};
-let nested = {
-    "user": {
-        "id": 1,
-        "name": "Bob"
-    },
-    "settings": {
-        "theme": "dark",
-        "notifications": true
-    }
-};
-```
-
-### Function
-
-Callable objects:
-
-```claw
-let add = fun(a, b) {
-    return a + b;
-};
-
-// Functions are first-class values
-let operation = add;
-let result = operation(5, 3);  // 8
-```
-
----
-
-## 🔀 Control Flow
-
-### Conditional Statements
-
-#### If Statement
-
-```claw
-let score = 85;
-
-if (score >= 90) {
-    print "Excellent!";
-} else if (score >= 80) {
-    print "Good job!";
-} else if (score >= 70) {
-    print "Passing";
-} else {
-    print "Needs improvement";
-}
-```
-
-#### Ternary Operator
-
-```claw
-let age = 20;
-let status = (age >= 18) ? "Adult" : "Minor";
-print status;  // "Adult"
-```
-
-### Loops
-
-#### While Loop
-
-```claw
-let i = 0;
-while (i < 5) {
-    print i;
-    i = i + 1;
-}
-// Output: 0 1 2 3 4
-```
-
-#### For Loop
-
-```claw
-// Traditional for loop
-for (let i = 0; i < 5; i = i + 1) {
-    print i;
-}
-
-// For-in loop (iterate over array indices)
-let numbers = [10, 20, 30, 40];
-for (let i in numbers) {
-    print numbers[i];
-}
-```
-
-#### Run-Until Loop
-
-Executes at least once, continues until condition becomes true:
-
-```claw
-let count = 5;
-run {
-    print count;
-    count = count - 1;
-} until (count <= 0);
-// Output: 5 4 3 2 1
-```
-
-### Loop Control
-
-#### Break Statement
-
-```claw
-for (let i = 0; i < 10; i = i + 1) {
-    if (i == 5) {
-        break;  // Exit the loop
-    }
-    print i;
-}
-// Output: 0 1 2 3 4
-```
-
-#### Continue Statement
-
-```claw
-for (let i = 0; i < 10; i = i + 1) {
-    if (i % 2 == 0) {
-        continue;  // Skip even numbers
-    }
-    print i;
-}
-// Output: 1 3 5 7 9
-```
-
----
-
-## 🔄 Functions
-
-### Function Declaration
-
-```claw
-fn greet(name) {
-    return "Hello, " + name + "!";
-}
-
-print greet("Alice");  // "Hello, Alice!"
-```
-
-### Parameters and Return Values
-
-```claw
+// Functions
 fn add(a, b) {
     return a + b;
 }
 
-fn multiply(a, b) {
-    return a * b;
-}
-
-// Functions without explicit return return nil
-fn printTwice(message) {
-    print message;
-    print message;
-    // Implicitly returns nil
-}
-```
-
-### Early Return
-
-```claw
-fn findFirstEven(numbers) {
-    for (let i = 0; i < numbers.length; i = i + 1) {
-        if (numbers[i] % 2 == 0) {
-            return numbers[i];  // Exit function immediately
-        }
+// Classes
+class Calculator {
+    init() {
+        this.result = 0;
     }
-    return nil;  // No even number found
-}
-
-print findFirstEven([1, 3, 4, 7, 8]);  // 4
-```
-
-### First-Class Functions
-
-Functions are values that can be assigned and passed around:
-
-```claw
-// Assign function to variable
-let operation = fun(x, y) {
-    return x * y;
-};
-
-print operation(5, 3);  // 15
-```claw
-// Pass function as argument
-fn apply(func, a, b) {
-    return func(a, b);
-}
-
-let result = apply(operation, 4, 7);  // 28
-```
-
-### Closures
-
-Functions that capture variables from their surrounding scope:
-
-```claw
-fn makeCounter() {
-    let count = 0;
     
-    return fun() {
-        count = count + 1;
-        return count;
-    };
+    add(value) {
+        this.result = this.result + value;
+        return this;
+    }
 }
-
-let counter = makeCounter();
-print counter();  // 1
-print counter();  // 2
-print counter();  // 3
 ```
 
-### Higher-Order Functions
+### Data Types
 
-Functions that take other functions as parameters or return functions:
+| Type | Description | Example |
+|------|-------------|---------|
+| `number` | Numeric values (integers and floats) | `42`, `3.14` |
+| `string` | Text values | `"Hello, World!"` |
+| `boolean` | Logical values | `true`, `false` |
+| `null` | Absence of value | `nil` |
+| `array` | Ordered collections | `[1, 2, 3]` |
+| `object` | Key-value pairs | `{"key": "value"}` |
+| `function` | Callable objects | `fn(x) { return x * 2; }` |
+
+### Control Flow
 
 ```claw
-// Function that returns a function
-fn makeAdder(x) {
-    return fun(y) {
-        return x + y;
-    };
+// If statements
+if (condition) {
+    // Code
+} else if (anotherCondition) {
+    // Code
+} else {
+    // Code
 }
 
-let addFive = makeAdder(5);
-print addFive(3);  // 8
-print addFive(10); // 15
-
-// Function that takes a function as parameter
-fn forEach(array, callback) {
-    for (let i = 0; i < array.length; i = i + 1) {
-        callback(array[i]);
-    }
+// Loops
+while (condition) {
+    // Code
 }
 
-let numbers = [1, 2, 3, 4, 5];
-forEach(numbers, fun(item) {
-    print item * 2;
-});
-// Output: 2 4 6 8 10
+for (let i = 0; i < 10; i = i + 1) {
+    // Code
+}
+
+run {
+    // Code
+} until (condition);
 ```
 
-### Recursion
+### Operators
 
-Functions can call themselves:
-
-```claw
-fn factorial(n) {
-    if (n <= 1) {
-        return 1;
-    }
-    return n * factorial(n - 1);
-}
-
-print factorial(5);  // 120
-
-fn fibonacci(n) {
-    if (n <= 1) {
-        return n;
-    }
-    return fibonacci(n - 1) + fibonacci(n - 2);
-}
-
-print fibonacci(8);  // 21
-```
+| Category | Operators |
+|----------|-----------|
+| Arithmetic | `+`, `-`, `*`, `/`, `%` |
+| Comparison | `==`, `!=`, `<`, `>`, `<=`, `>=` |
+| Logical | `&&`, `||`, `!` |
+| Assignment | `=`, `+=`, `-=` |
+| Ternary | `condition ? value1 : value2` |
 
 ---
 
-## 📦 Arrays
+## Standard Library
 
-### Creating Arrays
-
-```claw
-// Empty array
-let empty = [];
-
-// Array with elements
-let numbers = [1, 2, 3, 4, 5];
-
-// Mixed types
-let mixed = [42, "hello", true, nil, [1, 2, 3]];
-
-// Nested arrays
-let matrix = [
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 9]
-];
-
-// Trailing comma (allowed)
-let items = [
-    "apple",
-    "banana",
-    "cherry",
-];
-```
-
-### Accessing Elements
+### Core Functions
 
 ```claw
-let fruits = ["apple", "banana", "cherry"];
+// Type conversion
+print type("hello");     // "string"
+print str(42);           // "42"
+print num("3.14");       // 3.14
 
-// Get element by index
-print fruits[0];  // "apple"
-print fruits[1];  // "banana"
-print fruits[2];  // "cherry"
-
-// Get nested elements
-let matrix = [[1, 2], [3, 4]];
-print matrix[1][0];  // 3
-
-// Get length
-print fruits.length;  // 3
-```
-
-### Modifying Arrays
-
-```claw
-let numbers = [1, 2, 3, 4, 5];
-
-// Change element
-numbers[0] = 10;
-print numbers[0];  // 10
-
-// Add element to end
-numbers.push(6);
-print numbers.length;  // 6
-
-// Remove last element
-let last = numbers.pop();
-print last;           // 6
-print numbers.length; // 5
-
-// Reverse array in place
-numbers.reverse();
-print numbers[0];  // 5
+// Utility functions
+print clock();           // Current time in milliseconds
+sleep(1000);            // Sleep for 1 second
+print random();         // Random number 0-1
 ```
 
 ### Array Methods
 
-#### Push
-
 ```claw
-let arr = [1, 2, 3];
-arr.push(4);
-print arr;  // [1, 2, 3, 4]
+let arr = [1, 2, 3, 4, 5];
+
+// Properties
+print arr.length;        // 5
+
+// Methods
+arr.push(6);            // Add element
+let last = arr.pop();    // Remove last element
+arr.reverse();           // Reverse array
+
+// Functional methods
+let doubled = arr.map(fn(x) { return x * 2; });
+let evens = arr.filter(fn(x) { return x % 2 === 0; });
+let sum = arr.reduce(fn(acc, x) { return acc + x; }, 0);
 ```
 
-#### Pop
+### String Methods
 
 ```claw
-let arr = [1, 2, 3];
-let last = arr.pop();
-print last;  // 3
-print arr;   // [1, 2]
+let text = "Hello, World!";
+
+// Properties
+print text.length;       // 13
+
+// Methods
+print substring(text, 0, 5);     // "Hello"
+print indexOf(text, "World");     // 7
+print toUpper(text);              // "HELLO, WORLD!"
+print toLower(text);              // "hello, world!"
+print trim("  spaced  ");         // "spaced"
 ```
 
-#### Reverse
+### Object Methods
 
 ```claw
-let arr = [1, 2, 3, 4];
-arr.reverse();
-print arr;  // [4, 3, 2, 1]
+let obj = {"name": "Alice", "age": 25};
+
+// Properties
+print obj.size;          // 2
+
+// Utility functions
+print keys(obj);         // ["name", "age"]
+print values(obj);       // ["Alice", 25]
+print has(obj, "name");  // true
+remove(obj, "age");      // Remove property
 ```
 
-### Iterating Over Arrays
+### Mathematical Functions
 
 ```claw
-let numbers = [10, 20, 30, 40, 50];
+// Basic
+print abs(-5);           // 5
+print sqrt(16);          // 4
+print pow(2, 3);         // 8
+print min(5, 3);         // 3
+print max(5, 3);         // 5
 
-// Traditional for loop
-for (let i = 0; i < numbers.length; i = i + 1) {
-    print numbers[i];
-}
+// Trigonometric
+print sin(0);            // 0
+print cos(0);            // 1
+print tan(0);            // 0
 
-// For-in loop
-for (let i in numbers) {
-    print numbers[i];
-}
-
-// Using forEach (higher-order function)
-fn forEach(array, callback) {
-    for (let i = 0; i < array.length; i = i + 1) {
-        callback(array[i]);
-    }
-}
-
-forEach(numbers, fun(item) {
-    print "Number: " + str(item);
-});
+// Rounding
+print round(3.7);        // 4
+print floor(3.7);        // 3
+print ceil(3.2);         // 4
 ```
 
-### Common Array Operations
-
-#### Finding Maximum
+### File I/O
 
 ```claw
-fn max(array) {
-    if (array.length == 0) return nil;
-    
-    let maxValue = array[0];
-    for (let i = 1; i < array.length; i = i + 1) {
-        if (array[i] > maxValue) {
-            maxValue = array[i];
-        }
-    }
-    return maxValue;
-}
-
-print max([3, 7, 2, 9, 1]);  // 9
-```
-
-#### Summing Elements
-
-```claw
-fn sum(array) {
-    let total = 0;
-    for (let i = 0; i < array.length; i = i + 1) {
-        total = total + array[i];
-    }
-    return total;
-}
-
-print sum([1, 2, 3, 4, 5]);  // 15
-```
-
-#### Filtering Elements
-
-```claw
-fn filter(array, predicate) {
-    let result = [];
-    for (let i = 0; i < array.length; i = i + 1) {
-        if (predicate(array[i])) {
-            result.push(array[i]);
-        }
-    }
-    return result;
-}
-
-let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-let evens = filter(numbers, fun(x) { return x % 2 == 0; });
-print evens;  // [2, 4, 6, 8, 10]
-```
-
-#### Mapping Elements
-
-```claw
-fn map(array, transformer) {
-    let result = [];
-    for (let i = 0; i < array.length; i = i + 1) {
-        result.push(transformer(array[i]));
-    }
-    return result;
-}
-
-let numbers = [1, 2, 3, 4, 5];
-let doubled = map(numbers, fun(x) { return x * 2; });
-print doubled;  // [2, 4, 6, 8, 10]
-```
-
----
-
-## 🗺️ Hash Maps
-
-### Creating Hash Maps
-
-```claw
-// Empty hash map
-let empty = {};
-
-// Hash map with string keys
-let person = {
-    "name": "Alice",
-    "age": 25,
-    "active": true
-};
-
-// Hash map with mixed key types (converted to strings)
-let mixed = {
-    "name": "Bob",
-    42: "answer",
-    true: "boolean key"
-};
-
-// Nested hash maps
-let company = {
-    "name": "Tech Corp",
-    "departments": {
-        "engineering": {
-            "head": "Alice",
-            "size": 10
-        },
-        "marketing": {
-            "head": "Bob",
-            "size": 5
-        }
-    }
-};
-```
-
-### Accessing Values
-
-```claw
-let person = {
-    "name": "Alice",
-    "age": 25,
-    "active": true
-};
-
-// Get value by key
-print person["name"];  // "Alice"
-print person["age"];   // 25
-
-// Get nested values
-let company = {
-    "departments": {
-        "engineering": {
-            "head": "Alice"
-        }
-    }
-};
-print company["departments"]["engineering"]["head"];  // "Alice"
-
-// Get size
-print person.size;  // 3
-```
-
-### Modifying Hash Maps
-
-```claw
-let person = {
-    "name": "Alice",
-    "age": 25
-};
-
-// Add new key-value pair
-person["email"] = "alice@example.com";
-print person["email"];  // "alice@example.com"
-
-// Update existing value
-person["age"] = 26;
-print person["age"];  // 26
-
-// Remove key-value pair
-let wasRemoved = remove(person, "age");
-print wasRemoved;     // true
-print has(person, "age");  // false
-```
-
-### Hash Map Methods
-
-#### Keys
-
-```claw
-let person = {
-    "name": "Alice",
-    "age": 25,
-    "active": true
-};
-
-let keys = keys(person);
-print keys;  // ["name", "age", "active"]
-```
-
-#### Values
-
-```claw
-let person = {
-    "name": "Alice",
-    "age": 25,
-    "active": true
-};
-
-let values = values(person);
-print values;  // ["Alice", 25, true]
-```
-
-#### Has
-
-```claw
-let person = {
-    "name": "Alice",
-    "age": 25
-};
-
-print has(person, "name");    // true
-print has(person, "email");   // false
-print has(person, "age");     // true
-```
-
-#### Remove
-
-```claw
-let person = {
-    "name": "Alice",
-    "age": 25,
-    "active": true
-};
-
-let wasRemoved = remove(person, "age");
-print wasRemoved;  // true
-print has(person, "age");  // false
-
-let notFound = remove(person, "salary");
-print notFound;  // false
-```
-
-### Iterating Over Hash Maps
-
-```claw
-let person = {
-    "name": "Alice",
-    "age": 25,
-    "active": true
-};
-
-// Get keys and iterate
-let keysList = keys(person);
-for (let i = 0; i < keysList.length; i = i + 1) {
-    let key = keysList[i];
-    let value = person[key];
-    print key + ": " + str(value);
-}
-
-// Using forEach for key-value pairs
-fn forEachKeyValue(map, callback) {
-    let keyList = keys(map);
-    for (let i = 0; i < keyList.length; i = i + 1) {
-        let key = keyList[i];
-        callback(key, map[key]);
-    }
-}
-
-forEachKeyValue(person, fun(key, value) {
-    print key + " = " + str(value);
-});
-```
-
-### Common Hash Map Operations
-
-#### Counting Word Frequencies
-
-```claw
-fn wordCount(text) {
-    let words = split(text, " ");
-    let counts = {};
-    
-    for (let i = 0; i < words.length; i = i + 1) {
-        let word = trim(words[i]);
-        if (word != "") {
-            if (has(counts, word)) {
-                counts[word] = counts[word] + 1;
-            } else {
-                counts[word] = 1;
-            }
-        }
-    }
-    
-    return counts;
-}
-
-let text = "the quick brown fox jumps over the lazy dog the fox";
-let frequencies = wordCount(text);
-print frequencies["the"];   // 3
-print frequencies["fox"];   // 2
-print frequencies["quick"]; // 1
-```
-
-#### Grouping Data
-
-```claw
-fn groupBy(array, keyFunction) {
-    let groups = {};
-    
-    for (let i = 0; i < array.length; i = i + 1) {
-        let item = array[i];
-        let key = keyFunction(item);
-        
-        if (!has(groups, key)) {
-            groups[key] = [];
-        }
-        groups[key].push(item);
-    }
-    
-    return groups;
-}
-
-let people = [
-    {"name": "Alice", "department": "Engineering"},
-    {"name": "Bob", "department": "Marketing"},
-    {"name": "Carol", "department": "Engineering"},
-    {"name": "Dave", "department": "Sales"}
-];
-
-let byDepartment = groupBy(people, fun(person) { 
-    return person["department"]; 
-});
-
-print byDepartment["Engineering"].length;  // 2
-print byDepartment["Marketing"].length;    // 1
-print byDepartment["Sales"].length;        // 1
-```
-
----
-
-## 📁 File I/O
-
-### Reading Files
-
-```claw
-// Read entire file as string
+// Basic operations
 let content = readFile("data.txt");
-print content;
+writeFile("output.txt", "Hello, World!");
 
-// Handle file not found
-if (fileExists("data.txt")) {
-    let content = readFile("data.txt");
-    print "File content: " + content;
-} else {
-    print "File not found!";
-}
+// File information
+print fileExists("data.txt");     // true/false
+print fileSize("data.txt");        // Size in bytes
+
+// File management
+deleteFile("temp.txt");            // Delete file
 ```
 
-### Writing Files
+---
+
+## API Reference
+
+### Global Functions
+
+#### `print(value)`
+Outputs a value to the console.
 
 ```claw
-// Write string to file (overwrites existing content)
-let success = writeFile("output.txt", "Hello, World!");
-if (success) {
-    print "File written successfully";
-} else {
-    print "Failed to write file";
+print "Hello, World!";
+print 42;
+print [1, 2, 3];
+```
+
+#### `input(prompt)` → string
+Reads user input from the console.
+
+```claw
+let name = input("Enter your name: ");
+print "Hello, " + name;
+```
+
+#### `exit(code)` → void
+Exits the program with the specified exit code.
+
+```claw
+exit(0);  // Success
+exit(1);  // Error
+```
+
+### Type Functions
+
+#### `type(value)` → string
+Returns the type of the value.
+
+```claw
+print type("hello");  // "string"
+print type(42);       // "number"
+print type(true);     // "boolean"
+```
+
+#### `str(value)` → string
+Converts a value to a string.
+
+```claw
+print str(42);        // "42"
+print str(true);      // "true"
+```
+
+#### `num(string)` → number
+Converts a string to a number.
+
+```claw
+print num("42");      // 42
+print num("3.14");    // 3.14
+```
+
+---
+
+## User Guide
+
+### Getting Started
+
+1. **Installation**: Follow the installation instructions above
+2. **First Program**: Create a file `hello.claw` with `print "Hello, World!";`
+3. **Run**: Execute with `./clawscript hello.claw`
+4. **Interactive Mode**: Use `./clawscript` for REPL
+
+### Basic Programming
+
+```claw
+// Variables and types
+let message = "Welcome to ClawScript!";
+let count = 10;
+let ready = true;
+
+// Control flow
+if (ready) {
+    print message;
+    for (let i = 0; i < count; i = i + 1) {
+        print "Item " + (i + 1);
+    }
 }
 
-// Append to file
-let appendSuccess = appendFile("log.txt", "New log entry\n");
-if (appendSuccess) {
-    print "Entry appended";
+// Functions
+fn greet(name) {
+    return "Hello, " + name + "!";
 }
+
+print greet("ClawScript");
+```
+
+### Object-Oriented Programming
+
+```claw
+// Class definition
+class Person {
+    init(name, age) {
+        this.name = name;
+        this.age = age;
+    }
+    
+    introduce() {
+        return "Hi, I'm " + this.name + " and I'm " + this.age;
+    }
+    
+    haveBirthday() {
+        this.age = this.age + 1;
+        print "Happy birthday, " + this.name + "!";
+    }
+}
+
+// Usage
+let alice = Person("Alice", 25);
+print alice.introduce();
+alice.haveBirthday();
 ```
 
 ### File Operations
 
 ```claw
-// Check if file exists
-if (exists("config.json")) {
-    print "Configuration file exists";
-    print "File size: " + str(fileSize("config.json")) + " bytes";
-} else {
-    print "Configuration file not found";
-}
-
-// Delete file
-if (exists("temp.txt")) {
-    let deleted = deleteFile("temp.txt");
-    if (deleted) {
-        print "Temporary file deleted";
-    } else {
-        print "Failed to delete file";
-    }
-}
-```
-
-### Practical Example: Configuration Management
-
-```claw
-// Read configuration
-fn loadConfig(filename) {
-    if (!exists(filename)) {
-        // Create default configuration
-        let defaultConfig = {
-            "appName": "MyApp",
-            "version": "1.0.0",
-            "debug": true,
-            "maxUsers": 100
-        };
-        saveConfig(filename, defaultConfig);
-        return defaultConfig;
-    }
-    
-    let content = readFile(filename);
-    return jsonDecode(content);
-}
-
-// Save configuration
-fn saveConfig(filename, config) {
-    let jsonContent = jsonEncode(config);
-    return writeFile(filename, jsonContent);
-}
-
-// Usage
-let config = loadConfig("app.config");
-print "App: " + config["appName"];
-print "Version: " + config["version"];
-
-// Update configuration
-config["maxUsers"] = 150;
-saveConfig("app.config", config);
-```
-
----
-
-## 🧵 String Operations
----
-
-## 🔐 Security Policy & Logging
-
-### Policy File: .voltsec
-- Configure sandbox capabilities and logging via a plaintext `.voltsec` file in the working directory.
-- Supported keys:
-  - `output=allow|deny` — enable or block print/output
-  - `log.path=<path>` — set log file path (default `claw.log`)
-  - `log.hmac=<key>` — enable HMAC-SHA256 for log lines
-  - `log.meta.required=true|false` — require metadata for logWrite
-- Apply changes in-script with `policyReload()`.
-
-### Logging API
-- `logWrite(message[, metadata])` — writes a single line to the configured log:
-  - Without HMAC: `message|metadata?`
-  - With HMAC: `message|hex(HMAC)|metadata?`
-  - `metadata` is a map (JSON-like) and is optional unless required by policy.
-
-### Examples
-
-Enable output and configure HMAC with required metadata:
-
-```claw
-writeFile(".voltsec", "log.path=security.log\nlog.hmac=abc123\nlog.meta.required=true\noutput=allow");
-policyReload();
-
-logWrite("user-login", {"user":"alice","ok":true,"id":42});
-print readFile("security.log");
-```
-
-Optional metadata when not required:
-
-```claw
-writeFile(".voltsec", "log.path=events.log\nlog.hmac=abc123\nlog.meta.required=false\noutput=allow");
-policyReload();
-
-logWrite("heartbeat");
-print readFile("events.log");
-```
-
-### Platform Notes
-- Windows uses BCrypt SHA-256 in keyed (HMAC) mode.
-- Other platforms prefer OpenSSL if available; otherwise a built-in fallback is used.
-
-### Basic String Operations
-
-```claw
-let text = "Hello, World!";
-
-// Get length
-print len(text);  // 13
-
-// Convert case
-print toUpper(text);  // "HELLO, WORLD!"
-print toLower(text);  // "hello, world!"
-print upper(text);    // "HELLO, WORLD!" (alias)
-print lower(text);    // "hello, world!" (alias)
-
-// Extract substring
-print substr(text, 0, 5);    // "Hello"
-print substr(text, 7, 5);    // "World"
-
-// Find substring
-print indexOf(text, "World");  // 7
-print indexOf(text, "xyz");    // -1 (not found)
-```
-
-### String Manipulation
-
-```claw
-// Trim whitespace
-let spaced = "   Hello, World!   ";
-print "'" + trim(spaced) + "'";  // "'Hello, World!'"
-
-// Split string
-let csv = "apple,banana,cherry,date";
-let fruits = split(csv, ",");
-print fruits[0];  // "apple"
-print fruits[1];  // "banana"
-
-// Split into characters
-let word = "hello";
-let chars = split(word, "");
-print chars[0];  // "h"
-print chars[1];  // "e"
-
-// Replace text
-let sentence = "The quick brown fox";
-let modified = replace(sentence, "fox", "cat");
-print modified;  // "The quick brown cat"
-
-// Replace all occurrences
-let text = "hello hello hello";
-let replaced = replace(text, "hello", "hi");
-print replaced;  // "hi hi hi"
-```
-
-### String Comparison
-
-```claw
-let str1 = "Hello";
-let str2 = "World";
-
-// Check prefixes and suffixes
-print startsWith(str1, "Hel");    // true
-print startsWith(str1, "Wor");    // false
-print endsWith(str2, "rld");      // true
-print endsWith(str2, "abc");      // false
-```
-
-### Advanced String Functions
-
-```claw
-// Padding
-let number = "42";
-print "'" + padStart(number, 5, "0") + "'";  // "'00042'"
-print "'" + padEnd(number, 5, "0") + "'";    // "'42000'"
-
-// Repeat string
-print repeat("Hi ", 3);  // "Hi Hi Hi "
-print repeat("*", 10);   // "**********"
-
-// Character codes
-print charCodeAt("A", 0);     // 65
-print charCodeAt("ABC", 1);   // 66
-print fromCharCode(65);       // "A"
-print fromCharCode(66);       // "B"
-```
-
-### String Processing Examples
-
-#### CSV Parsing
-
-```claw
-fn parseCSV(line) {
-    let fields = split(line, ",");
-    let result = [];
-    
-    for (let i = 0; i < fields.length; i = i + 1) {
-        result.push(trim(fields[i]));
-    }
-    
-    return result;
-}
-
-let csvLine = "John Doe, 25, Engineer, New York";
-let fields = parseCSV(csvLine);
-print "Name: " + fields[0];
-print "Age: " + fields[1];
-print "Job: " + fields[2];
-print "City: " + fields[3];
-```
-
-#### Text Analysis
-
-```claw
-fn analyzeText(text) {
-    let cleanText = toLower(trim(text));
-    let words = split(cleanText, " ");
-    
-    let wordCount = 0;
-    let charCount = 0;
-    
-    for (let i = 0; i < words.length; i = i + 1) {
-        let word = trim(words[i]);
-        if (len(word) > 0) {
-            wordCount = wordCount + 1;
-            charCount = charCount + len(word);
-        }
-    }
-    
-    return {
-        "wordCount": wordCount,
-        "charCount": charCount,
-        "avgWordLength": charCount / wordCount
-    };
-}
-
-let text = "The quick brown fox jumps over the lazy dog";
-let analysis = analyzeText(text);
-print "Words: " + str(analysis["wordCount"]);
-print "Characters: " + str(analysis["charCount"]);
-print "Average word length: " + str(analysis["avgWordLength"]);
-```
-
----
-
-## 🧮 Mathematical Functions
-
-### Basic Math Functions
-
-```claw
-// Absolute value
-print abs(-5);    // 5
-print abs(3.14);  // 3.14
-
-// Square root
-print sqrt(16);   // 4
-print sqrt(2);    // 1.4142135623730951
-
-// Power function
-print pow(2, 3);  // 8
-print pow(5, 2);  // 25
-
-// Minimum and maximum
-print min(10, 5);  // 5
-print max(10, 5);  // 10
-
-// Rounding
-print round(3.7);   // 4
-print round(3.2);   // 3
-print floor(3.7);   // 3
-print ceil(3.2);    // 4
-
-// Random number
-print random();     // Random number between 0 and 1
-```
-
-### Performance Helpers
-
-```claw
-print fibFast(35);        // Fast Fibonacci for benchmarks
-print arraySumFast(1000); // Sum 0..999 using a formula
-```
-
-### Trigonometric Functions
-
-```claw
-// Convert degrees to radians for trig functions
-fn degToRad(degrees) {
-    return degrees * 3.14159 / 180;
-}
-
-let angle = degToRad(45);
-print sin(angle);  // 0.7071067811865475
-print cos(angle);  // 0.7071067811865476
-print tan(angle);  // 0.9999999999999999
-```
-
-### Logarithmic Functions
-
-```claw
-// Natural logarithm
-print log(1);      // 0
-print log(2.71828); // ~1
-
-// Exponential function
-print exp(0);      // 1
-print exp(1);      // 2.718281828459045
-```
-
-### Practical Math Examples
-
-#### Distance Calculation
-
-```claw
-fn distance(x1, y1, x2, y2) {
-    let dx = x2 - x1;
-    let dy = y2 - y1;
-    return sqrt(dx * dx + dy * dy);
-}
-
-print distance(0, 0, 3, 4);  // 5
-```
-
-#### Quadratic Formula
-
-```claw
-fn solveQuadratic(a, b, c) {
-    let discriminant = b * b - 4 * a * c;
-    
-    if (discriminant < 0) {
-        return nil;  // No real solutions
-    }
-    
-    let sqrtDisc = sqrt(discriminant);
-    let root1 = (-b + sqrtDisc) / (2 * a);
-    let root2 = (-b - sqrtDisc) / (2 * a);
-    
-    return [root1, root2];
-}
-
-let solutions = solveQuadratic(1, -5, 6);
-print solutions[0];  // 3
-print solutions[1];  // 2
-```
-
-#### Compound Interest
-
-```claw
-fn compoundInterest(principal, rate, time) {
-    return principal * pow(1 + rate, time);
-}
-
-let amount = compoundInterest(1000, 0.05, 10);
-print "Final amount: $" + str(amount);  // $1628.89
-```
-
----
-
-## 🔁 Functional Programming
-
-### Function Composition
-
-```claw
-// Basic composition
-let add = fun(x, y) { return x + y; };
-let multiply = fun(x, y) { return x * y; };
-let square = fun(x) { return x * x; };
-
-// Compose functions (right to left)
-let addThenSquare = compose(square, add);
-let result = addThenSquare(3, 4);  // square(add(3, 4)) = square(7) = 49
-print result;
-
-// Multiple function composition
-let process = compose(square, multiply, add);
-let result2 = process(2, 3, 4);  // square(multiply(add(2, 3), 4)) = square(multiply(5, 4)) = square(20) = 400
-print result2;
-```
-
-### Function Piping
-
-```claw
-// Pipe functions (left to right)
-let addOne = fun(x) { return x + 1; };
-let double = fun(x) { return x * 2; };
-let square = fun(x) { return x * x; };
-
-let piped = pipe(addOne, double, square);
-let result = piped(5);  // square(double(addOne(5))) = square(double(6)) = square(12) = 144
-print result;
-
-// Practical data processing pipeline
-let numbers = [1, 2, 3, 4, 5];
-
-let processPipeline = pipe(
-    fun(arr) { return map(arr, fun(x) { return x * 2; }); },  // Double each number
-    fun(arr) { return filter(arr, fun(x) { return x > 5; }); },  // Keep numbers > 5
-    fun(arr) { return reduce(arr, fun(acc, x) { return acc + x; }, 0); }  // Sum remaining numbers
-);
-
-let result = processPipeline(numbers);
-print result;  // 18 (6 + 8 + 10)
-```
-
-### Higher-Order Functions
-
-```claw
-// Map function
-fn map(array, func) {
-    let result = [];
-    for (let i = 0; i < array.length; i = i + 1) {
-        result.push(func(array[i]));
-    }
-    return result;
-}
-
-// Filter function
-fn filter(array, predicate) {
-    let result = [];
-    for (let i = 0; i < array.length; i = i + 1) {
-        if (predicate(array[i])) {
-            result.push(array[i]);
-        }
-    }
-    return result;
-}
-
-// Reduce function
-fn reduce(array, reducer, initialValue) {
-    let accumulator = initialValue;
-    for (let i = 0; i < array.length; i = i + 1) {
-        accumulator = reducer(accumulator, array[i]);
-    }
-    return accumulator;
-}
-
-// Usage examples
-let numbers = [1, 2, 3, 4, 5];
-
-let doubled = map(numbers, fun(x) { return x * 2; });
-print doubled;  // [2, 4, 6, 8, 10]
-
-let evens = filter(numbers, fun(x) { return x % 2 == 0; });
-print evens;  // [2, 4]
-
-let sum = reduce(numbers, fun(acc, x) { return acc + x; }, 0);
-print sum;  // 15
-
-let product = reduce(numbers, fun(acc, x) { return acc * x; }, 1);
-print product;  // 120
-```
-
-### Function Factories
-
-```claw
-// Create multiplier functions
-fn createMultiplier(factor) {
-    return fun(value) {
-        return value * factor;
-    };
-}
-
-let doubler = createMultiplier(2);
-let tripler = createMultiplier(3);
-let halfer = createMultiplier(0.5);
-
-print doubler(10);   // 20
-print tripler(10);   // 30
-print halfer(10);    // 5
-
-// Create validator functions
-fn createValidator(min, max) {
-    return fun(value) {
-        return value >= min && value <= max;
-    };
-}
-
-let isAdult = createValidator(18, 120);
-let isChild = createValidator(0, 17);
-
-print isAdult(25);   // true
-print isAdult(15);   // false
-print isChild(10);   // true
-```
-
-### Currying
-
-```claw
-// Manual currying
-fn add(a) {
-    return fun(b) {
-        return fun(c) {
-            return a + b + c;
-        };
-    };
-}
-
-let addFive = add(5);
-let addFiveAndThree = addFive(3);
-let result = addFiveAndThree(2);  // 5 + 3 + 2 = 10
-print result;
-
-// Generic curry function
-fn curry(func, arity) {
-    return fun(...args) {
-        if (args.length >= arity) {
-            return func(...args);
-        } else {
-            return curry(fun(...moreArgs) {
-                return func(...args, ...moreArgs);
-            }, arity - args.length);
-        }
-    };
-}
-
-let curriedAdd = curry(fun(a, b, c) { return a + b + c; }, 3);
-print curriedAdd(1)(2)(3);        // 6
-print curriedAdd(1, 2)(3);        // 6
-print curriedAdd(1)(2, 3);        // 6
-print curriedAdd(1, 2, 3);        // 6
-```
-
----
-
-## ⚡ Performance Tools
-
-### Sleep Function
-
-```claw
-// Pause execution for specified milliseconds
-print "Starting...";
-sleep(1000);  // Sleep for 1 second
-print "1 second later!";
-
-// Create delays between operations
-for (let i = 5; i > 0; i = i - 1) {
-    print i;
-    sleep(500);  // Half second delay
-}
-print "Done!";
-```
-
-### Benchmarking
-
-```claw
-// Benchmark a function
-fn slowFunction(n) {
-    let result = 0;
-    for (let i = 0; i < n; i = i + 1) {
-        for (let j = 0; j < n; j = j + 1) {
-            result = result + 1;
-        }
-    }
-    return result;
-}
-
-fn fastFunction(n) {
-    return n * n;
-}
-
-// Benchmark both functions
-let slowResult = benchmark(slowFunction, 100);
-let fastResult = benchmark(fastFunction, 100);
-
-print "Slow function result: " + str(slowResult.result);
-print "Slow function time: " + str(slowResult.timeMicroseconds) + " μs";
-
-print "Fast function result: " + str(fastResult.result);
-print "Fast function time: " + str(fastResult.timeMicroseconds) + " μs";
-
-// Calculate speedup
-if (fastResult.timeMicroseconds > 0) {
-    let speedup = slowResult.timeMicroseconds / fastResult.timeMicroseconds;
-    print "Speedup factor: " + str(speedup) + "x";
-}
-```
-
-### Performance Comparison
-
-```claw
-// Compare different algorithms
-fn bubbleSort(arr) {
-    let n = arr.length;
-    for (let i = 0; i < n; i = i + 1) {
-        for (let j = 0; j < n - i - 1; j = j + 1) {
-            if (arr[j] > arr[j + 1]) {
-                let temp = arr[j];
-                arr[j] = arr[j + 1];
-                arr[j + 1] = temp;
-            }
-        }
-    }
-    return arr;
-}
-
-fn quickSort(arr) {
-    if (arr.length <= 1) return arr;
-    
-    let pivot = arr[0];
-    let left = [];
-    let right = [];
-    
-    for (let i = 1; i < arr.length; i = i + 1) {
-        if (arr[i] < pivot) {
-            left.push(arr[i]);
-        } else {
-            right.push(arr[i]);
-        }
-    }
-    
-    return quickSort(left).concat([pivot]).concat(quickSort(right));
-}
-
-// Generate test data
-fn generateRandomArray(size) {
-    let arr = [];
-    for (let i = 0; i < size; i = i + 1) {
-        arr.push(floor(random() * 1000));
-    }
-    return arr;
-}
-
-// Benchmark sorting algorithms
-let testData = generateRandomArray(100);
-
-let bubbleTime = benchmark(bubbleSort, [testData]);
-let quickTime = benchmark(quickSort, [testData]);
-
-print "Bubble sort: " + str(bubbleTime.timeMicroseconds) + " μs";
-print "Quick sort: " + str(quickTime.timeMicroseconds) + " μs";
-
-if (quickTime.timeMicroseconds > 0) {
-    let speedup = bubbleTime.timeMicroseconds / quickTime.timeMicroseconds;
-    print "Quick sort is " + str(speedup) + "x faster";
-}
-```
-
-### Timing Operations
-
-```claw
-// Time a block of code
-fn timeOperation(name, operation) {
-    print "Starting " + name + "...";
-    let start = now();
-    
-    let result = operation();
-    
-    let end = now();
-    let elapsed = end - start;
-    
-    print name + " completed in " + str(elapsed) + " ms";
-    return result;
-}
-
-// Usage
-let result = timeOperation("calculation", fun() {
-    let sum = 0;
-    for (let i = 0; i < 1000000; i = i + 1) {
-        sum = sum + i;
-    }
-    return sum;
-});
-
-print "Result: " + str(result);
-```
-
----
-
-## ⚠️ Error Handling
-
-### Runtime Errors
-
-ClawScript provides precise error reporting with line and column information:
-
-```claw
-// Division by zero
-let result = 10 / 0;  // Error: Division by zero
-
-// Array index out of bounds
-let arr = [1, 2, 3];
-print arr[10];  // Error: Array index out of bounds: 10
-
-// Invalid operation
-let str = "hello";
-let result = str - 5;  // Error: Operands must be numbers
-
-// Function call on non-function
-let notAFunction = 42;
-notAFunction();  // Error: Can only call functions and classes
-```
-
-### Error Information
-
-Errors include:
-- **Error message**: Description of what went wrong
-- **Line number**: Where the error occurred
-- **Column number**: Exact position in the line
-- **Token information**: The specific token that caused the error
-
-### Best Practices for Error Prevention
-
-```claw
-// Check array bounds before access
-fn safeGet(array, index) {
-    if (index >= 0 && index < array.length) {
-        return array[index];
-    } else {
-        return nil;
-    }
-}
-
-let arr = [1, 2, 3];
-print safeGet(arr, 1);  // 2
-print safeGet(arr, 10); // nil
-
-// Check file existence before reading
-fn safeReadFile(filename) {
-    if (fileExists(filename)) {
-        return readFile(filename);
-    } else {
-        return "File not found: " + filename;
-    }
-}
-
-let content = safeReadFile("data.txt");
-print content;
-
-// Validate input types
-fn addNumbers(a, b) {
-    if (type(a) != "number" || type(b) != "number") {
-        throw "Both arguments must be numbers";
-    }
-    return a + b;
-}
-
-try {
-    let result = addNumbers(5, "hello");
-} catch (error) {
-    print "Error: " + error;
-}
-```
-
----
-
-## 📚 Built-in Functions
-
-### Type Conversion Functions
-
-```claw
-// Convert to string
-print str(42);        // "42"
-print str(true);      // "true"
-print str(nil);       // "nil"
-
-// Convert to number
-print num("123");     // 123
-print num("3.14");    // 3.14
-print num(true);      // 1
-print num(false);     // 0
-
-// Get type as string
-print type(42);       // "number"
-print type("hello");  // "string"
-print type(true);     // "bool"
-print type(nil);      // "nil"
-print type([1,2,3]);  // "array"
-print type({"a":1});  // "hashmap"
-print type(fun(x){}); // "function"
-```
-
-### Input/Output Functions
-
-```claw
-// Print to console
-print "Hello, World!";
-print 42;
-print [1, 2, 3];
-
-// Read input from user
-let name = input("Enter your name: ");
-print "Hello, " + name + "!";
-
-let age = input("Enter your age: ");
-let ageNum = num(age);
-print "Next year you'll be " + str(ageNum + 1);
-```
-
-### Utility Functions
-
-```claw
-// Get current time
-let timestamp = now();
-print "Current timestamp: " + str(timestamp);
-
-// Format date (stub implementation)
-let formatted = formatDate(now(), "YYYY-MM-DD");
-print "Formatted date: " + formatted;
-
-// JSON encoding/decoding
-let obj = {
-    "name": "Alice",
-    "age": 25,
-    "active": true
-};
-
-let jsonString = jsonEncode(obj);
-print jsonString;
-
-let parsed = jsonDecode(jsonString);
-print parsed["name"];  // "Alice"
-```
-
----
-
-## 🎯 Best Practices
-
-### Naming Conventions
-
-```claw
-// Use descriptive names
-let userAge = 25;           // Good
-let ua = 25;                // Avoid
-
-let calculateTotal = fun(prices) {  // Good
-    // implementation
-};
-
-let calc = fun(p) {         // Avoid
-    // implementation
-};
-```
-
-### Code Organization
-
-```claw
-// Group related functionality
-fn mathUtils = {
-    "add": fun(a, b) { return a + b; },
-    "subtract": fun(a, b) { return a - b; },
-    "multiply": fun(a, b) { return a * b; }
-};
-
-// Use consistent indentation
-if (condition) {
-    doSomething();
-    doAnotherThing();
-} else {
-    handleAlternative();
-}
-```
-
-### Error Prevention
-
-```claw
-// Validate inputs
-fn divide(a, b) {
-    if (type(a) != "number" || type(b) != "number") {
-        throw "Arguments must be numbers";
-    }
-    if (b == 0) {
-        throw "Division by zero";
-    }
-    return a / b;
-}
-
-// Check array bounds
-fn getLast(array) {
-    if (array.length == 0) {
-        return nil;
-    }
-    return array[array.length - 1];
-}
-```
-
-### Performance Considerations
-
-```claw
-// Avoid unnecessary operations in loops
-// Bad:
-for (let i = 0; i < array.length; i = i + 1) {
-    let length = array.length;  // Calculated every iteration
-    // use length
-}
-
-// Good:
-let length = array.length;
-for (let i = 0; i < length; i = i + 1) {
-    // use length
-}
-
-// Use appropriate data structures
-// For frequent lookups, use hash maps
-let lookup = {
-    "key1": "value1",
-    "key2": "value2"
-};
-print lookup["key1"];  // Fast O(1) lookup
-
-// For ordered data, use arrays
-let ordered = [1, 2, 3, 4, 5];
-// Process in order
-```
-
----
-
-## 📖 Examples
-
-### Complete Programs
-
-#### Calculator
-
-```claw
-fn calculator() {
-    print "=== Simple Calculator ===";
-    
-    let num1 = num(input("Enter first number: "));
-    let operator = input("Enter operator (+, -, *, /): ");
-    let num2 = num(input("Enter second number: "));
-    
-    let result;
-    
-    if (operator == "+") {
-        result = num1 + num2;
-    } else if (operator == "-") {
-        result = num1 - num2;
-    } else if (operator == "*") {
-        result = num1 * num2;
-    } else if (operator == "/") {
-        if (num2 != 0) {
-            result = num1 / num2;
-        } else {
-            print "Error: Division by zero";
-            return;
-        }
-    } else {
-        print "Error: Invalid operator";
-        return;
-    }
-    
-    print "Result: " + str(result);
-}
-
-calculator();
-```
-
-#### Todo List Manager
-
-```claw
-fn todoManager() {
-    let todos = [];
-    
-    while (true) {
-        print "\n=== Todo Manager ===";
-        print "1. Add todo";
-        print "2. List todos";
-        print "3. Remove todo";
-        print "4. Exit";
-        
-        let choice = num(input("Enter choice: "));
-        
-        if (choice == 1) {
-            let todo = input("Enter todo: ");
-            todos.push(todo);
-            print "Todo added!";
-        } else if (choice == 2) {
-            if (todos.length == 0) {
-                print "No todos yet!";
-            } else {
-                print "Todos:";
-                for (let i = 0; i < todos.length; i = i + 1) {
-                    print (i + 1) + ". " + todos[i];
-                }
-            }
-        } else if (choice == 3) {
-            if (todos.length == 0) {
-                print "No todos to remove!";
-            } else {
-                let index = num(input("Enter todo number to remove: ")) - 1;
-                if (index >= 0 && index < todos.length) {
-                    let removed = todos.pop(index);
-                    print "Removed: " + removed;
-                } else {
-                    print "Invalid todo number!";
-                }
-            }
-        } else if (choice == 4) {
-            print "Goodbye!";
-            break;
-        } else {
-            print "Invalid choice!";
-        }
-    }
-}
-
-todoManager();
-```
-
-#### File Processor
-
-```claw
+// Reading files
 fn processFile(filename) {
-    if (!exists(filename)) {
+    if (!fileExists(filename)) {
         print "File not found: " + filename;
         return;
     }
@@ -2018,231 +416,460 @@ fn processFile(filename) {
     let content = readFile(filename);
     let lines = split(content, "\n");
     
-    let wordCount = 0;
-    let lineCount = 0;
-    
+    print "Processing " + lines.length + " lines...";
     for (let i = 0; i < lines.length; i = i + 1) {
-        let line = trim(lines[i]);
-        if (len(line) > 0) {
-            lineCount = lineCount + 1;
-            let words = split(line, " ");
-            for (let j = 0; j < words.length; j = j + 1) {
-                if (len(trim(words[j])) > 0) {
-                    wordCount = wordCount + 1;
+        if (lines[i].length > 0) {
+            print "Line " + (i + 1) + ": " + lines[i];
+        }
+    }
+}
+
+processFile("data.txt");
+```
+
+---
+
+## Migration Guide
+
+### Migrating from v2.0.0 to v3.0.0
+
+#### Breaking Changes
+
+1. **File Extensions**: `.volt` → `.claw`
+2. **Array Length**: `len(array)` → `array.length`
+3. **Object Size**: `size(object)` → `object.size`
+4. **CLI Output**: Removed emojis from command-line interface
+
+#### Migration Steps
+
+1. **Backup**: Create backup of existing code
+2. **Rename Files**: Change `.volt` to `.claw`
+3. **Update Function Calls**: Replace deprecated functions
+4. **Test**: Run existing test suite
+5. **Update Documentation**: Update any references
+
+#### Code Examples
+
+```claw
+// Before v3.0.0
+let arr = [1, 2, 3];
+let length = len(arr);
+
+let obj = {"a": 1, "b": 2};
+let size = size(obj);
+
+// After v3.0.0
+let arr = [1, 2, 3];
+let length = arr.length;
+
+let obj = {"a": 1, "b": 2};
+let size = obj.size;
+```
+
+---
+
+## Performance Guide
+
+### Optimization Tips
+
+1. **Use Appropriate Data Structures**
+   - Arrays for ordered data
+   - Objects for key-value lookups
+   - Use `keys()` and `values()` for iteration
+
+2. **Minimize Object Creation**
+   - Reuse objects when possible
+   - Use object pools for frequently created objects
+   - Avoid creating objects in tight loops
+
+3. **Optimize Loops**
+   - Cache frequently accessed properties
+   - Use reverse loops when possible
+   - Avoid repeated function calls
+
+4. **String Operations**
+   - Use `join()` for large concatenations
+   - Cache string lengths
+   - Use appropriate string methods
+
+### Performance Measurement
+
+```claw
+fn measureTime(description, func) {
+    let start = clock();
+    func();
+    let end = clock();
+    print description + ": " + (end - start) + " ms";
+}
+
+measureTime("Array creation", fn() {
+    let arr = [];
+    for (let i = 0; i < 10000; i = i + 1) {
+        arr.push(i);
+    }
+});
+```
+
+### JIT Compilation
+
+Enable JIT for performance-critical applications:
+
+```bash
+./clawscript --jit=aggressive program.claw
+```
+
+JIT works best with:
+- Stable types
+- Predictable control flow
+- Hot loops
+- Simple arithmetic operations
+
+---
+
+## Examples
+
+### Complete Application Example
+
+```claw
+// task_manager.claw - Task management system
+
+class Task {
+    init(title, priority) {
+        this.title = title;
+        this.priority = priority;
+        this.completed = false;
+        this.createdAt = clock();
+    }
+    
+    complete() {
+        this.completed = true;
+        this.completedAt = clock();
+    }
+    
+    getInfo() {
+        let status = this.completed ? "Completed" : "Pending";
+        return "[" + status + "] " + this.title + " (Priority: " + this.priority + ")";
+    }
+}
+
+class TaskManager {
+    init() {
+        this.tasks = [];
+        this.nextId = 1;
+    }
+    
+    addTask(title, priority) {
+        let task = Task(title, priority);
+        task.id = this.nextId;
+        this.tasks.push(task);
+        this.nextId = this.nextId + 1;
+        print "Task added: " + task.getInfo();
+        return task;
+    }
+    
+    completeTask(taskId) {
+        for (let i = 0; i < this.tasks.length; i = i + 1) {
+            if (this.tasks[i].id === taskId) {
+                this.tasks[i].complete();
+                print "Task completed: " + this.tasks[i].getInfo();
+                return true;
+            }
+        }
+        print "Task not found: " + taskId;
+        return false;
+    }
+    
+    listTasks() {
+        print "\n=== Task List ===";
+        if (this.tasks.length === 0) {
+            print "No tasks found.";
+            return;
+        }
+        
+        for (let i = 0; i < this.tasks.length; i = i + 1) {
+            print (i + 1) + ". " + this.tasks[i].getInfo();
+        }
+        print "================";
+    }
+    
+    getStatistics() {
+        let total = this.tasks.length;
+        let completed = 0;
+        let pending = 0;
+        
+        for (let i = 0; i < this.tasks.length; i = i + 1) {
+            if (this.tasks[i].completed) {
+                completed = completed + 1;
+            } else {
+                pending = pending + 1;
+            }
+        }
+        
+        print "\n=== Statistics ===";
+        print "Total tasks: " + total;
+        print "Completed: " + completed;
+        print "Pending: " + pending;
+        print "Completion rate: " + ((completed / total) * 100) + "%";
+        print "================";
+    }
+    
+    saveToFile(filename) {
+        let data = {
+            "tasks": this.tasks,
+            "nextId": this.nextId,
+            "savedAt": clock()
+        };
+        
+        let json = str(data);  // Simplified JSON serialization
+        writeFile(filename, json);
+        print "Tasks saved to " + filename;
+    }
+    
+    loadFromFile(filename) {
+        if (!fileExists(filename)) {
+            print "No saved file found: " + filename;
+            return false;
+        }
+        
+        let json = readFile(filename);
+        // Simplified JSON parsing would go here
+        print "Tasks loaded from " + filename;
+        return true;
+    }
+}
+
+// Main application
+fn main() {
+    print "=== ClawScript Task Manager ===";
+    
+    let manager = TaskManager();
+    
+    // Add some tasks
+    manager.addTask("Write documentation", "High");
+    manager.addTask("Fix bugs", "Medium");
+    manager.addTask("Review code", "Low");
+    
+    // List tasks
+    manager.listTasks();
+    
+    // Complete a task
+    manager.completeTask(1);
+    
+    // List updated tasks
+    manager.listTasks();
+    
+    // Show statistics
+    manager.getStatistics();
+    
+    // Save tasks
+    manager.saveToFile("tasks.claw");
+    
+    print "\nTask Manager demo completed!";
+}
+
+// Run the application
+main();
+```
+
+### Data Processing Example
+
+```claw
+// data_processor.claw - Data analysis and processing
+
+class DataProcessor {
+    init() {
+        this.data = [];
+        this.statistics = {};
+    }
+    
+    loadData(filename) {
+        if (!fileExists(filename)) {
+            print "Data file not found: " + filename;
+            return false;
+        }
+        
+        let content = readFile(filename);
+        let lines = split(content, "\n");
+        
+        print "Loading " + lines.length + " data points...";
+        
+        for (let i = 0; i < lines.length; i = i + 1) {
+            if (lines[i].length > 0) {
+                let fields = split(lines[i], ",");
+                if (fields.length >= 2) {
+                    this.data.push({
+                        "value": num(fields[0]),
+                        "category": fields[1],
+                        "timestamp": fields.length > 2 ? fields[2] : str(clock())
+                    });
                 }
             }
         }
+        
+        print "Loaded " + this.data.length + " valid data points";
+        return true;
     }
     
-    print "File: " + filename;
-    print "Lines: " + str(lineCount);
-    print "Words: " + str(wordCount);
-    print "Characters: " + str(len(content));
+    calculateStatistics() {
+        if (this.data.length === 0) {
+            print "No data to analyze";
+            return;
+        }
+        
+        let values = this.data.map(fn(item) { return item["value"]; });
+        
+        this.statistics = {
+            "count": values.length,
+            "sum": values.reduce(fn(acc, x) { return acc + x; }, 0),
+            "min": values.reduce(fn(acc, x) { return min(acc, x); }, values[0]),
+            "max": values.reduce(fn(acc, x) { return max(acc, x); }, values[0]),
+            "mean": 0,
+            "categories": {}
+        };
+        
+        this.statistics["mean"] = this.statistics["sum"] / this.statistics["count"];
+        
+        // Category analysis
+        for (let i = 0; i < this.data.length; i = i + 1) {
+            let category = this.data[i]["category"];
+            if (!has(this.statistics["categories"], category)) {
+                this.statistics["categories"][category] = 0;
+            }
+            this.statistics["categories"][category] = this.statistics["categories"][category] + 1;
+        }
+        
+        this.printStatistics();
+    }
+    
+    printStatistics() {
+        print "\n=== Data Statistics ===";
+        print "Count: " + this.statistics["count"];
+        print "Sum: " + this.statistics["sum"];
+        print "Min: " + this.statistics["min"];
+        print "Max: " + this.statistics["max"];
+        print "Mean: " + this.statistics["mean"];
+        
+        print "\nCategories:";
+        let categories = this.statistics["categories"];
+        let categoryKeys = keys(categories);
+        for (let i = 0; i < categoryKeys.length; i = i + 1) {
+            let key = categoryKeys[i];
+            print "  " + key + ": " + categories[key];
+        }
+        print "======================";
+    }
+    
+    filterByCategory(category) {
+        return this.data.filter(fn(item) { return item["category"] === category; });
+    }
+    
+    filterByValue(minValue, maxValue) {
+        return this.data.filter(fn(item) { 
+            return item["value"] >= minValue && item["value"] <= maxValue; 
+        });
+    }
+    
+    exportResults(filename) {
+        let output = "Value,Category,Timestamp\n";
+        
+        for (let i = 0; i < this.data.length; i = i + 1) {
+            let item = this.data[i];
+            output = output + item["value"] + "," + item["category"] + "," + item["timestamp"] + "\n";
+        }
+        
+        writeFile(filename, output);
+        print "Results exported to " + filename;
+    }
 }
 
-processFile("document.txt");
+// Sample data generation
+fn generateSampleData(filename, count) {
+    let categories = ["A", "B", "C", "D"];
+    let data = "";
+    
+    for (let i = 0; i < count; i = i + 1) {
+        let value = random() * 100;
+        let category = categories[floor(random() * categories.length)];
+        let timestamp = str(clock());
+        
+        data = data + value + "," + category + "," + timestamp + "\n";
+    }
+    
+    writeFile(filename, data);
+    print "Generated " + count + " sample data points in " + filename;
+}
+
+// Main execution
+fn main() {
+    print "=== ClawScript Data Processor ===";
+    
+    let filename = "sample_data.csv";
+    
+    // Generate sample data
+    generateSampleData(filename, 1000);
+    
+    // Process data
+    let processor = DataProcessor();
+    processor.loadData(filename);
+    processor.calculateStatistics();
+    
+    // Filter examples
+    print "\nFiltering examples:";
+    let categoryA = processor.filterByCategory("A");
+    print "Category A items: " + categoryA.length;
+    
+    let range50to75 = processor.filterByValue(50, 75);
+    print "Values between 50-75: " + range50to75.length;
+    
+    // Export results
+    processor.exportResults("processed_data.csv");
+    
+    print "\nData processing completed!";
+}
+
+main();
 ```
 
 ---
 
-## 🏗️ Project Structure
+## Contributing
 
-This section describes how the ClawScript repository is organized for v0.9.2.
+### Development Setup
 
-```text
-ClawScript/
-├── src/                     # Core implementation (lexer, parser, VM, runtime)
-│   ├── lexer/              # Tokens and lexical analysis
-│   ├── parser/             # AST nodes and recursive descent parser
-│   ├── interpreter/        # Tree-walk interpreter and runtime
-│   ├── features/           # Arrays, hash maps, classes, string pool
-│   ├── vm/                 # Bytecode virtual machine
-│   ├── compiler/           # AST-to-bytecode compiler
-│   ├── aot/                # AoT compilation pipeline (optional, LLVM 16+)
-│   ├── jit/                # JIT compilation stubs (optional)
-│   └── main.cpp            # REPL & file runner
-├── tests/                   # Automated tests (unit, integration, perf)
-│   ├── test_*.cpp          # Unit and feature tests (GTest)
-│   ├── integration_tests.cpp# End-to-end script tests
-│   └── perf/               # Performance and stress tests (benchmarks)
-├── examples/                # 50+ example programs (organized by category)
-│   ├── basic/              # Beginner-friendly examples
-│   ├── math/               # Mathematical operations
-│   ├── strings/            # String manipulation examples
-│   ├── data_structures/    # Arrays and hash maps
-│   ├── functional/         # Functional programming patterns
-│   ├── algorithms/         # Algorithmic examples
-│   ├── intermediate/       # Intermediate complexity programs
-│   ├── advanced/           # Advanced/debug examples
-│   └── advanced_examples/  # Complex real-world examples
-├── benchmarks/             # C++ microbenchmarks for core components
-├── docs/                   # Language documentation and migration guides
-├── CMakeLists.txt
-└── README.md
+1. **Clone Repository**: `git clone https://github.com/your-org/clawscript.git`
+2. **Install Dependencies**: CMake, C++20 compiler
+3. **Build**: `mkdir build && cd build && cmake .. && make`
+4. **Test**: `make test`
+
+### Code Style
+
+- Use 4 spaces for indentation
+- Use camelCase for variables and functions
+- Use PascalCase for classes
+- Add comments for complex logic
+- Follow existing code patterns
+
+### Submitting Changes
+
+1. Fork the repository
+2. Create feature branch
+3. Make changes with tests
+4. Ensure all tests pass
+5. Submit pull request
+
+### Testing
+
+```bash
+# Run all tests
+./clawscript_test
+
+# Run specific test
+./clawscript_test --test=array_operations
+
+# Performance tests
+./clawscript_test --performance
 ```
-
-At a high level, the core implementation is split into a classic interpreter
-pipeline and a bytecode pipeline:
-
-- The lexer and parser turn source text into a typed AST.
-- The interpreter walks the AST directly for clarity and debugging.
-- The compiler lowers the AST into bytecode instructions.
-- The VM executes bytecode using a stack-based eval loop and NaN-boxed values.
-
-The most important modules for new contributors are:
-
-- `src/lexer/`
-  - Tokenizes raw source into a stream of tokens with line/column metadata.
-  - Implements keyword tables, number/string scanning, and error tokens.
-- `src/parser/`
-  - Builds the AST and statement nodes using recursive descent.
-  - Encodes all language grammar rules and precedence rules.
-- `src/interpreter/`
-  - Contains the tree-walk interpreter, environments, and runtime error types.
-  - Hosts native functions (I/O, math, time, JSON) and the module loader.
-- `src/features/`
-  - Implements shared runtime helpers such as arrays, hash maps, and the string pool.
-  - Provides the building blocks used by both interpreter and VM.
-- `src/vm/`
-  - Implements the bytecode virtual machine and its execution loop.
-  - Uses NaN-boxing to represent values efficiently and supports profiling.
-- `src/compiler/`
-  - Compiles AST programs into bytecode chunks consumed by the VM.
-  - Handles scopes, locals, upvalues, and constant tables.
-
-Start by reading `src/lexer`, then `src/parser`, and finally either
-`src/interpreter` or the `src/compiler` + `src/vm` pair depending on whether
-you are more interested in the tree-walk or VM pipeline.
 
 ---
 
-## ⚙️ Development Workflow
-
-This is the recommended workflow for building, testing, and running ClawScript.
-
-### Build
-
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Debug   # Development builds
-cmake -B build -DCMAKE_BUILD_TYPE=Release # Optimized builds
-cmake --build build
-```
-
-### AoT Build (Optional)
-
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DCLAW_ENABLE_AOT=ON
-cmake --build build --config Release
-./build/bin/Release/claw --aot-output=main.o script.claw
-```
-
-### Run the REPL or a Script
-
-```bash
-./build/bin/claw               # Start interactive REPL
-./build/bin/claw script.claw   # Run a script file
-```
-
-### Run Tests
-
-```bash
-ctest --test-dir build                 # Run all tests (if enabled)
-./build/bin/claw_tests                # Run unit and feature tests
-./build/bin/claw_integration_tests    # Run integration tests
-```
-
-### Run Benchmarks
-
-```bash
-./build/bin/claw_benchmarks
-```
-
-### Profiling & Observability (v2.0.0)
-
-Use the built-in profiler to analyze CPU and heap behavior.
-
-```bash
-# Enable profiling and write HTML flame graph
-build\bin\Release\claw.exe --profile=profile.html script.claw
-
-# Change sampling frequency (Hz)
-build\bin\Release\claw.exe --profile --profile-hz=200 script.claw
-```
-
-- Outputs:
-  - HTML flame graph: profile.html (or claw_profile.html if no filename is given)
-  - Folded stacks: profile.cpu.folded, profile.heap.folded
-  - Speedscope JSON: profile.speedscope.json
-- Environment toggles:
-- CLAW_PROFILE=1 — enable profiling without CLI
-- CLAW_PROFILE_HZ=100 — set sampling frequency
-- CLAW_PROFILE_OUT=claw_profile.html — set output base path
-- In-script controls:
-  - profilePause() — pause sampling
-  - profileResume() — resume sampling
-
----
-
-## ❓ FAQ
-
-### General Questions
-
-**Q: What is ClawScript?**
-A: ClawScript is a dynamically-typed programming language built from scratch in C++20. It's designed to be both educational and practical.
-
-**Q: Why build a language from scratch?**
-A: To understand how programming languages work internally - lexers, parsers, interpreters, and runtime systems.
-
-**Q: Is ClawScript production-ready?**
-A: While functional and well-tested, it's primarily educational. For production use, consider established languages.
-
-### Technical Questions
-
-**Q: What C++ standard is required?**
-A: C++20 or higher is required for modern features and standard library support.
-
-**Q: How fast is ClawScript?**
-A: v0.9.2 includes a bytecode VM, NaN-boxed values, inline caches, and optional LLVM AoT, making it significantly faster than the original tree-walk-only versions while remaining educational and portable.
-
-**Q: Does it have garbage collection?**
-A: It uses C++ smart pointers (shared_ptr) for automatic memory management.
-
-### Language Features
-
-**Q: Does it support object-oriented programming?**
-A: Yes. ClawScript supports classes with inheritance, methods, constructors, `this`, and `super`.
-
-**Q: Are there modules or imports?**
-A: Not yet. All code must be in a single file or manually concatenated.
-
-**Q: What data structures are available?**
-A: Arrays, hash maps, strings, numbers, booleans, and functions.
-
-### Development
-
-**Q: How many tests does it have?**
-A: Around 580 automated tests across unit, integration, and performance suites in v0.9.2.
-
-**Q: How is error reporting handled?**
-A: Precise error messages with line and column numbers for exact source location.
-
-**Q: Can I contribute?**
-A: Yes! Contributions are welcome for bug fixes, features, and documentation improvements.
-
----
-
-## 📄 License
-
-MIT License - Free to use, modify, and distribute.
-
----
-
-<div align="center">
-
-### ⚡ ClawScript v2.0.0 ⚡
-
-**Built with passion and C++20**
-
-[GitHub Repository](https://github.com/yourusername/voltscript) • [Report Issues](https://github.com/yourusername/voltscript/issues)
-
-</div>
+This documentation provides a comprehensive guide to ClawScript v3.0.0. For specific API details, see the individual reference documents. For community support and contributions, visit the GitHub repository.

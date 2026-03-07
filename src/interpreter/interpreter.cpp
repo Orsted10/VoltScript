@@ -9,7 +9,58 @@
 #include "features/class.h"
 #include "features/string_pool.h"
 #include "interpreter/natives/native_math.h"
+#include "interpreter/natives/native_gamemath.h"
+#include "interpreter/natives/native_collections.h"
+#include "interpreter/natives/native_regex.h"
+#include "interpreter/natives/native_os.h"
+#include "interpreter/natives/native_events.h"
+#include "interpreter/natives/native_ecs.h"
 #include "interpreter/natives/native_string.h"
+#include "interpreter/natives/native_coroutine.h"
+#include "interpreter/natives/native_ffi.h"
+#include "interpreter/natives/native_http.h"
+#include "interpreter/natives/native_thread.h"
+#include "interpreter/natives/native_gfx.h"
+#include "interpreter/natives/native_types.h"
+#include "interpreter/natives/native_package.h"
+#include "interpreter/natives/native_database.h"
+#include "interpreter/natives/native_crypto.h"
+#include "interpreter/natives/native_ai.h"
+#include "interpreter/natives/native_websocket.h"
+#include "interpreter/natives/native_audio.h"
+#include "interpreter/natives/native_blockchain.h"
+#include "interpreter/natives/native_vr.h"
+#include "interpreter/natives/native_quantum.h"
+#include "interpreter/natives/native_robotics.h"
+#include "interpreter/natives/native_space.h"
+#include "interpreter/natives/native_biotech.h"
+#include "interpreter/natives/native_nanotech.h"
+#include "interpreter/natives/native_climate.h"
+#include "interpreter/natives/native_medical.h"
+#include "interpreter/natives/native_physics.h"
+#include "interpreter/natives/native_mathematics.h"
+#include "interpreter/natives/native_optimization.h"
+#include "interpreter/natives/native_cybersecurity.h"
+#include "interpreter/natives/native_augmented_reality.h"
+#include "interpreter/natives/native_blockchain_advanced.h"
+#include "interpreter/natives/native_quantum_computing_advanced.h"
+// Must undef Windows macros that clash with our identifiers before including coroutine.h
+#ifdef _WIN32
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#endif
+#include "features/coroutine.h"
+#ifdef _WIN32
+// Windows defines Yield as SwitchToThread — undefine so our code compiles
+#  ifdef Yield
+#    undef Yield
+#  endif
+#endif
+
 #include "interpreter/natives/native_array.h"
 #include "interpreter/natives/native_io.h"
 #include "interpreter/natives/native_time.h"
@@ -25,9 +76,14 @@
 #include <chrono>
 #include <thread>
 #include <cstdio>
+#include <algorithm>
+#include <limits>
 #include "observability/profiler.h"
 
 namespace claw {
+
+thread_local Interpreter* tl_current_interpreter = nullptr;
+
 
 Interpreter::Interpreter()
     : environment_(std::make_shared<Environment>()),
@@ -100,8 +156,43 @@ void Interpreter::defineNatives() {
     
     // Register math native functions
     registerNativeMath(globals_);
+    registerNativeGameMath(globals_);
+    registerNativeCollections(globals_);
+    registerNativeRegex(globals_);
+    registerNativeOS(globals_);
+    registerNativeEvents(globals_);
+    registerNativeECS(*globals_);
+    registerNativeCoroutine(globals_);
+    registerNativeFFI(globals_);
+    registerNativeHTTP(globals_);
+    registerNativeThread(globals_);
+    registerNativeGFX(globals_);
+    registerNativeTypes(globals_);
+    registerNativePackage(globals_);
+    registerNativeDatabase(globals_);
+    registerNativeCrypto(globals_);
+    registerNativeAI(globals_);
+    registerNativeWebSocket(globals_);
+    registerNativeAudio(globals_);
+    registerNativeBlockchain(globals_);
+    registerNativeVR(globals_);
+    registerNativeQuantum(globals_);
+    registerNativeRobotics(globals_);
+    registerNativeSpace(globals_);
+    registerNativeBiotech(globals_);
+    registerNativeNanotech(globals_);
+    registerNativeClimate(globals_);
+    registerNativeMedical(globals_);
+    registerNativePhysics(globals_);
+    registerNativeMathematics(globals_);
+    registerNativeOptimization(globals_);
+    registerNativeCybersecurity(globals_);
+    registerNativeAugmentedReality(globals_);
+    registerNativeBlockchainAdvanced(globals_);
+    registerNativeQuantumComputingAdvanced(globals_);
     
     // ==================== TIME AND DATE STUFF (NEW FOR v0.7.5) ====================
+
     
     // Time moved to native_time.cpp
     
@@ -258,67 +349,65 @@ void Interpreter::defineNatives() {
     
     // ==================== FUNCTIONAL PROGRAMMING UTILITIES (NEW FOR v0.7.9) ====================
     
-    // compose(...functions) - compose functions from right to left
-    globals_->define("compose", std::make_shared<NativeFunction>(
-        -1, // Variable arity
-        [](const std::vector<Value>& args) -> Value {
-            // Verify all arguments are callable
-            for (const auto& arg : args) {
-                if (!isCallable(arg)) {
-                    throw std::runtime_error("E2001: All arguments to compose() must be functions");
-                }
+    // compose(...functions) — compose right-to-left: compose(f,g)(x) = f(g(x))
+    struct ComposeCallable : public Callable {
+        std::vector<Value> fns;
+        explicit ComposeCallable(std::vector<Value> f) : fns(std::move(f)) {}
+        Value call(Interpreter& interp, const std::vector<Value>& args) override {
+            Value result = args.empty() ? nilValue() : args[0];
+            for (int i = static_cast<int>(fns.size()) - 1; i >= 0; --i) {
+                result = asCallable(fns[i])->call(interp, {result});
             }
-            
-            // Create a function that applies the composed functions
-            return callableValue(std::make_shared<NativeFunction>(
-                1, // Takes one argument
-                [args](const std::vector<Value>& callArgs) -> Value {
-                    if (callArgs.empty()) {
-                        throw std::runtime_error("E4007: compose() function needs at least one argument");
-                    }
-                    
-                    Value result = callArgs[0];
-                    
-                    // Apply functions from right to left (last to first)
-                    // For now, return the input unchanged to avoid crashes
-                    return result;
-                },
-                "composedFunction"
-            ));
+            return result;
+        }
+        int arity() const override { return 1; }
+        std::string toString() const override { return "<composed>"; }
+    };
+    globals_->define("compose", callableValue(std::make_shared<NativeFunction>(
+        -1,
+        [](const std::vector<Value>& args) -> Value {
+            for (const auto& a : args)
+                if (!isCallable(a)) throw std::runtime_error("compose(): all arguments must be functions");
+            // Return a Callable that captures the function list
+            struct Composed : public Callable {
+                std::vector<Value> fns;
+                explicit Composed(std::vector<Value> f) : fns(std::move(f)) {}
+                Value call(Interpreter& interp, const std::vector<Value>& a) override {
+                    Value r = a.empty() ? nilValue() : a[0];
+                    for (int i = static_cast<int>(fns.size()) - 1; i >= 0; --i)
+                        r = asCallable(fns[i])->call(interp, {r});
+                    return r;
+                }
+                int arity() const override { return 1; }
+                std::string toString() const override { return "<composed>"; }
+            };
+            return callableValue(std::make_shared<Composed>(args));
         },
         "compose"
-    ));
-    
-    // pipe(...functions) - pipe value through functions from left to right
-    globals_->define("pipe", std::make_shared<NativeFunction>(
-        -1, // Variable arity
+    )));
+
+    // pipe(...functions) — pipe left-to-right: pipe(f,g)(x) = g(f(x))
+    globals_->define("pipe", callableValue(std::make_shared<NativeFunction>(
+        -1,
         [](const std::vector<Value>& args) -> Value {
-            // Verify all arguments are callable
-            for (const auto& arg : args) {
-                if (!isCallable(arg)) {
-                    throw std::runtime_error("E2001: All arguments to pipe() must be functions");
+            for (const auto& a : args)
+                if (!isCallable(a)) throw std::runtime_error("pipe(): all arguments must be functions");
+            struct Piped : public Callable {
+                std::vector<Value> fns;
+                explicit Piped(std::vector<Value> f) : fns(std::move(f)) {}
+                Value call(Interpreter& interp, const std::vector<Value>& a) override {
+                    Value r = a.empty() ? nilValue() : a[0];
+                    for (const auto& fn : fns)
+                        r = asCallable(fn)->call(interp, {r});
+                    return r;
                 }
-            }
-            
-            // Create a function that pipes the value through functions
-            return callableValue(std::make_shared<NativeFunction>(
-                1, // Takes one argument
-                [args](const std::vector<Value>& callArgs) -> Value {
-                    if (callArgs.empty()) {
-                        throw std::runtime_error("E4007: pipe() function needs at least one argument");
-                    }
-                    
-                    Value result = callArgs[0];
-                    
-                    // Apply functions from left to right (first to last)
-                    // For now, return the input unchanged to avoid crashes
-                    return result;
-                },
-                "pipeFunction"
-            ));
+                int arity() const override { return 1; }
+                std::string toString() const override { return "<piped>"; }
+            };
+            return callableValue(std::make_shared<Piped>(args));
         },
         "pipe"
-    ));
+    )));
     
     // ==================== PERFORMANCE UTILITIES (NEW FOR v0.7.9) ====================
     // Sleep moved to native_time.cpp
@@ -373,6 +462,7 @@ void Interpreter::execute(Stmt* stmt) {
 }
 
 void Interpreter::execute(const std::vector<StmtPtr>& statements) {
+    tl_current_interpreter = this;
     for (const auto& stmt : statements) {
         execute(stmt.get());
     }
@@ -387,7 +477,7 @@ void Interpreter::visitPrintStmt(PrintStmt* stmt) {
     if (!globals_->canOutput()) {
         throwRuntimeError(stmt->token, ErrorCode::RUNTIME_ERROR, "Output disabled by sandbox");
     }
-    std::cout << valueToString(value) << "\n";
+    std::cout << valueToDisplayString(value) << "\n";
 }
 
 void Interpreter::visitLetStmt(LetStmt* stmt) {
@@ -504,12 +594,13 @@ void Interpreter::visitFnStmt(FnStmt* stmt) {
 }
 
 void Interpreter::visitReturnStmt(ReturnStmt* stmt) {
-    Value value = nilValue();
-    if (stmt->value) {
-        value = evaluate(stmt->value.get());
+    if (stmt->values.size() > 1) {
+        // Multiple return values — wrap in array (Lua-style)
+        auto arr = gcNewArray();
+        for (const auto& v : stmt->values) arr->push(evaluate(v.get()));
+        throw ReturnValue(arrayValue(arr));
     }
-    
-    // Throw a special exception to unwind the call stack
+    Value value = stmt->values.empty() ? nilValue() : evaluate(stmt->values[0].get());
     throw ReturnValue(value);
 }
 
@@ -636,17 +727,7 @@ Value Interpreter::evaluate(Expr* expr) {
 }
 
 Value Interpreter::visitLiteralExpr(LiteralExpr* expr) {
-    switch (expr->type) {
-        case LiteralExpr::Type::Number:
-            return numberToValue(expr->numberValue);
-        case LiteralExpr::Type::String:
-            return stringValue(StringPool::intern(expr->stringValue).data());
-        case LiteralExpr::Type::Bool:
-            return boolValue(expr->boolValue);
-        case LiteralExpr::Type::Nil:
-            return nilValue();
-    }
-    return nilValue();
+    return expr->value;
 }
 
 Value Interpreter::visitVariableExpr(VariableExpr* expr) {
@@ -662,9 +743,12 @@ Value Interpreter::visitUnaryExpr(UnaryExpr* expr) {
     
     switch (expr->op.type) {
         case TokenType::Minus:
+            if (isNumber(right)) return numberToValue(-asNumber(right));
+            { Value out; if (tryMetamethod(right, "__unm", {}, out)) return out; }
             checkNumberOperand(expr->op, right);
             return numberToValue(-asNumber(right));
         case TokenType::Bang:
+            { Value out; if (tryMetamethod(right, "__not", {}, out)) return out; }
             return boolValue(!isTruthy(right));
         case TokenType::BitNot: {
             checkNumberOperand(expr->op, right);
@@ -688,6 +772,17 @@ Value Interpreter::visitBinaryExpr(BinaryExpr* expr) {
             if (isString(left) && isString(right)) {
                 return stringValue(StringPool::intern(asString(left) + asString(right)).data());
             }
+            // Bool + Bool → numeric addition (true=1, false=0)
+            if (isBool(left) && isBool(right)) {
+                return numberToValue((asBool(left) ? 1.0 : 0.0) + (asBool(right) ? 1.0 : 0.0));
+            }
+            // Bool + Number / Number + Bool
+            if (isBool(left) && isNumber(right)) {
+                return numberToValue((asBool(left) ? 1.0 : 0.0) + asNumber(right));
+            }
+            if (isNumber(left) && isBool(right)) {
+                return numberToValue(asNumber(left) + (asBool(right) ? 1.0 : 0.0));
+            }
             // Type coercion: string + number or number + string
             if (isString(left) && isNumber(right)) {
                 return stringValue(StringPool::intern(asString(left) + valueToString(right)).data());
@@ -695,44 +790,91 @@ Value Interpreter::visitBinaryExpr(BinaryExpr* expr) {
             if (isNumber(left) && isString(right)) {
                 return stringValue(StringPool::intern(valueToString(left) + asString(right)).data());
             }
+            // String + Bool / Bool + String
+            if (isString(left)) {
+                return stringValue(StringPool::intern(asString(left) + valueToString(right)).data());
+            }
+            if (isString(right)) {
+                return stringValue(StringPool::intern(valueToString(left) + asString(right)).data());
+            }
+            // Metamethod __add
+            { Value out; if (tryMetamethod(left, "__add", {right}, out)) return out; }
+            { Value out; if (tryMetamethod(right, "__radd", {left}, out)) return out; }
             throwRuntimeError(expr->op, ErrorCode::TYPE_MISMATCH, "Operands must be two numbers or two strings");
             
         case TokenType::Minus:
+            if (isNumber(left) && isNumber(right)) return numberToValue(asNumber(left) - asNumber(right));
+            { Value out; if (tryMetamethod(left, "__sub", {right}, out)) return out; }
             checkNumberOperands(expr->op, left, right);
             return numberToValue(asNumber(left) - asNumber(right));
         case TokenType::Star:
+            if (isNumber(left) && isNumber(right)) return numberToValue(asNumber(left) * asNumber(right));
+            { Value out; if (tryMetamethod(left, "__mul", {right}, out)) return out; }
+            { Value out; if (tryMetamethod(right, "__mul", {left}, out)) return out; }
             checkNumberOperands(expr->op, left, right);
             return numberToValue(asNumber(left) * asNumber(right));
         case TokenType::Slash:
-            checkNumberOperands(expr->op, left, right);
-            if (asNumber(right) == 0.0) {
-                throwRuntimeError(expr->op, ErrorCode::DIVISION_BY_ZERO, "Division by zero");
+            if (isNumber(left) && isNumber(right)) {
+                if (asNumber(right) == 0.0) throwRuntimeError(expr->op, ErrorCode::DIVISION_BY_ZERO, "Division by zero");
+                return numberToValue(asNumber(left) / asNumber(right));
             }
+            { Value out; if (tryMetamethod(left, "__div", {right}, out)) return out; }
+            checkNumberOperands(expr->op, left, right);
+            if (asNumber(right) == 0.0) throwRuntimeError(expr->op, ErrorCode::DIVISION_BY_ZERO, "Division by zero");
             return numberToValue(asNumber(left) / asNumber(right));
         case TokenType::Percent:
-            checkNumberOperands(expr->op, left, right);
-            if (asNumber(right) == 0.0) {
-                throwRuntimeError(expr->op, ErrorCode::DIVISION_BY_ZERO, "Division by zero");
+            if (isNumber(left) && isNumber(right)) {
+                if (asNumber(right) == 0.0) throwRuntimeError(expr->op, ErrorCode::DIVISION_BY_ZERO, "Division by zero");
+                return numberToValue(std::fmod(asNumber(left), asNumber(right)));
             }
+            { Value out; if (tryMetamethod(left, "__mod", {right}, out)) return out; }
+            checkNumberOperands(expr->op, left, right);
+            if (asNumber(right) == 0.0) throwRuntimeError(expr->op, ErrorCode::DIVISION_BY_ZERO, "Division by zero");
             return numberToValue(std::fmod(asNumber(left), asNumber(right)));
             
         case TokenType::Greater:
+            if (isNumber(left) && isNumber(right))
+                return boolValue(asNumber(left) > asNumber(right));
+            if (isString(left) && isString(right))
+                return boolValue(asString(left) > asString(right));
+            { Value out; if (tryMetamethod(left, "__gt", {right}, out)) return out; }
             checkNumberOperands(expr->op, left, right);
             return boolValue(asNumber(left) > asNumber(right));
         case TokenType::GreaterEqual:
+            if (isNumber(left) && isNumber(right))
+                return boolValue(asNumber(left) >= asNumber(right));
+            if (isString(left) && isString(right))
+                return boolValue(asString(left) >= asString(right));
+            { Value out; if (tryMetamethod(left, "__ge", {right}, out)) return out; }
             checkNumberOperands(expr->op, left, right);
             return boolValue(asNumber(left) >= asNumber(right));
         case TokenType::Less:
+            if (isNumber(left) && isNumber(right))
+                return boolValue(asNumber(left) < asNumber(right));
+            if (isString(left) && isString(right))
+                return boolValue(asString(left) < asString(right));
+            { Value out; if (tryMetamethod(left, "__lt", {right}, out)) return out; }
             checkNumberOperands(expr->op, left, right);
             return boolValue(asNumber(left) < asNumber(right));
         case TokenType::LessEqual:
+            if (isNumber(left) && isNumber(right))
+                return boolValue(asNumber(left) <= asNumber(right));
+            if (isString(left) && isString(right))
+                return boolValue(asString(left) <= asString(right));
+            { Value out; if (tryMetamethod(left, "__le", {right}, out)) return out; }
             checkNumberOperands(expr->op, left, right);
             return boolValue(asNumber(left) <= asNumber(right));
             
-        case TokenType::EqualEqual:
+        case TokenType::EqualEqual: {
+            Value out;
+            if (tryMetamethod(left, "__eq", {right}, out)) return out;
             return boolValue(isEqual(left, right));
-        case TokenType::BangEqual:
+        }
+        case TokenType::BangEqual: {
+            Value out;
+            if (tryMetamethod(left, "__eq", {right}, out)) return boolValue(!isTruthy(out));
             return boolValue(!isEqual(left, right));
+        }
         
         // Bitwise operations (integers via truncation)
         case TokenType::BitAnd: {
@@ -793,7 +935,7 @@ Value Interpreter::visitLogicalExpr(LogicalExpr* expr) {
 }
 
 Value Interpreter::visitGroupingExpr(GroupingExpr* expr) {
-    return evaluate(expr->expr.get());
+    return evaluate(expr->expression.get());
 }
 
 Value Interpreter::visitCallExpr(CallExpr* expr) {
@@ -803,7 +945,20 @@ Value Interpreter::visitCallExpr(CallExpr* expr) {
     // Evaluate all the arguments
     std::vector<Value> arguments;
     for (const auto& arg : expr->arguments) {
-        arguments.push_back(evaluate(arg.get()));
+        // Handle spread: ...array expands into individual arguments
+        if (auto* spread = dynamic_cast<SpreadExpr*>(arg.get())) {
+            Value spreadVal = evaluate(spread->expr.get());
+            if (isArray(spreadVal)) {
+                auto arr = asArray(spreadVal);
+                for (int i = 0; i < arr->length(); i++) {
+                    arguments.push_back(arr->get(i));
+                }
+            } else {
+                arguments.push_back(spreadVal);
+            }
+        } else {
+            arguments.push_back(evaluate(arg.get()));
+        }
     }
     
     if (!isCallable(callee) && !isClass(callee)) {
@@ -886,28 +1041,32 @@ Value Interpreter::visitCompoundAssignExpr(CompoundAssignExpr* expr) {
             }
             result = numberToValue(asNumber(current) / asNumber(operand));
             break;
-        case TokenType::BitAndEqual: {
+        case TokenType::BitAndEqual:
+        case TokenType::BitAnd: {
             checkNumberOperands(expr->op, current, operand);
             auto lv = static_cast<int64_t>(asNumber(current));
             auto rv = static_cast<int64_t>(asNumber(operand));
             result = numberToValue(static_cast<double>(lv & rv));
             break;
         }
-        case TokenType::BitOrEqual: {
+        case TokenType::BitOrEqual:
+        case TokenType::BitOr: {
             checkNumberOperands(expr->op, current, operand);
             auto lv = static_cast<int64_t>(asNumber(current));
             auto rv = static_cast<int64_t>(asNumber(operand));
             result = numberToValue(static_cast<double>(lv | rv));
             break;
         }
-        case TokenType::BitXorEqual: {
+        case TokenType::BitXorEqual:
+        case TokenType::BitXor: {
             checkNumberOperands(expr->op, current, operand);
             auto lv = static_cast<int64_t>(asNumber(current));
             auto rv = static_cast<int64_t>(asNumber(operand));
             result = numberToValue(static_cast<double>(lv ^ rv));
             break;
         }
-        case TokenType::ShiftLeftEqual: {
+        case TokenType::ShiftLeftEqual:
+        case TokenType::ShiftLeft: {
             checkNumberOperands(expr->op, current, operand);
             auto lv = static_cast<int64_t>(asNumber(current));
             auto sh = static_cast<int>(asNumber(operand));
@@ -918,7 +1077,8 @@ Value Interpreter::visitCompoundAssignExpr(CompoundAssignExpr* expr) {
             result = numberToValue(static_cast<double>(lv << sh));
             break;
         }
-        case TokenType::ShiftRightEqual: {
+        case TokenType::ShiftRightEqual:
+        case TokenType::ShiftRight: {
             checkNumberOperands(expr->op, current, operand);
             auto lv = static_cast<int64_t>(asNumber(current));
             auto sh = static_cast<int>(asNumber(operand));
@@ -990,13 +1150,15 @@ Value Interpreter::visitUpdateMemberExpr(UpdateMemberExpr* expr) {
     // Class instance field
     if (isInstance(object)) {
         auto inst = asInstance(object);
-        Value cur = inst->get(expr->nameTok);
+        auto sv = StringPool::intern(expr->member);
+        Token memberTok(TokenType::Identifier, sv, expr->token.line, expr->token.column);
+        Value cur = inst->get(memberTok);
         if (!isNumber(cur)) {
             throwRuntimeError(expr->op, ErrorCode::TYPE_MISMATCH, "Operand must be a number for increment/decrement");
         }
         double oldVal = asNumber(cur);
         double newVal = (expr->op.type == TokenType::PlusPlus) ? (oldVal + 1) : (oldVal - 1);
-        inst->set(expr->nameTok, numberToValue(newVal));
+        inst->set(memberTok, numberToValue(newVal));
         return expr->prefix ? numberToValue(newVal) : numberToValue(oldVal);
     }
     
@@ -1057,7 +1219,11 @@ Value Interpreter::visitSetExpr(SetExpr* expr) {
 
     if (isInstance(object)) {
         Value value = evaluate(expr->value.get());
-        asInstance(object)->set(expr->token, value);
+        // expr->token is the '=' token; use expr->member for the property name
+        Token memberToken(TokenType::Identifier,
+                          StringPool::intern(expr->member),
+                          expr->token.line, expr->token.column);
+        asInstance(object)->set(memberToken, value);
         return value;
     } else if (isHashMap(object)) {
         Value value = evaluate(expr->value.get());
@@ -1253,7 +1419,9 @@ Value Interpreter::visitCompoundMemberAssignExpr(CompoundMemberAssignExpr* expr)
         isMap = true;
     } else if (isInstance(object)) {
         auto inst = asInstance(object);
-        current = inst->get(expr->nameTok);
+        auto sv = StringPool::intern(expr->member);
+        Token memberTok(TokenType::Identifier, sv, expr->token.line, expr->token.column);
+        current = inst->get(memberTok);
     } else {
         throwRuntimeError(expr->token, ErrorCode::RUNTIME_ERROR, "Invalid object for member compound assignment");
     }
@@ -1338,7 +1506,9 @@ Value Interpreter::visitCompoundMemberAssignExpr(CompoundMemberAssignExpr* expr)
     if (isMap) {
         asHashMap(object)->set(expr->member, result);
     } else {
-        asInstance(object)->set(expr->nameTok, result);
+        auto sv2 = StringPool::intern(expr->member);
+        Token memberTok2(TokenType::Identifier, sv2, expr->token.line, expr->token.column);
+        asInstance(object)->set(memberTok2, result);
     }
     return result;
 }
@@ -1542,7 +1712,12 @@ Value Interpreter::visitCompoundIndexAssignExpr(CompoundIndexAssignExpr* expr) {
 }
 Value Interpreter::visitMemberExpr(MemberExpr* expr) {
     Value object = evaluate(expr->object.get());
-    
+
+    // Handle strings — method dispatch (s.upper(), s.split(), etc.)
+    if (isString(object)) {
+        return stringMethodDispatch(asString(object), expr->member, expr->token);
+    }
+
     // Handle arrays
     if (isArray(object)) {
         auto array = asArray(object);
@@ -1702,6 +1877,170 @@ Value Interpreter::visitMemberExpr(MemberExpr* expr) {
             ));
         }
         
+        // array.concat(other) — returns new array with elements of both
+        if (expr->member == "concat") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                -1,
+                [array](const std::vector<Value>& args) -> Value {
+                    auto result = gcNewArray();
+                    for (int i = 0; i < array->length(); i++) result->push(array->get(i));
+                    for (const auto& arg : args) {
+                        if (isArray(arg)) {
+                            auto other = asArray(arg);
+                            for (int i = 0; i < other->length(); i++) result->push(other->get(i));
+                        } else {
+                            result->push(arg);
+                        }
+                    }
+                    return arrayValue(result);
+                },
+                "concat"
+            ));
+        }
+
+        // array.flat(depth=1) — flatten nested arrays
+        if (expr->member == "flat") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                -1,
+                [array](const std::vector<Value>& args) -> Value {
+                    int depth = (args.size() >= 1 && isNumber(args[0])) ? static_cast<int>(asNumber(args[0])) : 1;
+                    std::function<void(std::shared_ptr<ClawArray>, std::shared_ptr<ClawArray>, int)> flatten;
+                    flatten = [&flatten](std::shared_ptr<ClawArray> src, std::shared_ptr<ClawArray> dst, int d) {
+                        for (int i = 0; i < src->length(); i++) {
+                            Value v = src->get(i);
+                            if (d > 0 && isArray(v)) flatten(asArray(v), dst, d - 1);
+                            else dst->push(v);
+                        }
+                    };
+                    auto result = gcNewArray();
+                    flatten(array, result, depth);
+                    return arrayValue(result);
+                },
+                "flat"
+            ));
+        }
+
+        // array.indexOf(value) — find first index of value, -1 if not found
+        if (expr->member == "indexOf") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                1,
+                [array](const std::vector<Value>& args) -> Value {
+                    for (int i = 0; i < array->length(); i++) {
+                        if (isEqual(array->get(i), args[0])) return numberToValue(static_cast<double>(i));
+                    }
+                    return numberToValue(-1.0);
+                },
+                "indexOf"
+            ));
+        }
+
+        // array.includes(value) — true if value is in array
+        if (expr->member == "includes") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                1,
+                [array](const std::vector<Value>& args) -> Value {
+                    for (int i = 0; i < array->length(); i++) {
+                        if (isEqual(array->get(i), args[0])) return boolValue(true);
+                    }
+                    return boolValue(false);
+                },
+                "includes"
+            ));
+        }
+
+        // array.find(predicate) — first element matching predicate
+        if (expr->member == "find") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                1,
+                [array, this](const std::vector<Value>& args) -> Value {
+                    if (args.empty() || !isCallable(args[0])) throw std::runtime_error("find() requires a function");
+                    auto func = asCallable(args[0]);
+                    for (int i = 0; i < array->length(); i++) {
+                        Value el = array->get(i);
+                        if (isTruthy(func->call(*this, {el}))) return el;
+                    }
+                    return nilValue();
+                },
+                "find"
+            ));
+        }
+
+        // array.findIndex(predicate) — index of first element matching predicate
+        if (expr->member == "findIndex") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                1,
+                [array, this](const std::vector<Value>& args) -> Value {
+                    if (args.empty() || !isCallable(args[0])) throw std::runtime_error("findIndex() requires a function");
+                    auto func = asCallable(args[0]);
+                    for (int i = 0; i < array->length(); i++) {
+                        Value el = array->get(i);
+                        if (isTruthy(func->call(*this, {el}))) return numberToValue(static_cast<double>(i));
+                    }
+                    return numberToValue(-1.0);
+                },
+                "findIndex"
+            ));
+        }
+
+        // array.every(predicate) — true if all elements match
+        if (expr->member == "every") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                1,
+                [array, this](const std::vector<Value>& args) -> Value {
+                    if (args.empty() || !isCallable(args[0])) throw std::runtime_error("every() requires a function");
+                    auto func = asCallable(args[0]);
+                    for (int i = 0; i < array->length(); i++) {
+                        if (!isTruthy(func->call(*this, {array->get(i)}))) return boolValue(false);
+                    }
+                    return boolValue(true);
+                },
+                "every"
+            ));
+        }
+
+        // array.some(predicate) — true if any element matches
+        if (expr->member == "some") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                1,
+                [array, this](const std::vector<Value>& args) -> Value {
+                    if (args.empty() || !isCallable(args[0])) throw std::runtime_error("some() requires a function");
+                    auto func = asCallable(args[0]);
+                    for (int i = 0; i < array->length(); i++) {
+                        if (isTruthy(func->call(*this, {array->get(i)}))) return boolValue(true);
+                    }
+                    return boolValue(false);
+                },
+                "some"
+            ));
+        }
+
+        // array.fill(value, start=0, end=length) — fill range with value
+        if (expr->member == "fill") {
+            auto array = asArray(object);
+            return callableValue(std::make_shared<NativeFunction>(
+                -1,
+                [array](const std::vector<Value>& args) -> Value {
+                    if (args.empty()) throw std::runtime_error("fill() requires a value");
+                    Value val = args[0];
+                    int start = (args.size() >= 2 && isNumber(args[1])) ? static_cast<int>(asNumber(args[1])) : 0;
+                    int end   = (args.size() >= 3 && isNumber(args[2])) ? static_cast<int>(asNumber(args[2])) : array->length();
+                    if (start < 0) start = 0;
+                    if (end > array->length()) end = array->length();
+                    for (int i = start; i < end; i++) array->set(i, val);
+                    return arrayValue(array);
+                },
+                "fill"
+            ));
+        }
+
         throwRuntimeError(expr->token, ErrorCode::UNDEFINED_VARIABLE, "Unknown array member: " + expr->member);
     }
     
@@ -1710,6 +2049,12 @@ Value Interpreter::visitMemberExpr(MemberExpr* expr) {
         auto map = asHashMap(object);
         
         // Handle hash map properties/methods
+        // If the map stores a callable under this key (e.g. Set/Queue/Stack methods),
+        // prefer the stored value so user-defined collections can override built-ins.
+        if (map->contains(expr->member)) {
+            Value stored = map->get(expr->member);
+            if (isCallable(stored)) return stored;
+        }
         if (expr->member == "size") {
             return numberToValue(static_cast<double>(map->size()));
         }
@@ -1781,9 +2126,20 @@ Value Interpreter::visitMemberExpr(MemberExpr* expr) {
         throwRuntimeError(expr->token, ErrorCode::UNDEFINED_VARIABLE, "Unknown hash map member: " + expr->member);
     }
     
-    // Handle class instances
+    // Handle class instances — check __index metamethod if property not found
     if (isInstance(object)) {
-        return asInstance(object)->get(expr->token);
+        auto inst = asInstance(object);
+        // Try direct property first
+        try {
+            return inst->get(expr->token);
+        } catch (...) {}
+        // Try __index metamethod
+        Value out;
+        if (tryMetamethod(object, "__index", {stringValue(StringPool::intern(expr->member).data())}, out)) {
+            return out;
+        }
+        // Re-throw original error
+        return inst->get(expr->token);
     }
     
    throwRuntimeError(expr->token, ErrorCode::NOT_INDEXABLE, "Only arrays, hash maps, and class instances have members");
@@ -1811,9 +2167,12 @@ void Interpreter::visitClassStmt(ClassStmt* stmt) {
     }
 
     std::unordered_map<std::string, std::shared_ptr<ClawFunction>> methods;
-    for (auto& method : stmt->methods) {
-        auto function = std::make_shared<ClawFunction>(method.get(), environment_, method->name == "init");
-        methods[method->name] = function;
+    for (auto& member : stmt->members) {
+        if (member.method) {
+            auto function = std::make_shared<ClawFunction>(
+                member.method.get(), environment_, member.name == "init");
+            methods[member.name] = function;
+        }
     }
 
     auto cls = std::make_shared<ClawClass>(stmt->name, superclass, std::move(methods));
@@ -1848,19 +2207,35 @@ Value Interpreter::visitFunctionExpr(FunctionExpr* expr) {
         std::vector<std::string> parameters;
         const FunctionExpr* func_expr;
         std::shared_ptr<Environment> closure;
-        
+        bool hasRest;
+
         FunctionExpressionCallable(std::vector<std::string> params,
                                  const FunctionExpr* expr,
-                                 std::shared_ptr<Environment> env)
-            : parameters(std::move(params)), func_expr(expr), closure(std::move(env)) {}
-        
+                                 std::shared_ptr<Environment> env,
+                                 bool rest = false)
+            : parameters(std::move(params)), func_expr(expr), closure(std::move(env)), hasRest(rest) {}
+
         Value call(Interpreter& interp, const std::vector<Value>& arguments) override {
             // Create new environment for function execution
             auto functionEnv = std::make_shared<Environment>(closure);
-            
-            // Bind parameters to arguments
-            for (size_t i = 0; i < parameters.size() && i < arguments.size(); i++) {
-                functionEnv->define(parameters[i], arguments[i]);
+
+            // Bind parameters to arguments, handling rest params
+            if (hasRest && !parameters.empty()) {
+                // Bind normal params
+                size_t normalCount = parameters.size() - 1;
+                for (size_t i = 0; i < normalCount && i < arguments.size(); i++) {
+                    functionEnv->define(parameters[i], arguments[i]);
+                }
+                // Collect rest args into array
+                auto restArr = std::make_shared<ClawArray>();
+                for (size_t i = normalCount; i < arguments.size(); i++) {
+                    restArr->push(arguments[i]);
+                }
+                functionEnv->define(parameters.back(), arrayValue(restArr));
+            } else {
+                for (size_t i = 0; i < parameters.size() && i < arguments.size(); i++) {
+                    functionEnv->define(parameters[i], arguments[i]);
+                }
             }
             
             // Push to call stack
@@ -1896,7 +2271,7 @@ Value Interpreter::visitFunctionExpr(FunctionExpr* expr) {
         }
         
         int arity() const override {
-            return static_cast<int>(parameters.size());
+            return hasRest ? -1 : static_cast<int>(parameters.size());
         }
         
         std::string toString() const override {
@@ -1905,7 +2280,7 @@ Value Interpreter::visitFunctionExpr(FunctionExpr* expr) {
     };
     
     return callableValue(std::make_shared<FunctionExpressionCallable>(
-        expr->parameters, expr, environment_));
+        expr->parameters, expr, environment_, expr->hasRest));
 }
 
 void Interpreter::checkNumberOperand(const Token& op, const Value& operand) {
@@ -1916,6 +2291,668 @@ void Interpreter::checkNumberOperand(const Token& op, const Value& operand) {
 void Interpreter::checkNumberOperands(const Token& op, const Value& left, const Value& right) {
     if (isNumber(left) && isNumber(right)) return;
     throwRuntimeError(op, ErrorCode::TYPE_MISMATCH, "Operands must be numbers");
+}
+
+// ============================================================
+// Metamethod helpers
+// ============================================================
+
+bool Interpreter::tryMetamethod(Value obj, const std::string& name,
+                                 const std::vector<Value>& args, Value& out) {
+    if (!isInstance(obj)) return false;
+    auto inst = asInstance(obj);
+    if (!inst) return false;
+    auto sv = StringPool::intern(name);
+    Token tok(TokenType::Identifier, sv, 0);
+    try {
+        Value method = inst->get(tok);
+        if (isCallable(method)) {
+            out = asCallable(method)->call(*this, args);
+            return true;
+        }
+    } catch (...) {}
+    return false;
+}
+
+std::string Interpreter::valueToDisplayString(Value v) {
+    if (isInstance(v)) {
+        Value out;
+        if (tryMetamethod(v, "__str", {}, out)) {
+            return valueToString(out);
+        }
+    }
+    return valueToString(v);
+}
+
+Value Interpreter::stringMethodDispatch(const std::string& str, const std::string& member,
+                                         const Token& tok) {
+    // Property: length
+    if (member == "length") {
+        return numberToValue(static_cast<double>(str.length()));
+    }
+    // upper() / toUpperCase()
+    if (member == "upper" || member == "toUpperCase") {
+        return callableValue(std::make_shared<NativeFunction>(0, [str](const std::vector<Value>&) -> Value {
+            std::string s = str;
+            for (auto& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+            return stringValue(StringPool::intern(s).data());
+        }, "upper"));
+    }
+    // lower() / toLowerCase()
+    if (member == "lower" || member == "toLowerCase") {
+        return callableValue(std::make_shared<NativeFunction>(0, [str](const std::vector<Value>&) -> Value {
+            std::string s = str;
+            for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            return stringValue(StringPool::intern(s).data());
+        }, "lower"));
+    }
+    // trim()
+    if (member == "trim") {
+        return callableValue(std::make_shared<NativeFunction>(0, [str](const std::vector<Value>&) -> Value {
+            size_t start = str.find_first_not_of(" \t\r\n");
+            if (start == std::string::npos) return stringValue(StringPool::intern("").data());
+            size_t end = str.find_last_not_of(" \t\r\n");
+            return stringValue(StringPool::intern(str.substr(start, end - start + 1)).data());
+        }, "trim"));
+    }
+    // trimStart() / trimLeft()
+    if (member == "trimStart" || member == "trimLeft") {
+        return callableValue(std::make_shared<NativeFunction>(0, [str](const std::vector<Value>&) -> Value {
+            size_t start = str.find_first_not_of(" \t\r\n");
+            if (start == std::string::npos) return stringValue(StringPool::intern("").data());
+            return stringValue(StringPool::intern(str.substr(start)).data());
+        }, "trimStart"));
+    }
+    // trimEnd() / trimRight()
+    if (member == "trimEnd" || member == "trimRight") {
+        return callableValue(std::make_shared<NativeFunction>(0, [str](const std::vector<Value>&) -> Value {
+            size_t end = str.find_last_not_of(" \t\r\n");
+            if (end == std::string::npos) return stringValue(StringPool::intern("").data());
+            return stringValue(StringPool::intern(str.substr(0, end + 1)).data());
+        }, "trimEnd"));
+    }
+    // split(sep)
+    if (member == "split") {
+        return callableValue(std::make_shared<NativeFunction>(-1, [str](const std::vector<Value>& args) -> Value {
+            std::string sep = (args.size() >= 1 && isString(args[0])) ? asString(args[0]) : " ";
+            auto result = gcNewArray();
+            if (sep.empty()) {
+                for (char c : str) result->push(stringValue(StringPool::intern(std::string(1, c)).data()));
+                return arrayValue(result);
+            }
+            size_t pos = 0, found;
+            while ((found = str.find(sep, pos)) != std::string::npos) {
+                result->push(stringValue(StringPool::intern(str.substr(pos, found - pos)).data()));
+                pos = found + sep.length();
+            }
+            result->push(stringValue(StringPool::intern(str.substr(pos)).data()));
+            return arrayValue(result);
+        }, "split"));
+    }
+    // replace(old, new)
+    if (member == "replace") {
+        return callableValue(std::make_shared<NativeFunction>(2, [str](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0]) || !isString(args[1]))
+                throw std::runtime_error("replace() requires string arguments");
+            std::string from = asString(args[0]);
+            std::string to   = asString(args[1]);
+            std::string result = str;
+            size_t pos = 0;
+            while ((pos = result.find(from, pos)) != std::string::npos) {
+                result.replace(pos, from.length(), to);
+                pos += to.length();
+            }
+            return stringValue(StringPool::intern(result).data());
+        }, "replace"));
+    }
+    // replaceFirst(old, new) — replace only first occurrence
+    if (member == "replaceFirst") {
+        return callableValue(std::make_shared<NativeFunction>(2, [str](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0]) || !isString(args[1]))
+                throw std::runtime_error("replaceFirst() requires string arguments");
+            std::string from = asString(args[0]);
+            std::string to   = asString(args[1]);
+            std::string result = str;
+            size_t pos = result.find(from);
+            if (pos != std::string::npos) result.replace(pos, from.length(), to);
+            return stringValue(StringPool::intern(result).data());
+        }, "replaceFirst"));
+    }
+    // startsWith(prefix)
+    if (member == "startsWith") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) return boolValue(false);
+            std::string prefix = asString(args[0]);
+            return boolValue(str.length() >= prefix.length() &&
+                             str.substr(0, prefix.length()) == prefix);
+        }, "startsWith"));
+    }
+    // endsWith(suffix)
+    if (member == "endsWith") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) return boolValue(false);
+            std::string suffix = asString(args[0]);
+            if (suffix.length() > str.length()) return boolValue(false);
+            return boolValue(str.substr(str.length() - suffix.length()) == suffix);
+        }, "endsWith"));
+    }
+    // includes(sub) / contains(sub)
+    if (member == "includes" || member == "contains") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) return boolValue(false);
+            return boolValue(str.find(asString(args[0])) != std::string::npos);
+        }, "includes"));
+    }
+    // indexOf(sub)
+    if (member == "indexOf") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) return numberToValue(-1.0);
+            size_t pos = str.find(asString(args[0]));
+            return numberToValue(pos == std::string::npos ? -1.0 : static_cast<double>(pos));
+        }, "indexOf"));
+    }
+    // lastIndexOf(sub)
+    if (member == "lastIndexOf") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) return numberToValue(-1.0);
+            size_t pos = str.rfind(asString(args[0]));
+            return numberToValue(pos == std::string::npos ? -1.0 : static_cast<double>(pos));
+        }, "lastIndexOf"));
+    }
+    // slice(start, end?) / substring(start, end?) / substr(start, len?)
+    if (member == "slice" || member == "substring") {
+        return callableValue(std::make_shared<NativeFunction>(-1, [str](const std::vector<Value>& args) -> Value {
+            int len = static_cast<int>(str.length());
+            int start = (args.size() >= 1 && isNumber(args[0])) ? static_cast<int>(asNumber(args[0])) : 0;
+            int end   = (args.size() >= 2 && isNumber(args[1])) ? static_cast<int>(asNumber(args[1])) : len;
+            if (start < 0) start = std::max(0, len + start);
+            if (end   < 0) end   = std::max(0, len + end);
+            start = std::min(start, len);
+            end   = std::min(end,   len);
+            if (start >= end) return stringValue(StringPool::intern("").data());
+            return stringValue(StringPool::intern(str.substr(start, end - start)).data());
+        }, "slice"));
+    }
+    // repeat(n)
+    if (member == "repeat") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            int n = (args.size() >= 1 && isNumber(args[0])) ? static_cast<int>(asNumber(args[0])) : 0;
+            if (n <= 0) return stringValue(StringPool::intern("").data());
+            std::string result;
+            result.reserve(str.length() * static_cast<size_t>(n));
+            for (int i = 0; i < n; i++) result += str;
+            return stringValue(StringPool::intern(result).data());
+        }, "repeat"));
+    }
+    // padStart(len, pad?) / padLeft(len, pad?)
+    if (member == "padStart" || member == "padLeft") {
+        return callableValue(std::make_shared<NativeFunction>(-1, [str](const std::vector<Value>& args) -> Value {
+            int targetLen = (args.size() >= 1 && isNumber(args[0])) ? static_cast<int>(asNumber(args[0])) : 0;
+            std::string pad = (args.size() >= 2 && isString(args[1])) ? asString(args[1]) : " ";
+            if (pad.empty()) pad = " ";
+            std::string result = str;
+            while (static_cast<int>(result.length()) < targetLen) result = pad + result;
+            if (static_cast<int>(result.length()) > targetLen)
+                result = result.substr(result.length() - static_cast<size_t>(targetLen));
+            return stringValue(StringPool::intern(result).data());
+        }, "padStart"));
+    }
+    // padEnd(len, pad?) / padRight(len, pad?)
+    if (member == "padEnd" || member == "padRight") {
+        return callableValue(std::make_shared<NativeFunction>(-1, [str](const std::vector<Value>& args) -> Value {
+            int targetLen = (args.size() >= 1 && isNumber(args[0])) ? static_cast<int>(asNumber(args[0])) : 0;
+            std::string pad = (args.size() >= 2 && isString(args[1])) ? asString(args[1]) : " ";
+            if (pad.empty()) pad = " ";
+            std::string result = str;
+            while (static_cast<int>(result.length()) < targetLen) result += pad;
+            if (static_cast<int>(result.length()) > targetLen)
+                result = result.substr(0, static_cast<size_t>(targetLen));
+            return stringValue(StringPool::intern(result).data());
+        }, "padEnd"));
+    }
+    // charAt(i)
+    if (member == "charAt") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            if (!isNumber(args[0])) return stringValue(StringPool::intern("").data());
+            int idx = static_cast<int>(asNumber(args[0]));
+            if (idx < 0 || idx >= static_cast<int>(str.length()))
+                return stringValue(StringPool::intern("").data());
+            return stringValue(StringPool::intern(std::string(1, str[static_cast<size_t>(idx)])).data());
+        }, "charAt"));
+    }
+    // charCodeAt(i)
+    if (member == "charCodeAt") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            if (!isNumber(args[0])) return numberToValue(-1.0);
+            int idx = static_cast<int>(asNumber(args[0]));
+            if (idx < 0 || idx >= static_cast<int>(str.length())) return numberToValue(-1.0);
+            return numberToValue(static_cast<double>(static_cast<unsigned char>(str[static_cast<size_t>(idx)])));
+        }, "charCodeAt"));
+    }
+    // toNumber()
+    if (member == "toNumber") {
+        return callableValue(std::make_shared<NativeFunction>(0, [str](const std::vector<Value>&) -> Value {
+            try { return numberToValue(std::stod(str)); }
+            catch (...) { return numberToValue(std::nan("")); }
+        }, "toNumber"));
+    }
+    // isEmpty()
+    if (member == "isEmpty") {
+        return callableValue(std::make_shared<NativeFunction>(0, [str](const std::vector<Value>&) -> Value {
+            return boolValue(str.empty());
+        }, "isEmpty"));
+    }
+    // reverse()
+    if (member == "reverse") {
+        return callableValue(std::make_shared<NativeFunction>(0, [str](const std::vector<Value>&) -> Value {
+            std::string s = str;
+            std::reverse(s.begin(), s.end());
+            return stringValue(StringPool::intern(s).data());
+        }, "reverse"));
+    }
+    // count(sub) — count occurrences
+    if (member == "count") {
+        return callableValue(std::make_shared<NativeFunction>(1, [str](const std::vector<Value>& args) -> Value {
+            if (!isString(args[0])) return numberToValue(0.0);
+            std::string sub = asString(args[0]);
+            if (sub.empty()) return numberToValue(0.0);
+            int count = 0;
+            size_t pos = 0;
+            while ((pos = str.find(sub, pos)) != std::string::npos) { ++count; pos += sub.length(); }
+            return numberToValue(static_cast<double>(count));
+        }, "count"));
+    }
+    // Unknown member — throw error
+    throwRuntimeError(tok, ErrorCode::UNDEFINED_VARIABLE,
+        "String has no member '" + member + "'");
+}
+
+// ============================================================
+// New ExprVisitor implementations
+// ============================================================
+
+Value Interpreter::visitFStringExpr(FStringExpr* expr) {
+    std::string result;
+    for (auto& seg : expr->segments) {
+        if (seg.isExpr) {
+            result += valueToString(evaluate(seg.expr.get()));
+        } else {
+            result += seg.text;
+        }
+    }
+    return stringValue(StringPool::intern(result).data());
+}
+
+Value Interpreter::visitTemplateExpr(TemplateExpr* expr) {
+    std::string result;
+    for (auto& seg : expr->segments) {
+        if (seg.isExpr) {
+            result += valueToString(evaluate(seg.expr.get()));
+        } else {
+            result += seg.text;
+        }
+    }
+    return stringValue(StringPool::intern(result).data());
+}
+
+Value Interpreter::visitSpreadExpr(SpreadExpr* expr) {
+    // Spread is handled by the call site; here just evaluate the inner expr
+    return evaluate(expr->expr.get());
+}
+
+Value Interpreter::visitOptionalChainExpr(OptionalChainExpr* expr) {
+    Value obj = evaluate(expr->object.get());
+    if (isNil(obj)) return nilValue();
+
+    switch (expr->kind) {
+        case OptionalChainExpr::Kind::Member: {
+            if (isHashMap(obj)) return asHashMap(obj)->get(expr->member);
+            if (isInstance(obj)) {
+                auto sv = StringPool::intern(expr->member);
+                Token tok(TokenType::Identifier, sv, expr->token.line);
+                return asInstance(obj)->get(tok);
+            }
+            return nilValue();
+        }
+        case OptionalChainExpr::Kind::Index: {
+            Value idx = evaluate(expr->index.get());
+            if (isArray(obj) && isNumber(idx)) {
+                int i = static_cast<int>(asNumber(idx));
+                auto arr = asArray(obj);
+                if (i < 0 || i >= arr->length()) return nilValue();
+                return arr->get(i);
+            }
+            if (isHashMap(obj)) return asHashMap(obj)->get(valueToString(idx));
+            return nilValue();
+        }
+        case OptionalChainExpr::Kind::Call: {
+            if (!isCallable(obj)) return nilValue();
+            std::vector<Value> args;
+            for (auto& a : expr->args) args.push_back(evaluate(a.get()));
+            return asCallable(obj)->call(*this, args);
+        }
+    }
+    return nilValue();
+}
+
+Value Interpreter::visitNullCoalesceExpr(NullCoalesceExpr* expr) {
+    Value left = evaluate(expr->left.get());
+    if (!isNil(left)) return left;
+    return evaluate(expr->right.get());
+}
+
+Value Interpreter::visitPipeExpr(PipeExpr* expr) {
+    Value arg = evaluate(expr->left.get());
+    Value fn  = evaluate(expr->right.get());
+    if (!isCallable(fn)) {
+        throwRuntimeError(expr->token, ErrorCode::NOT_CALLABLE,
+            "Right side of |> must be callable");
+    }
+    return asCallable(fn)->call(*this, {arg});
+}
+
+Value Interpreter::visitAwaitExpr(AwaitExpr* expr) {
+    // Synchronous mode: await is a no-op, just evaluate the inner expression
+    return evaluate(expr->expr.get());
+}
+
+Value Interpreter::visitYieldExpr(YieldExpr* expr) {
+    Value value = expr->expr ? evaluate(expr->expr.get()) : nilValue();
+    // Check if we are inside a running coroutine
+    claw::Coroutine* activeCo = claw::Coroutine::current_;
+    if (activeCo) {
+        return claw::Coroutine::doYield(value);
+    }
+    return value;
+}
+
+Value Interpreter::visitMatchExpr(MatchExpr* expr) {
+    Value subject = evaluate(expr->subject.get());
+    for (auto& arm : expr->arms) {
+        if (arm.isDefault) {
+            if (arm.bodyExpr) return evaluate(arm.bodyExpr.get());
+            if (!arm.body.empty()) {
+                executeBlock(arm.body, std::make_shared<Environment>(environment_));
+            }
+            return nilValue();
+        }
+        for (auto& pat : arm.patterns) {
+            Value patVal = evaluate(pat.get());
+            if (arm.guard) {
+                if (!isTruthy(evaluate(arm.guard.get()))) continue;
+            }
+            if (isEqual(subject, patVal)) {
+                if (arm.bodyExpr) return evaluate(arm.bodyExpr.get());
+                if (!arm.body.empty()) {
+                    executeBlock(arm.body, std::make_shared<Environment>(environment_));
+                }
+                return nilValue();
+            }
+        }
+    }
+    return nilValue();
+}
+
+Value Interpreter::visitComprehensionExpr(ComprehensionExpr* expr) {
+    Value iterableVal = evaluate(expr->iterable.get());
+    auto result = gcNewArray();
+
+    auto iterate = [&](const std::function<void(Value)>& fn) {
+        if (isArray(iterableVal)) {
+            auto arr = asArray(iterableVal);
+            for (int i = 0; i < arr->length(); ++i) fn(arr->get(i));
+        } else if (isHashMap(iterableVal)) {
+            auto map = asHashMap(iterableVal);
+            for (auto& k : map->getKeys()) {
+                fn(stringValue(StringPool::intern(k).data()));
+            }
+        }
+    };
+
+    iterate([&](Value item) {
+        auto loopEnv = std::make_shared<Environment>(environment_);
+        loopEnv->define(expr->varName, item);
+        auto prev = environment_;
+        environment_ = loopEnv;
+        bool pass = true;
+        if (expr->condition) pass = isTruthy(evaluate(expr->condition.get()));
+        if (pass) result->push(evaluate(expr->body.get()));
+        environment_ = prev;
+    });
+
+    return arrayValue(result);
+}
+
+Value Interpreter::visitDestructureArrayExpr(DestructureArrayExpr* expr) {
+    Value val = evaluate(expr->value.get());
+    if (!isArray(val)) {
+        throwRuntimeError(expr->token, ErrorCode::TYPE_MISMATCH,
+            "Array destructuring requires an array");
+    }
+    auto arr = asArray(val);
+    for (size_t i = 0; i < expr->elements.size(); ++i) {
+        auto& elem = expr->elements[i];
+        if (elem.isRest) {
+            auto rest = gcNewArray();
+            for (int j = static_cast<int>(i); j < arr->length(); ++j)
+                rest->push(arr->get(j));
+            environment_->define(elem.name, arrayValue(rest));
+            break;
+        }
+        Value v = (static_cast<int>(i) < arr->length()) ? arr->get(static_cast<int>(i)) : nilValue();
+        if (isNil(v) && elem.defaultVal) v = evaluate(elem.defaultVal.get());
+        environment_->define(elem.name, v);
+    }
+    return val;
+}
+
+Value Interpreter::visitDestructureObjectExpr(DestructureObjectExpr* expr) {
+    Value val = evaluate(expr->value.get());
+    for (auto& prop : expr->properties) {
+        if (prop.isRest) continue; // TODO
+        Value v = nilValue();
+        if (isHashMap(val)) v = asHashMap(val)->get(prop.key);
+        else if (isInstance(val)) {
+            auto sv = StringPool::intern(prop.key);
+            Token tok(TokenType::Identifier, sv, expr->token.line);
+            v = asInstance(val)->get(tok);
+        }
+        if (isNil(v) && prop.defaultVal) v = evaluate(prop.defaultVal.get());
+        std::string bindName = prop.alias.empty() ? prop.key : prop.alias;
+        environment_->define(bindName, v);
+    }
+    return val;
+}
+
+Value Interpreter::visitTypeAnnotationExpr(TypeAnnotationExpr* expr) {
+    return evaluate(expr->expr.get());
+}
+
+Value Interpreter::visitNewExpr(NewExpr* expr) {
+    Value callee = evaluate(expr->callee.get());
+    std::vector<Value> args;
+    for (auto& a : expr->arguments) args.push_back(evaluate(a.get()));
+    if (isClass(callee)) {
+        return asClass(callee)->call(*this, args);
+    }
+    if (isCallable(callee)) {
+        return asCallable(callee)->call(*this, args);
+    }
+    throwRuntimeError(expr->token, ErrorCode::NOT_CALLABLE, "new requires a class");
+    return nilValue(); // unreachable
+}
+
+Value Interpreter::visitMetaExpr(MetaExpr* expr) {
+    // Metatables not yet implemented; return nil
+    (void)expr;
+    return nilValue();
+}
+
+// ============================================================
+// New StmtVisitor implementations
+// ============================================================
+
+void Interpreter::visitConstStmt(ConstStmt* stmt) {
+    Value value = nilValue();
+    if (stmt->initializer) value = evaluate(stmt->initializer.get());
+    environment_->define(stmt->name, value);
+}
+
+void Interpreter::visitEnumStmt(EnumStmt* stmt) {
+    auto map = gcNewHashMap();
+    double idx = 0.0;
+    for (auto& mem : stmt->members) {
+        Value v = mem.value ? evaluate(mem.value.get()) : numberToValue(idx);
+        map->set(mem.name, v);
+        idx += 1.0;
+    }
+    environment_->define(stmt->name, hashMapValue(map));
+}
+
+void Interpreter::visitInterfaceStmt(InterfaceStmt*) {
+    // Interfaces are structural — no runtime representation needed
+}
+
+void Interpreter::visitForOfStmt(ForOfStmt* stmt) {
+    Value iterableVal = evaluate(stmt->iterable.get());
+
+    auto runBody = [&](Value item) -> bool {
+        auto loopEnv = std::make_shared<Environment>(environment_);
+        loopEnv->define(stmt->varName, item);
+        auto prev = environment_;
+        environment_ = loopEnv;
+        bool shouldBreak = false;
+        try {
+            execute(stmt->body.get());
+        } catch (const BreakException&) {
+            shouldBreak = true;
+        } catch (const ContinueException&) {
+            // continue to next iteration
+        }
+        environment_ = prev;
+        return !shouldBreak;
+    };
+
+    if (isArray(iterableVal)) {
+        auto arr = asArray(iterableVal);
+        for (int i = 0; i < arr->length(); ++i)
+            if (!runBody(arr->get(i))) break;
+    } else if (isHashMap(iterableVal)) {
+        // Check if this is a coroutine (has "resume" and "isDead" keys)
+        auto map = asHashMap(iterableVal);
+        bool isCoroObj = map->contains("resume") && map->contains("isDead");
+        if (isCoroObj) {
+            // Coroutine generator protocol: resume until dead, skip nil return on completion
+            Value resumeFn = map->get("resume");
+            Value isDeadFn = map->get("isDead");
+            while (true) {
+                // Check isDead()
+                Value deadVal = nilValue();
+                if (isCallable(isDeadFn)) {
+                    deadVal = asCallable(isDeadFn)->call(*this, {});
+                }
+                if (isTruthy(deadVal)) break;
+                // Resume
+                Value yielded = nilValue();
+                if (isCallable(resumeFn)) {
+                    yielded = asCallable(resumeFn)->call(*this, {});
+                }
+                // After resume, check dead again — if now dead, the yielded value
+                // is the return value (not a yielded value), so skip it
+                Value deadAfter = nilValue();
+                if (isCallable(isDeadFn)) {
+                    deadAfter = asCallable(isDeadFn)->call(*this, {});
+                }
+                if (isTruthy(deadAfter)) break;
+                if (!runBody(yielded)) break;
+            }
+        } else {
+            for (auto& k : map->getKeys())
+                if (!runBody(stringValue(StringPool::intern(k).data()))) break;
+        }
+    } else if (isString(iterableVal)) {
+        std::string s = asString(iterableVal);
+        for (char c : s)
+            if (!runBody(stringValue(StringPool::intern(std::string(1, c)).data()))) break;
+    }
+}
+
+void Interpreter::visitForInStmt(ForInStmt* stmt) {
+    Value objVal = evaluate(stmt->object.get());
+
+    auto runBody = [&](Value key) -> bool {
+        auto loopEnv = std::make_shared<Environment>(environment_);
+        loopEnv->define(stmt->varName, key);
+        auto prev = environment_;
+        environment_ = loopEnv;
+        bool shouldBreak = false;
+        try {
+            execute(stmt->body.get());
+        } catch (const BreakException&) {
+            shouldBreak = true;
+        } catch (const ContinueException&) {}
+        environment_ = prev;
+        return !shouldBreak;
+    };
+
+    if (isHashMap(objVal)) {
+        auto map = asHashMap(objVal);
+        for (auto& k : map->getKeys())
+            if (!runBody(stringValue(StringPool::intern(k).data()))) break;
+    } else if (isArray(objVal)) {
+        auto arr = asArray(objVal);
+        for (int i = 0; i < arr->length(); ++i)
+            if (!runBody(numberToValue(static_cast<double>(i)))) break;
+    }
+}
+
+void Interpreter::visitDeferStmt(DeferStmt* stmt) {
+    // Simple eager execution (full defer stack not yet implemented)
+    execute(stmt->body.get());
+}
+
+void Interpreter::visitAsyncFnStmt(AsyncFnStmt* stmt) {
+    if (stmt->fn) visitFnStmt(stmt->fn.get());
+}
+
+void Interpreter::visitWithStmt(WithStmt* stmt) {
+    Value resource = evaluate(stmt->resource.get());
+    auto withEnv = std::make_shared<Environment>(environment_);
+    withEnv->define(stmt->varName, resource);
+    auto prev = environment_;
+    environment_ = withEnv;
+    try {
+        execute(stmt->body.get());
+    } catch (...) {
+        environment_ = prev;
+        throw;
+    }
+    environment_ = prev;
+}
+
+void Interpreter::visitLabeledStmt(LabeledStmt* stmt) {
+    execute(stmt->body.get());
+}
+
+void Interpreter::visitMultiLetStmt(MultiLetStmt* stmt) {
+    Value val = stmt->initializer ? evaluate(stmt->initializer.get()) : nilValue();
+    for (size_t i = 0; i < stmt->names.size(); ++i) {
+        Value v = nilValue();
+        if (isArray(val)) {
+            auto arr = asArray(val);
+            if (static_cast<int>(i) < arr->length()) v = arr->get(static_cast<int>(i));
+        }
+        environment_->define(stmt->names[i], v);
+    }
+}
+
+void Interpreter::visitExportStmt(ExportStmt* stmt) {
+    // Export is handled by the module system; no-op at interpreter level
+    (void)stmt;
+}
+
+void Interpreter::visitDecoratorStmt(DecoratorStmt* stmt) {
+    if (stmt->target) execute(stmt->target.get());
 }
 
 } // namespace claw

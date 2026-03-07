@@ -1,0 +1,50 @@
+// Threading Demo
+// Shows ClawScript's threading capabilities
+
+print "=== Threading Demo ===";
+
+// Simple worker function
+fn worker() {
+    let sum = 0;
+    for (let i = 0; i < 1000; i = i + 1) {
+        sum = sum + i;
+    }
+    return sum;
+}
+
+print "\n1. Basic thread test:";
+let thread1 = spawn(worker);
+print "Thread spawned";
+
+let result = thread.join(thread1);
+print "Thread result:", result;
+
+print "\n2. Channel communication:";
+
+// Create a channel
+let ch = channel();
+
+// Spawn producer thread
+let producer = spawn(fn() {
+    for (let i = 0; i < 5; i = i + 1) {
+        ch.send("Message " + str(i));
+    }
+    ch.close();
+});
+
+// Spawn consumer thread
+let consumer = spawn(fn() {
+    while (true) {
+        let msg = ch.receive();
+        if (msg == nil) {
+            break;
+        }
+        print "Received:", msg;
+    }
+});
+
+// Wait for both threads
+thread.join(producer);
+thread.join(consumer);
+
+print "\n=== Threading Demo Complete ===";

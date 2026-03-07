@@ -6,16 +6,7 @@ namespace claw {
 
 std::string printAST(Expr* expr) {
     if (auto* lit = dynamic_cast<LiteralExpr*>(expr)) {
-        switch (lit->type) {
-            case LiteralExpr::Type::Number:
-                return std::to_string(lit->numberValue);
-            case LiteralExpr::Type::String:
-                return "\"" + lit->stringValue + "\"";
-            case LiteralExpr::Type::Bool:
-                return lit->boolValue ? "true" : "false";
-            case LiteralExpr::Type::Nil:
-                return "nil";
-        }
+        return valueToString(lit->value);
     }
     
     if (auto* var = dynamic_cast<VariableExpr*>(expr)) {
@@ -45,7 +36,7 @@ std::string printAST(Expr* expr) {
     }
     
     if (auto* group = dynamic_cast<GroupingExpr*>(expr)) {
-        return "(group " + printAST(group->expr.get()) + ")";
+        return "(group " + printAST(group->expression.get()) + ")";
     }
     
     if (auto* call = dynamic_cast<CallExpr*>(expr)) {
@@ -182,6 +173,23 @@ Value FunctionExpr::accept(ExprVisitor& visitor) { return visitor.visitFunctionE
 Value UpdateMemberExpr::accept(ExprVisitor& visitor) { return visitor.visitUpdateMemberExpr(this); }
 Value UpdateIndexExpr::accept(ExprVisitor& visitor) { return visitor.visitUpdateIndexExpr(this); }
 
+// New expression nodes
+Value FStringExpr::accept(ExprVisitor& visitor) { return visitor.visitFStringExpr(this); }
+Value TemplateExpr::accept(ExprVisitor& visitor) { return visitor.visitTemplateExpr(this); }
+Value SpreadExpr::accept(ExprVisitor& visitor) { return visitor.visitSpreadExpr(this); }
+Value OptionalChainExpr::accept(ExprVisitor& visitor) { return visitor.visitOptionalChainExpr(this); }
+Value NullCoalesceExpr::accept(ExprVisitor& visitor) { return visitor.visitNullCoalesceExpr(this); }
+Value PipeExpr::accept(ExprVisitor& visitor) { return visitor.visitPipeExpr(this); }
+Value AwaitExpr::accept(ExprVisitor& visitor) { return visitor.visitAwaitExpr(this); }
+Value YieldExpr::accept(ExprVisitor& visitor) { return visitor.visitYieldExpr(this); }
+Value MatchExpr::accept(ExprVisitor& visitor) { return visitor.visitMatchExpr(this); }
+Value ComprehensionExpr::accept(ExprVisitor& visitor) { return visitor.visitComprehensionExpr(this); }
+Value DestructureArrayExpr::accept(ExprVisitor& visitor) { return visitor.visitDestructureArrayExpr(this); }
+Value DestructureObjectExpr::accept(ExprVisitor& visitor) { return visitor.visitDestructureObjectExpr(this); }
+Value TypeAnnotationExpr::accept(ExprVisitor& visitor) { return visitor.visitTypeAnnotationExpr(this); }
+Value NewExpr::accept(ExprVisitor& visitor) { return visitor.visitNewExpr(this); }
+Value MetaExpr::accept(ExprVisitor& visitor) { return visitor.visitMetaExpr(this); }
+
 void ExprStmt::accept(StmtVisitor& visitor) { visitor.visitExprStmt(this); }
 void PrintStmt::accept(StmtVisitor& visitor) { visitor.visitPrintStmt(this); }
 void LetStmt::accept(StmtVisitor& visitor) { visitor.visitLetStmt(this); }
@@ -199,5 +207,19 @@ void ThrowStmt::accept(StmtVisitor& visitor) { visitor.visitThrowStmt(this); }
 void ImportStmt::accept(StmtVisitor& visitor) { visitor.visitImportStmt(this); }
 void ClassStmt::accept(StmtVisitor& visitor) { visitor.visitClassStmt(this); }
 void SwitchStmt::accept(StmtVisitor& visitor) { visitor.visitSwitchStmt(this); }
+
+// New statement nodes
+void ConstStmt::accept(StmtVisitor& visitor) { visitor.visitConstStmt(this); }
+void EnumStmt::accept(StmtVisitor& visitor) { visitor.visitEnumStmt(this); }
+void InterfaceStmt::accept(StmtVisitor& visitor) { visitor.visitInterfaceStmt(this); }
+void ForOfStmt::accept(StmtVisitor& visitor) { visitor.visitForOfStmt(this); }
+void ForInStmt::accept(StmtVisitor& visitor) { visitor.visitForInStmt(this); }
+void DeferStmt::accept(StmtVisitor& visitor) { visitor.visitDeferStmt(this); }
+void AsyncFnStmt::accept(StmtVisitor& visitor) { visitor.visitAsyncFnStmt(this); }
+void WithStmt::accept(StmtVisitor& visitor) { visitor.visitWithStmt(this); }
+void LabeledStmt::accept(StmtVisitor& visitor) { visitor.visitLabeledStmt(this); }
+void MultiLetStmt::accept(StmtVisitor& visitor) { visitor.visitMultiLetStmt(this); }
+void ExportStmt::accept(StmtVisitor& visitor) { visitor.visitExportStmt(this); }
+void DecoratorStmt::accept(StmtVisitor& visitor) { visitor.visitDecoratorStmt(this); }
 
 } // namespace claw

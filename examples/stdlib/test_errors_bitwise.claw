@@ -1,0 +1,164 @@
+// ============================================================
+// ClawScript — Error Handling, Bitwise, Switch, Enum, JSON Tests
+// ============================================================
+print("=== Error / Bitwise / Switch / Enum / JSON Tests ===");
+
+// --- Test 1: try/catch basic ---
+let caught = false;
+try {
+    throw "oops";
+} catch (e) {
+    caught = true;
+}
+if (caught) { print("PASS: try/catch basic"); } else { print("FAIL: try/catch basic"); }
+
+// --- Test 2: try/catch with error message ---
+let errMsg = "";
+try {
+    let x = 1 / 0;
+    throw "should not reach";
+} catch (e) {
+    errMsg = e;
+}
+if (errMsg != "") { print("PASS: try/catch division by zero caught"); } else { print("FAIL: try/catch division by zero"); }
+
+// --- Test 3: nested try/catch ---
+let outer = false;
+let inner = false;
+try {
+    try {
+        throw "inner error";
+    } catch (e) {
+        inner = true;
+        throw "outer error";
+    }
+} catch (e) {
+    outer = true;
+}
+if (inner and outer) { print("PASS: nested try/catch"); } else { print("FAIL: nested try/catch"); }
+
+// --- Test 4: Bitwise AND ---
+let r1 = 12 & 10;  // 1100 & 1010 = 1000 = 8
+if (r1 == 8) { print("PASS: bitwise AND"); } else { print("FAIL: bitwise AND got " + r1); }
+
+// --- Test 5: Bitwise OR ---
+let r2 = 12 | 10;  // 1100 | 1010 = 1110 = 14
+if (r2 == 14) { print("PASS: bitwise OR"); } else { print("FAIL: bitwise OR got " + r2); }
+
+// --- Test 6: Bitwise XOR ---
+let r3 = 12 ^ 10;  // 1100 ^ 1010 = 0110 = 6
+if (r3 == 6) { print("PASS: bitwise XOR"); } else { print("FAIL: bitwise XOR got " + r3); }
+
+// --- Test 7: Bitwise NOT ---
+let r4 = ~0;  // ~0 = -1 (two's complement)
+if (r4 == -1) { print("PASS: bitwise NOT"); } else { print("FAIL: bitwise NOT got " + r4); }
+
+// --- Test 8: Left shift ---
+let r5 = 1 << 4;  // 16
+if (r5 == 16) { print("PASS: left shift"); } else { print("FAIL: left shift got " + r5); }
+
+// --- Test 9: Right shift ---
+let r6 = 64 >> 3;  // 8
+if (r6 == 8) { print("PASS: right shift"); } else { print("FAIL: right shift got " + r6); }
+
+// --- Test 10: Compound bitwise &= ---
+let b1 = 15;
+b1 &= 6;  // 1111 & 0110 = 0110 = 6
+if (b1 == 6) { print("PASS: compound &="); } else { print("FAIL: compound &= got " + b1); }
+
+// --- Test 11: Compound bitwise |= ---
+let b2 = 5;
+b2 |= 2;  // 101 | 010 = 111 = 7
+if (b2 == 7) { print("PASS: compound |="); } else { print("FAIL: compound |= got " + b2); }
+
+// --- Test 12: Compound bitwise ^= ---
+let b3 = 7;
+b3 ^= 3;  // 111 ^ 011 = 100 = 4
+if (b3 == 4) { print("PASS: compound ^="); } else { print("FAIL: compound ^= got " + b3); }
+
+// --- Test 13: Compound <<= ---
+let b4 = 1;
+b4 <<= 3;  // 1 << 3 = 8
+if (b4 == 8) { print("PASS: compound <<="); } else { print("FAIL: compound <<= got " + b4); }
+
+// --- Test 14: Compound >>= ---
+let b5 = 32;
+b5 >>= 2;  // 32 >> 2 = 8
+if (b5 == 8) { print("PASS: compound >>="); } else { print("FAIL: compound >>= got " + b5); }
+
+// --- Test 15: Switch basic ---
+let day = 3;
+let dayName = "";
+switch (day) {
+    case 1: dayName = "Mon"; break;
+    case 2: dayName = "Tue"; break;
+    case 3: dayName = "Wed"; break;
+    default: dayName = "Other"; break;
+}
+if (dayName == "Wed") { print("PASS: switch basic"); } else { print("FAIL: switch basic got " + dayName); }
+
+// --- Test 16: Switch default ---
+let x2 = 99;
+let res = "";
+switch (x2) {
+    case 1: res = "one"; break;
+    case 2: res = "two"; break;
+    default: res = "other"; break;
+}
+if (res == "other") { print("PASS: switch default"); } else { print("FAIL: switch default got " + res); }
+
+// --- Test 17: Switch string ---
+let color = "red";
+let hex = "";
+switch (color) {
+    case "red":   hex = "#FF0000"; break;
+    case "green": hex = "#00FF00"; break;
+    case "blue":  hex = "#0000FF"; break;
+    default:      hex = "#000000"; break;
+}
+if (hex == "#FF0000") { print("PASS: switch string"); } else { print("FAIL: switch string got " + hex); }
+
+// --- Test 18: Enum ---
+enum Direction { North, South, East, West };
+if (Direction.North == 0 and Direction.South == 1 and Direction.East == 2 and Direction.West == 3) {
+    print("PASS: enum auto-values");
+} else {
+    print("FAIL: enum auto-values");
+}
+
+// --- Test 19: Enum custom values ---
+enum HttpStatus { Ok = 200, NotFound = 404, Error = 500 };
+if (HttpStatus.Ok == 200 and HttpStatus.NotFound == 404 and HttpStatus.Error == 500) {
+    print("PASS: enum custom values");
+} else {
+    print("FAIL: enum custom values");
+}
+
+// --- Test 20: JSON stringify ---
+let obj = { "name": "Alice", "age": 30, "active": true };
+let json = jsonStringify(obj);
+if (json != "" and json != nil) {
+    print("PASS: jsonStringify produces output");
+} else {
+    print("FAIL: jsonStringify");
+}
+
+// --- Test 21: JSON parse ---
+let jsonStr = "{\"x\": 42, \"y\": \"hello\"}";
+let parsed = jsonParse(jsonStr);
+if (parsed.x == 42 and parsed.y == "hello") {
+    print("PASS: jsonParse");
+} else {
+    print("FAIL: jsonParse got x=" + parsed.x + " y=" + parsed.y);
+}
+
+// --- Test 22: JSON round-trip ---
+let data = { "nums": [1, 2, 3], "flag": false };
+let rt = jsonParse(jsonStringify(data));
+if (rt.flag == false and rt.nums[1] == 2) {
+    print("PASS: JSON round-trip");
+} else {
+    print("FAIL: JSON round-trip");
+}
+
+print("=== Error / Bitwise / Switch / Enum / JSON Tests Complete ===");

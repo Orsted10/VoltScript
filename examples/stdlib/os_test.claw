@@ -1,0 +1,59 @@
+// ── OS stdlib test ───────────────────────────────────────────────────────────
+print("=== OS Tests ===");
+
+let plat = osPlatform();
+print("Platform: " + plat);
+
+let pid = osPid();
+print("PID > 0: " + (pid > 0));
+
+let t = osTime();
+print("Unix time > 0: " + (t > 0));
+
+let tms = osTimeMs();
+print("Unix time ms > unix time: " + (tms > t));
+
+let cwd = osCwd();
+print("CWD non-empty: " + (len(cwd) > 0));
+
+let joined = osJoinPath("foo", "bar.txt");
+print("Join: " + joined);
+
+let base = osBasename("foo/bar/baz.txt");
+print("Basename: " + base);
+
+let dir = osDirname("foo/bar/baz.txt");
+print("Dirname: " + dir);
+
+let testFile = "tmp_os_test.txt";
+let wrote = osWriteFile(testFile, "hello clawscript\n");
+print("Write: " + wrote);
+
+let content = osReadFile(testFile);
+print("Read ok: " + (len(content) > 0));
+
+let sz = osFileSize(testFile);
+print("Size > 0: " + (sz > 0));
+
+let exists = osExists(testFile);
+print("Exists: " + exists);
+
+let isFile = osIsFile(testFile);
+print("IsFile: " + isFile);
+
+let testDir = "tmp_os_testdir";
+let madeDir = osMkdir(testDir);
+print("Mkdir: " + madeDir);
+
+let isDir = osIsDir(testDir);
+print("IsDir: " + isDir);
+
+osRemove(testFile);
+osRemove(testDir);
+print("Removed: " + (!osExists(testFile)));
+
+osSetEnv("CLAW_TEST_VAR", "hello");
+let envVal = osGetEnv("CLAW_TEST_VAR");
+print("Env: " + envVal);
+
+print("=== OS Tests PASSED ===");

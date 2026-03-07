@@ -29,21 +29,17 @@ std::unique_ptr<Chunk> Compiler::compile(const std::vector<StmtPtr>& program) {
 // ExprVisitor implementation
 
 Value Compiler::visitLiteralExpr(LiteralExpr* expr) {
-    switch (expr->type) {
-        case LiteralExpr::Type::Number:
-            emitConstant(numberToValue(expr->numberValue));
-            break;
-        case LiteralExpr::Type::String:
-            emitConstant(stringValue(StringPool::intern(expr->stringValue).data()));
-            break;
-        case LiteralExpr::Type::Bool:
-            emitOp(expr->boolValue ? OpCode::True : OpCode::False);
-            break;
-        case LiteralExpr::Type::Nil:
-            emitOp(OpCode::Nil);
-            break;
+    Value v = expr->value;
+    if (v == nilValue()) {
+        emitOp(OpCode::Nil);
+    } else if (v == boolValue(true)) {
+        emitOp(OpCode::True);
+    } else if (v == boolValue(false)) {
+        emitOp(OpCode::False);
+    } else {
+        emitConstant(v);
     }
-    return nilValue(); // Compiler doesn't return Values during compilation
+    return nilValue();
 }
 
 Value Compiler::visitVariableExpr(VariableExpr* expr) {
@@ -120,20 +116,10 @@ Value Compiler::visitLogicalExpr(LogicalExpr* expr) {
 }
 
 Value Compiler::visitGroupingExpr(GroupingExpr* expr) {
-    return expr->expr->accept(*this);
+    return expr->expression->accept(*this);
 }
 
 Value Compiler::visitCallExpr(CallExpr* expr) {
-    if (auto* var = dynamic_cast<VariableExpr*>(expr->callee.get())) {
-        if (var->token.lexeme == std::string_view("num") && expr->arguments.size() == 1) {
-            if (auto* lit = dynamic_cast<LiteralExpr*>(expr->arguments[0].get())) {
-                if (lit->type == LiteralExpr::Type::Number) {
-                    expr->arguments[0]->accept(*this);
-                    return nilValue();
-                }
-            }
-        }
-    }
     expr->callee->accept(*this);
     uint8_t argCount = 0;
     for (const auto& argument : expr->arguments) {
@@ -550,76 +536,22 @@ void Compiler::visitForStmt(ForStmt* stmt) {
     if (stmt->initializer) {
         stmt->initializer->accept(*this);
     }
-    bool unrolled = false;
-    if (stmt->initializer && stmt->condition && stmt->increment) {
-        auto initLet = dynamic_cast<LetStmt*>(stmt->initializer.get());
-        auto condBin = dynamic_cast<BinaryExpr*>(stmt->condition.get());
-        auto incAssign = dynamic_cast<AssignExpr*>(stmt->increment.get());
-        auto incUpdate = dynamic_cast<UpdateExpr*>(stmt->increment.get());
-        if (initLet && initLet->initializer) {
-            auto initLit = dynamic_cast<LiteralExpr*>(initLet->initializer.get());
-            if (initLit && initLit->type == LiteralExpr::Type::Number && condBin) {
-                auto leftVar = dynamic_cast<VariableExpr*>(condBin->left.get());
-                auto rightLit = dynamic_cast<LiteralExpr*>(condBin->right.get());
-                if (leftVar && rightLit && rightLit->type == LiteralExpr::Type::Number) {
-                    double startVal = initLit->numberValue;
-                    double limitVal = rightLit->numberValue;
-                    double stepVal = 0.0;
-                    bool stepOk = false;
-                    if (incAssign) {
-                        auto valBin = dynamic_cast<BinaryExpr*>(incAssign->value.get());
-                        if (valBin && valBin->op.type == TokenType::Plus) {
-                            auto vleft = dynamic_cast<VariableExpr*>(valBin->left.get());
-                            auto vright = dynamic_cast<LiteralExpr*>(valBin->right.get());
-                            if (vleft && vright && vright->type == LiteralExpr::Type::Number &&
-                                vleft->name == leftVar->name) {
-                                stepVal = vright->numberValue;
-                                stepOk = true;
-                            }
-                        }
-                    } else if (incUpdate && incUpdate->op.type == TokenType::PlusPlus &&
-                               incUpdate->name == leftVar->name) {
-                        stepVal = 1.0;
-                        stepOk = true;
-                    }
-                    if (stepOk && stepVal > 0.0 && leftVar->name == initLet->name) {
-                        int iterations = 0;
-                        if (condBin->op.type == TokenType::Less) {
-                            iterations = static_cast<int>(std::max(0.0, std::floor((limitVal - startVal) / stepVal)));
-                        } else if (condBin->op.type == TokenType::LessEqual) {
-                            iterations = static_cast<int>(std::max(0.0, std::floor((limitVal - startVal) / stepVal) + 1.0));
-                        }
-                        if (iterations > 0 && iterations <= 16) {
-                            for (int k = 0; k < iterations; ++k) {
-                                stmt->body->accept(*this);
-                                stmt->increment->accept(*this);
-                                emitOp(OpCode::Pop);
-                            }
-                            unrolled = true;
-                        }
-                    }
-                }
-            }
-        }
+    int loopStart = static_cast<int>(chunk_->size());
+    int exitJump = -1;
+    if (stmt->condition) {
+        stmt->condition->accept(*this);
+        exitJump = emitJump(OpCode::JumpIfFalse);
+        emitOp(OpCode::Pop);
     }
-    if (!unrolled) {
-        int loopStart = static_cast<int>(chunk_->size());
-        int exitJump = -1;
-        if (stmt->condition) {
-            stmt->condition->accept(*this);
-            exitJump = emitJump(OpCode::JumpIfFalse);
-            emitOp(OpCode::Pop);
-        }
-        stmt->body->accept(*this);
-        if (stmt->increment) {
-            stmt->increment->accept(*this);
-            emitOp(OpCode::Pop);
-        }
-        emitLoop(loopStart);
-        if (exitJump != -1) {
-            patchJump(exitJump);
-            emitOp(OpCode::Pop);
-        }
+    stmt->body->accept(*this);
+    if (stmt->increment) {
+        stmt->increment->accept(*this);
+        emitOp(OpCode::Pop);
+    }
+    emitLoop(loopStart);
+    if (exitJump != -1) {
+        patchJump(exitJump);
+        emitOp(OpCode::Pop);
     }
     endScope();
 }
@@ -629,8 +561,8 @@ void Compiler::visitFnStmt(FnStmt* stmt) {
     functionCompiler.beginScope();
     functionCompiler.addLocal(stmt->name);
 
-    for (const auto& param : stmt->parameters) {
-        functionCompiler.addLocal(param);
+    for (const auto& param : stmt->params) {
+        functionCompiler.addLocal(param.name);
     }
 
     for (const auto& bodyStmt : stmt->body) {
@@ -643,7 +575,7 @@ void Compiler::visitFnStmt(FnStmt* stmt) {
 
     auto function = std::make_shared<VMFunction>();
     function->name = stmt->name;
-    function->arity = static_cast<int>(stmt->parameters.size());
+    function->arity = static_cast<int>(stmt->params.size());
     function->upvalueCount = static_cast<int>(functionCompiler.upvalues_.size());
     function->chunk = std::move(functionCompiler.chunk_);
 
@@ -665,8 +597,8 @@ void Compiler::visitFnStmt(FnStmt* stmt) {
     }
 }
 void Compiler::visitReturnStmt(ReturnStmt* stmt) {
-    if (stmt->value) {
-        stmt->value->accept(*this);
+    if (!stmt->values.empty()) {
+        stmt->values[0]->accept(*this);
     } else {
         emitOp(OpCode::Nil);
     }
@@ -679,6 +611,401 @@ void Compiler::visitThrowStmt(ThrowStmt*) {}
 void Compiler::visitImportStmt(ImportStmt*) {}
 void Compiler::visitClassStmt(ClassStmt*) {}
 void Compiler::visitSwitchStmt(SwitchStmt*) {}
+
+// ---- New ExprVisitor stubs ----
+Value Compiler::visitFStringExpr(FStringExpr* expr) {
+    // Concatenate all segments at runtime
+    bool first = true;
+    for (auto& seg : expr->segments) {
+        if (seg.isExpr) {
+            seg.expr->accept(*this);
+            emitOp(OpCode::ToString);
+        } else {
+            auto sv = StringPool::intern(seg.text);
+            emitConstant(stringValue(sv.data()));
+        }
+        if (!first) emitOp(OpCode::Add);
+        first = false;
+    }
+    if (first) emitConstant(stringValue(StringPool::intern("").data()));
+    return nilValue();
+}
+Value Compiler::visitTemplateExpr(TemplateExpr* expr) {
+    bool first = true;
+    for (auto& seg : expr->segments) {
+        if (seg.isExpr) {
+            seg.expr->accept(*this);
+            emitOp(OpCode::ToString);
+        } else {
+            auto sv = StringPool::intern(seg.text);
+            emitConstant(stringValue(sv.data()));
+        }
+        if (!first) emitOp(OpCode::Add);
+        first = false;
+    }
+    if (first) emitConstant(stringValue(StringPool::intern("").data()));
+    return nilValue();
+}
+Value Compiler::visitSpreadExpr(SpreadExpr* expr) {
+    expr->expr->accept(*this);
+    emitOp(OpCode::Spread);
+    return nilValue();
+}
+Value Compiler::visitOptionalChainExpr(OptionalChainExpr* expr) {
+    expr->object->accept(*this);
+    // Emit nil-check: if nil, short-circuit to nil
+    int nilJump = emitJump(OpCode::JumpIfNil);
+    switch (expr->kind) {
+        case OptionalChainExpr::Kind::Member: {
+            auto sv = StringPool::intern(expr->member);
+            emitOp(OpCode::GetProperty);
+            emitByte(makeConstant(stringValue(sv.data())));
+            break;
+        }
+        case OptionalChainExpr::Kind::Index:
+            expr->index->accept(*this);
+            emitOp(OpCode::GetIndex);
+            break;
+        case OptionalChainExpr::Kind::Call:
+            for (auto& arg : expr->args) arg->accept(*this);
+            emitOp(OpCode::Call);
+            emitByte(static_cast<uint8_t>(expr->args.size()));
+            break;
+    }
+    int endJump = emitJump(OpCode::Jump);
+    patchJump(nilJump);
+    emitOp(OpCode::Pop);
+    emitOp(OpCode::Nil);
+    patchJump(endJump);
+    return nilValue();
+}
+Value Compiler::visitNullCoalesceExpr(NullCoalesceExpr* expr) {
+    expr->left->accept(*this);
+    int notNilJump = emitJump(OpCode::JumpIfNotNil);
+    emitOp(OpCode::Pop);
+    expr->right->accept(*this);
+    patchJump(notNilJump);
+    return nilValue();
+}
+Value Compiler::visitPipeExpr(PipeExpr* expr) {
+    expr->right->accept(*this); // callee
+    expr->left->accept(*this);  // single argument
+    emitOp(OpCode::Call);
+    emitByte(1);
+    return nilValue();
+}
+Value Compiler::visitAwaitExpr(AwaitExpr* expr) {
+    expr->expr->accept(*this);
+    emitOp(OpCode::Await);
+    return nilValue();
+}
+Value Compiler::visitYieldExpr(YieldExpr* expr) {
+    if (expr->expr) expr->expr->accept(*this);
+    else emitOp(OpCode::Nil);
+    emitOp(OpCode::Yield);
+    return nilValue();
+}
+Value Compiler::visitMatchExpr(MatchExpr* expr) {
+    expr->subject->accept(*this);
+    // Simple linear match: for each arm emit compare + jump
+    std::vector<int> endJumps;
+    for (auto& arm : expr->arms) {
+        if (arm.isDefault) {
+            emitOp(OpCode::Pop); // pop subject
+            if (arm.bodyExpr) arm.bodyExpr->accept(*this);
+            else emitOp(OpCode::Nil);
+        } else {
+            for (auto& pat : arm.patterns) {
+                emitOp(OpCode::Dup);
+                pat->accept(*this);
+                emitOp(OpCode::Equal);
+                int matchJump = emitJump(OpCode::JumpIfTrue);
+                emitOp(OpCode::Pop); // pop Equal result
+                // try next pattern
+                int skipJump = emitJump(OpCode::Jump);
+                patchJump(matchJump);
+                emitOp(OpCode::Pop); // pop Equal result
+                emitOp(OpCode::Pop); // pop subject dup
+                if (arm.bodyExpr) arm.bodyExpr->accept(*this);
+                else emitOp(OpCode::Nil);
+                endJumps.push_back(emitJump(OpCode::Jump));
+                patchJump(skipJump);
+            }
+        }
+    }
+    // fallthrough: no match → nil
+    emitOp(OpCode::Pop);
+    emitOp(OpCode::Nil);
+    for (int j : endJumps) patchJump(j);
+    return nilValue();
+}
+Value Compiler::visitComprehensionExpr(ComprehensionExpr* expr) {
+    // Emit as: let $arr = []; for varName in iterable { if cond { $arr.push(body) } }
+    emitOp(OpCode::NewArray);
+    // Store array in a temp local
+    std::string tmpArr = std::string("$comp_") + std::to_string(reinterpret_cast<std::uintptr_t>(expr));
+    addLocal(tmpArr);
+    int arrSlot = resolveLocal(tmpArr);
+    emitOp(OpCode::SetLocal);
+    emitByte(static_cast<uint8_t>(arrSlot));
+    emitOp(OpCode::Pop);
+    // Iterate
+    expr->iterable->accept(*this);
+    emitOp(OpCode::GetIter);
+    std::string tmpIter = std::string("$iter_") + std::to_string(reinterpret_cast<std::uintptr_t>(expr));
+    addLocal(tmpIter);
+    int iterSlot = resolveLocal(tmpIter);
+    emitOp(OpCode::SetLocal);
+    emitByte(static_cast<uint8_t>(iterSlot));
+    emitOp(OpCode::Pop);
+    int loopStart = static_cast<int>(chunk_->size());
+    emitOp(OpCode::GetLocal);
+    emitByte(static_cast<uint8_t>(iterSlot));
+    emitOp(OpCode::IterNext);
+    int exitJump = emitJump(OpCode::JumpIfFalse);
+    emitOp(OpCode::Pop);
+    addLocal(expr->varName);
+    int varSlot = resolveLocal(expr->varName);
+    emitOp(OpCode::SetLocal);
+    emitByte(static_cast<uint8_t>(varSlot));
+    emitOp(OpCode::Pop);
+    if (expr->condition) {
+        expr->condition->accept(*this);
+        int skipJump = emitJump(OpCode::JumpIfFalse);
+        emitOp(OpCode::Pop);
+        emitOp(OpCode::GetLocal);
+        emitByte(static_cast<uint8_t>(arrSlot));
+        expr->body->accept(*this);
+        emitOp(OpCode::ArrayPush);
+        emitOp(OpCode::Pop);
+        int afterJump = emitJump(OpCode::Jump);
+        patchJump(skipJump);
+        emitOp(OpCode::Pop);
+        patchJump(afterJump);
+    } else {
+        emitOp(OpCode::GetLocal);
+        emitByte(static_cast<uint8_t>(arrSlot));
+        expr->body->accept(*this);
+        emitOp(OpCode::ArrayPush);
+        emitOp(OpCode::Pop);
+    }
+    emitLoop(loopStart);
+    patchJump(exitJump);
+    emitOp(OpCode::Pop);
+    emitOp(OpCode::GetLocal);
+    emitByte(static_cast<uint8_t>(arrSlot));
+    return nilValue();
+}
+Value Compiler::visitDestructureArrayExpr(DestructureArrayExpr* expr) {
+    expr->value->accept(*this);
+    int idx = 0;
+    for (auto& elem : expr->elements) {
+        if (elem.isRest) {
+            emitOp(OpCode::ArraySlice);
+            emitByte(static_cast<uint8_t>(idx));
+        } else {
+            emitOp(OpCode::Dup);
+            emitConstant(numberToValue(static_cast<double>(idx)));
+            emitOp(OpCode::GetIndex);
+        }
+        if (scopeDepth_ > 0) {
+            addLocal(elem.name);
+        } else {
+            emitOp(OpCode::DefineGlobal);
+            auto sv = StringPool::intern(elem.name);
+            emitByte(makeConstant(stringValue(sv.data())));
+        }
+        idx++;
+    }
+    emitOp(OpCode::Pop); // pop original array
+    return nilValue();
+}
+Value Compiler::visitDestructureObjectExpr(DestructureObjectExpr* expr) {
+    expr->value->accept(*this);
+    for (auto& prop : expr->properties) {
+        if (prop.isRest) continue; // TODO: rest object
+        emitOp(OpCode::Dup);
+        auto sv = StringPool::intern(prop.key);
+        emitOp(OpCode::GetProperty);
+        emitByte(makeConstant(stringValue(sv.data())));
+        std::string bindName = prop.alias.empty() ? prop.key : prop.alias;
+        if (scopeDepth_ > 0) {
+            addLocal(bindName);
+        } else {
+            emitOp(OpCode::DefineGlobal);
+            auto bsv = StringPool::intern(bindName);
+            emitByte(makeConstant(stringValue(bsv.data())));
+        }
+    }
+    emitOp(OpCode::Pop); // pop original object
+    return nilValue();
+}
+Value Compiler::visitTypeAnnotationExpr(TypeAnnotationExpr* expr) {
+    // Type annotations are erased at runtime
+    return expr->expr->accept(*this);
+}
+Value Compiler::visitNewExpr(NewExpr* expr) {
+    expr->callee->accept(*this);
+    for (auto& arg : expr->arguments) arg->accept(*this);
+    emitOp(OpCode::Construct);
+    emitByte(static_cast<uint8_t>(expr->arguments.size()));
+    return nilValue();
+}
+Value Compiler::visitMetaExpr(MetaExpr* expr) {
+    expr->object->accept(*this);
+    if (expr->metatable) {
+        expr->metatable->accept(*this);
+        emitOp(OpCode::SetMeta);
+    } else {
+        emitOp(OpCode::GetMeta);
+    }
+    return nilValue();
+}
+
+// ---- New StmtVisitor stubs ----
+void Compiler::visitConstStmt(ConstStmt* stmt) {
+    // Treat const like let (enforcement is semantic, not bytecode-level)
+    std::string_view name = stmt->token.lexeme;
+    if (scopeDepth_ > 0) {
+        addLocal(name);
+        int slot = resolveLocal(name);
+        emitOp(OpCode::Nil);
+        if (stmt->initializer) {
+            stmt->initializer->accept(*this);
+            emitOp(OpCode::SetLocal);
+            emitByte(static_cast<uint8_t>(slot));
+            emitOp(OpCode::Pop);
+        }
+    } else {
+        if (stmt->initializer) stmt->initializer->accept(*this);
+        else emitOp(OpCode::Nil);
+        emitOp(OpCode::DefineGlobal);
+        auto sv = StringPool::intern(name);
+        emitByte(makeConstant(stringValue(sv.data())));
+    }
+}
+void Compiler::visitEnumStmt(EnumStmt* stmt) {
+    // Emit enum as a hash-map constant
+    emitOp(OpCode::NewHashMap);
+    double idx = 0.0;
+    for (auto& mem : stmt->members) {
+        auto sv = StringPool::intern(mem.name);
+        emitConstant(stringValue(sv.data()));
+        if (mem.value) mem.value->accept(*this);
+        else emitConstant(numberToValue(idx));
+        emitOp(OpCode::HashMapSet);
+        idx += 1.0;
+    }
+    emitOp(OpCode::DefineGlobal);
+    auto sv = StringPool::intern(stmt->name);
+    emitByte(makeConstant(stringValue(sv.data())));
+}
+void Compiler::visitInterfaceStmt(InterfaceStmt*) {
+    // Interfaces are erased at runtime (structural typing)
+}
+void Compiler::visitForOfStmt(ForOfStmt* stmt) {
+    beginScope();
+    stmt->iterable->accept(*this);
+    emitOp(OpCode::GetIter);
+    std::string tmpIter = std::string("$foriter_") + std::to_string(reinterpret_cast<std::uintptr_t>(stmt));
+    addLocal(tmpIter);
+    int iterSlot = resolveLocal(tmpIter);
+    emitOp(OpCode::SetLocal);
+    emitByte(static_cast<uint8_t>(iterSlot));
+    emitOp(OpCode::Pop);
+    int loopStart = static_cast<int>(chunk_->size());
+    emitOp(OpCode::GetLocal);
+    emitByte(static_cast<uint8_t>(iterSlot));
+    emitOp(OpCode::IterNext);
+    int exitJump = emitJump(OpCode::JumpIfFalse);
+    emitOp(OpCode::Pop);
+    addLocal(stmt->varName);
+    int varSlot = resolveLocal(stmt->varName);
+    emitOp(OpCode::SetLocal);
+    emitByte(static_cast<uint8_t>(varSlot));
+    emitOp(OpCode::Pop);
+    stmt->body->accept(*this);
+    emitLoop(loopStart);
+    patchJump(exitJump);
+    emitOp(OpCode::Pop);
+    endScope();
+}
+void Compiler::visitForInStmt(ForInStmt* stmt) {
+    // for (key in obj) — iterate over keys
+    beginScope();
+    stmt->object->accept(*this);
+    emitOp(OpCode::GetIter);
+    std::string tmpIter = std::string("$finiter_") + std::to_string(reinterpret_cast<std::uintptr_t>(stmt));
+    addLocal(tmpIter);
+    int iterSlot = resolveLocal(tmpIter);
+    emitOp(OpCode::SetLocal);
+    emitByte(static_cast<uint8_t>(iterSlot));
+    emitOp(OpCode::Pop);
+    int loopStart = static_cast<int>(chunk_->size());
+    emitOp(OpCode::GetLocal);
+    emitByte(static_cast<uint8_t>(iterSlot));
+    emitOp(OpCode::IterNext);
+    int exitJump = emitJump(OpCode::JumpIfFalse);
+    emitOp(OpCode::Pop);
+    addLocal(stmt->varName);
+    int varSlot = resolveLocal(stmt->varName);
+    emitOp(OpCode::SetLocal);
+    emitByte(static_cast<uint8_t>(varSlot));
+    emitOp(OpCode::Pop);
+    stmt->body->accept(*this);
+    emitLoop(loopStart);
+    patchJump(exitJump);
+    emitOp(OpCode::Pop);
+    endScope();
+}
+void Compiler::visitDeferStmt(DeferStmt* stmt) {
+    // Defer: execute body at end of scope — emit as-is for now (no stack unwinding)
+    stmt->body->accept(*this);
+}
+void Compiler::visitAsyncFnStmt(AsyncFnStmt* stmt) {
+    // Async fn: compile the inner fn normally; async semantics handled at runtime
+    if (stmt->fn) stmt->fn->accept(*this);
+}
+void Compiler::visitWithStmt(WithStmt* stmt) {
+    beginScope();
+    stmt->resource->accept(*this);
+    addLocal(stmt->varName);
+    int slot = resolveLocal(stmt->varName);
+    emitOp(OpCode::SetLocal);
+    emitByte(static_cast<uint8_t>(slot));
+    emitOp(OpCode::Pop);
+    stmt->body->accept(*this);
+    endScope();
+}
+void Compiler::visitLabeledStmt(LabeledStmt* stmt) {
+    stmt->body->accept(*this);
+}
+void Compiler::visitMultiLetStmt(MultiLetStmt* stmt) {
+    // let [a, b] = expr  — compile initializer then destructure
+    if (stmt->initializer) stmt->initializer->accept(*this);
+    else emitOp(OpCode::Nil);
+    for (size_t i = 0; i < stmt->names.size(); ++i) {
+        emitOp(OpCode::Dup);
+        emitConstant(numberToValue(static_cast<double>(i)));
+        emitOp(OpCode::GetIndex);
+        std::string_view name = StringPool::intern(stmt->names[i]);
+        if (scopeDepth_ > 0) {
+            addLocal(name);
+        } else {
+            emitOp(OpCode::DefineGlobal);
+            emitByte(makeConstant(stringValue(name.data())));
+        }
+    }
+    emitOp(OpCode::Pop); // pop original value
+}
+void Compiler::visitExportStmt(ExportStmt* stmt) {
+    // Export: no-op at bytecode level (module system handles it)
+    (void)stmt;
+}
+void Compiler::visitDecoratorStmt(DecoratorStmt* stmt) {
+    // Compile the target first, then apply decorators in order
+    if (stmt->target) stmt->target->accept(*this);
+}
 
 // Private helpers
 

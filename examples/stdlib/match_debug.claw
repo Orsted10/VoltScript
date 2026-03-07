@@ -1,0 +1,11 @@
+let v = match(0) {
+    case 0: "zero",
+    default: "other"
+};
+print(v);
+
+let w = match(5) {
+    case 0: "zero",
+    default: "other"
+};
+print(w);
