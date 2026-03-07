@@ -1,0 +1,249 @@
+// objects.claw
+// Description: Demonstrates object creation and manipulation in ClawScript
+// Purpose: Shows hash map operations and object-oriented patterns
+
+fn main() {
+    print "=== Objects Demo ===";
+    
+    // Object creation
+    print "\n--- Object Creation ---";
+    let person = {
+        "name": "Alice",
+        "age": 25,
+        "email": "alice@example.com",
+        "active": true
+    };
+    
+    print "Person object: " + person;
+    
+    let emptyObject = {};
+    print "Empty object: " + emptyObject;
+    
+    // Property access
+    print "\n--- Property Access ---";
+    print "Name: " + person["name"];
+    print "Age: " + person["age"];
+    print "Email: " + person["email"];
+    print "Active: " + person["active"];
+    
+    // Property modification
+    print "\n--- Property Modification ---";
+    print "Original age: " + person["age"];
+    person["age"] = 26;
+    print "Updated age: " + person["age"];
+    
+    // Adding new properties
+    person["phone"] = "555-1234";
+    person["city"] = "New York";
+    print "After adding properties: " + person;
+    
+    // Object properties
+    print "\n--- Object Properties ---";
+    print "Object size: " + person.size;
+    
+    // Object utility functions
+    print "\n--- Object Utility Functions ---";
+    
+    // keys() function
+    let keys = keys(person);
+    print "Object keys: " + keys;
+    
+    // values() function
+    let values = values(person);
+    print "Object values: " + values;
+    
+    // has() function
+    print "Has 'name': " + has(person, "name"));
+    print "Has 'salary': " + has(person, "salary"));
+    
+    // remove() function
+    print "Before removal: " + person;
+    remove(person, "active");
+    print "After removing 'active': " + person;
+    
+    // Nested objects
+    print "\n--- Nested Objects ---";
+    let company = {
+        "name": "Tech Corp",
+        "founded": 2020,
+        "employees": 150,
+        "address": {
+            "street": "123 Main St",
+            "city": "San Francisco",
+            "state": "CA",
+            "zip": "94105"
+        },
+        "departments": {
+            "engineering": {
+                "head": "Alice",
+                "size": 50
+            },
+            "marketing": {
+                "head": "Bob",
+                "size": 20
+            },
+            "sales": {
+                "head": "Charlie",
+                "size": 30
+            }
+        }
+    };
+    
+    print "Company: " + company;
+    print "Company name: " + company["name"];
+    print "Street address: " + company["address"]["street"];
+    print "Engineering head: " + company["departments"]["engineering"]["head"];
+    
+    // Object iteration
+    print "\n--- Object Iteration ---";
+    print "Iterating over person object:";
+    let personKeys = keys(person);
+    for (let i = 0; i < personKeys.length; i = i + 1) {
+        let key = personKeys[i];
+        let value = person[key];
+        print "  " + key + ": " + value;
+    }
+    
+    // Object copying
+    print "\n--- Object Copying ---";
+    let original = {"a": 1, "b": 2, "c": 3};
+    let copy = {};
+    
+    let originalKeys = keys(original);
+    for (let i = 0; i < originalKeys.length; i = i + 1) {
+        let key = originalKeys[i];
+        copy[key] = original[key];
+    }
+    
+    print "Original: " + original;
+    print "Copy: " + copy;
+    
+    // Modify copy (doesn't affect original)
+    copy["d"] = 4;
+    print "After modifying copy:";
+    print "Original: " + original;
+    print "Copy: " + copy;
+    
+    // Object merging
+    print "\n--- Object Merging ---";
+    let obj1 = {"a": 1, "b": 2};
+    let obj2 = {"c": 3, "d": 4};
+    let obj3 = {"b": 99, "e": 5}; // Overlapping key
+    
+    let merged = {};
+    
+    // Copy obj1
+    let obj1Keys = keys(obj1);
+    for (let i = 0; i < obj1Keys.length; i = i + 1) {
+        let key = obj1Keys[i];
+        merged[key] = obj1[key];
+    }
+    
+    // Copy obj2
+    let obj2Keys = keys(obj2);
+    for (let i = 0; i < obj2Keys.length; i = i + 1) {
+        let key = obj2Keys[i];
+        merged[key] = obj2[key];
+    }
+    
+    // Copy obj3 (overwrites overlapping keys)
+    let obj3Keys = keys(obj3);
+    for (let i = 0; i < obj3Keys.length; i = i + 1) {
+        let key = obj3Keys[i];
+        merged[key] = obj3[key];
+    }
+    
+    print "obj1: " + obj1;
+    print "obj2: " + obj2;
+    print "obj3: " + obj3;
+    print "Merged: " + merged;
+    
+    // Object comparison
+    print "\n--- Object Comparison ---";
+    
+    fn deepEqual(obj1, obj2) {
+        let keys1 = keys(obj1);
+        let keys2 = keys(obj2);
+        
+        if (keys1.length !== keys2.length) {
+            return false;
+        }
+        
+        for (let i = 0; i < keys1.length; i = i + 1) {
+            let key = keys1[i];
+            if (!has(obj2, key)) {
+                return false;
+            }
+            
+            let val1 = obj1[key];
+            let val2 = obj2[key];
+            
+            if (type(val1) === "object" && type(val2) === "object") {
+                if (!deepEqual(val1, val2)) {
+                    return false;
+                }
+            } else if (val1 !== val2) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    let objA = {"x": 1, "y": 2};
+    let objB = {"x": 1, "y": 2};
+    let objC = {"x": 1, "y": 3};
+    
+    print "objA == objB: " + deepEqual(objA, objB));
+    print "objA == objC: " + deepEqual(objA, objC));
+    
+    // Practical examples
+    print "\n--- Practical Examples ---";
+    
+    // Configuration object
+    let config = {
+        "database": {
+            "host": "localhost",
+            "port": 5432,
+            "name": "myapp"
+        },
+        "server": {
+            "port": 8080,
+            "host": "0.0.0.0"
+        },
+        "logging": {
+            "level": "info",
+            "file": "app.log"
+        }
+    };
+    
+    print "Database host: " + config["database"]["host"];
+    print "Server port: " + config["server"]["port"];
+    print "Log level: " + config["logging"]["level"];
+    
+    // User profile
+    let userProfile = {
+        "username": "alice123",
+        "profile": {
+            "displayName": "Alice Johnson",
+            "avatar": "alice.png",
+            "bio": "Software developer"
+        },
+        "preferences": {
+            "theme": "dark",
+            "notifications": true,
+            "language": "en"
+        },
+        "activity": {
+            "lastLogin": "2026-03-07",
+            "loginCount": 42,
+            "status": "active"
+        }
+    };
+    
+    print "User display name: " + userProfile["profile"]["displayName"];
+    print "User theme: " + userProfile["preferences"]["theme"];
+    print "Last login: " + userProfile["activity"]["lastLogin"];
+}
+
+main();

@@ -1,0 +1,126 @@
+// arrays.claw
+// Description: Demonstrates array creation and manipulation in ClawScript
+// Purpose: Shows various array operations and methods
+
+fn main() {
+    print "=== Arrays Demo ===";
+    
+    // Array creation
+    let numbers = [1, 2, 3, 4, 5];
+    let strings = ["apple", "banana", "cherry"];
+    let mixed = [42, "hello", true, nil, [1, 2]];
+    let empty = [];
+    
+    print "Numbers array: " + numbers;
+    print "Strings array: " + strings;
+    print "Mixed array: " + mixed;
+    print "Empty array: " + empty;
+    
+    // Array properties
+    print "\n=== Array Properties ===";
+    print "Numbers length: " + numbers.length;
+    print "Strings length: " + strings.length;
+    print "Empty length: " + empty.length;
+    
+    // Array access
+    print "\n=== Array Access ===";
+    print "First number: " + numbers[0];
+    print "Last number: " + numbers[numbers.length - 1];
+    print "Second string: " + strings[1];
+    
+    // Array modification
+    print "\n=== Array Modification ===";
+    let mutableArray = [1, 2, 3];
+    print "Original: " + mutableArray;
+    
+    mutableArray[1] = 99;  // Change element
+    print "After modification: " + mutableArray;
+    
+    mutableArray.push(4);   // Add element
+    print "After push: " + mutableArray;
+    
+    let popped = mutableArray.pop();  // Remove last element
+    print "Popped element: " + popped;
+    print "After pop: " + mutableArray;
+    
+    mutableArray.reverse();  // Reverse array
+    print "After reverse: " + mutableArray;
+    
+    // Array methods
+    print "\n=== Array Methods ===";
+    
+    // Map method
+    let doubled = numbers.map(fn(x) { return x * 2; });
+    print "Doubled numbers: " + doubled;
+    
+    // Filter method
+    let evens = numbers.filter(fn(x) { return x % 2 === 0; });
+    print "Even numbers: " + evens;
+    
+    // Reduce method
+    let sum = numbers.reduce(fn(acc, x) { return acc + x; }, 0);
+    print "Sum of numbers: " + sum;
+    
+    // Join method
+    let joined = strings.join(", ");
+    print "Joined strings: " + joined;
+    
+    // Advanced array operations
+    print "\n=== Advanced Operations ===";
+    
+    // Find maximum
+    fn findMax(arr) {
+        if (arr.length === 0) return nil;
+        let max = arr[0];
+        for (let i = 1; i < arr.length; i = i + 1) {
+            if (arr[i] > max) {
+                max = arr[i];
+            }
+        }
+        return max;
+    }
+    
+    print "Maximum of numbers: " + findMax(numbers);
+    
+    // Array copying
+    let original = [1, 2, 3, 4, 5];
+    let copy = [];
+    for (let i = 0; i < original.length; i = i + 1) {
+        copy.push(original[i]);
+    }
+    print "Copied array: " + copy;
+    
+    // Multidimensional arrays
+    let matrix = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ];
+    print "2x3 matrix: " + matrix;
+    print "Matrix[1][2]: " + matrix[1][2];
+    
+    // Array iteration patterns
+    print "\n=== Iteration Patterns ===";
+    
+    // Traditional for loop
+    print "Traditional loop:";
+    for (let i = 0; i < numbers.length; i = i + 1) {
+        print "  numbers[" + i + "] = " + numbers[i];
+    }
+    
+    // Reverse iteration
+    print "Reverse iteration:";
+    for (let i = numbers.length - 1; i >= 0; i = i - 1) {
+        print "  numbers[" + i + "] = " + numbers[i];
+    }
+    
+    // While loop with array
+    print "While loop iteration:";
+    let index = 0;
+    while (index < strings.length) {
+        print "  strings[" + index + "] = " + strings[index];
+        index = index + 1;
+    }
+}
+
+main();

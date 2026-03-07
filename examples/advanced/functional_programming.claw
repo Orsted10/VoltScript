@@ -1,0 +1,403 @@
+// functional_programming.claw
+// Description: Demonstrates functional programming concepts in ClawScript
+// Purpose: Shows higher-order functions, closures, and functional patterns
+
+// Higher-order function examples
+fn applyTwice(func, value) {
+    return func(func(value));
+}
+
+fn compose(f, g) {
+    return fn(x) {
+        return f(g(x));
+    };
+}
+
+fn pipe(f, g) {
+    return fn(x) {
+        return g(f(x));
+    };
+}
+
+// Currying example
+fn add(a) {
+    return fn(b) {
+        return a + b;
+    };
+}
+
+fn multiply(a) {
+    return fn(b) {
+        return a * b;
+    };
+}
+
+// Partial application
+fn partialApply(func, ...args) {
+    return fn(...moreArgs) {
+        return func(...args, ...moreArgs);
+    };
+}
+
+// Memoization (caching)
+fn memoize(func) {
+    let cache = {};
+    
+    return fn(...args) {
+        let key = str(args);
+        if (has(cache, key)) {
+            return cache[key];
+        }
+        
+        let result = func(...args);
+        cache[key] = result;
+        return result;
+    };
+}
+
+// Lazy evaluation
+fn lazy(thunk) {
+    let evaluated = false;
+    let cachedValue = nil;
+    
+    return fn() {
+        if (!evaluated) {
+            cachedValue = thunk();
+            evaluated = true;
+        }
+        return cachedValue;
+    };
+}
+
+// Functional data structures
+fn createStack() {
+    let items = [];
+    
+    return {
+        "push": fn(item) {
+            items.push(item);
+        },
+        "pop": fn() {
+            return items.pop();
+        },
+        "isEmpty": fn() {
+            return items.length === 0;
+        },
+        "size": fn() {
+            return items.length;
+        }
+    };
+}
+
+fn createQueue() {
+    let items = [];
+    let head = 0;
+    
+    return {
+        "enqueue": fn(item) {
+            items.push(item);
+        },
+        "dequeue": fn() {
+            if (head < items.length) {
+                let item = items[head];
+                head = head + 1;
+                return item;
+            }
+            return nil;
+        },
+        "isEmpty": fn() {
+            return head >= items.length;
+        },
+        "size": fn() {
+            return items.length - head;
+        }
+    };
+}
+
+// Functional array operations
+fn take(arr, n) {
+    let result = [];
+    for (let i = 0; i < n && i < arr.length; i = i + 1) {
+        result.push(arr[i]);
+    }
+    return result;
+}
+
+fn drop(arr, n) {
+    let result = [];
+    for (let i = n; i < arr.length; i = i + 1) {
+        result.push(arr[i]);
+    }
+    return result;
+}
+
+fn zip(arr1, arr2) {
+    let result = [];
+    let minLength = min(arr1.length, arr2.length);
+    
+    for (let i = 0; i < minLength; i = i + 1) {
+        result.push([arr1[i], arr2[i]]);
+    }
+    return result;
+}
+
+fn flatten(arr) {
+    let result = [];
+    
+    for (let i = 0; i < arr.length; i = i + 1) {
+        if (type(arr[i]) === "array") {
+            let flattened = flatten(arr[i]);
+            for (let j = 0; j < flattened.length; j = j + 1) {
+                result.push(flattened[j]);
+            }
+        } else {
+            result.push(arr[i]);
+        }
+    }
+    return result;
+}
+
+// Functional predicates
+fn alwaysTrue() {
+    return fn(x) { return true; };
+}
+
+fn alwaysFalse() {
+    return fn(x) { return false; };
+}
+
+fn equals(target) {
+    return fn(x) { return x === target; };
+}
+
+fn not(predicate) {
+    return fn(x) { return !predicate(x); };
+}
+
+fn and(pred1, pred2) {
+    return fn(x) { return pred1(x) && pred2(x); };
+}
+
+fn or(pred1, pred2) {
+    return fn(x) { return pred1(x) || pred2(x); };
+}
+
+// Functional combinators
+fn either(leftFunc, rightFunc) {
+    return fn(value) {
+        try {
+            return leftFunc(value);
+        } catch (error) {
+            return rightFunc(value);
+        }
+    };
+}
+
+fn retry(func, maxAttempts) {
+    return fn(...args) {
+        let attempts = 0;
+        let lastError = nil;
+        
+        while (attempts < maxAttempts) {
+            try {
+                return func(...args);
+            } catch (error) {
+                lastError = error;
+                attempts = attempts + 1;
+            }
+        }
+        
+        throw lastError;
+    };
+}
+
+// Stream processing
+fn createStream(data) {
+    let index = 0;
+    
+    return {
+        "next": fn() {
+            if (index < data.length) {
+                let value = data[index];
+                index = index + 1;
+                return {"done": false, "value": value};
+            } else {
+                return {"done": true, "value": nil};
+            }
+        },
+        "map": fn(transform) {
+            let newData = [];
+            let stream = createStream(data);
+            let item;
+            
+            while (!(item = stream.next())["done"]) {
+                newData.push(transform(item["value"]));
+            }
+            
+            return createStream(newData);
+        },
+        "filter": fn(predicate) {
+            let newData = [];
+            let stream = createStream(data);
+            let item;
+            
+            while (!(item = stream.next())["done"]) {
+                if (predicate(item["value"])) {
+                    newData.push(item["value"]);
+                }
+            }
+            
+            return createStream(newData);
+        }
+    };
+}
+
+fn main() {
+    print "=== Functional Programming Demo ===";
+    
+    // Higher-order functions
+    print "\n--- Higher-Order Functions ---";
+    let double = fn(x) { return x * 2; };
+    let addFive = fn(x) { return x + 5; };
+    
+    let result1 = applyTwice(double, 10);  // double(double(10)) = 40
+    let result2 = applyTwice(addFive, 3);  // addFive(addFive(3)) = 13
+    
+    print "Double twice: " + result1;
+    print "Add five twice: " + result2;
+    
+    // Function composition
+    print "\n--- Function Composition ---";
+    let addThenMultiply = compose(multiply(2), add(5));  // multiply(2, add(5, x))
+    let multiplyThenAdd = pipe(multiply(2), add(5));     // add(5, multiply(2, x))
+    
+    print "Add 5 then multiply by 2: " + addThenMultiply(10);  // (10 + 5) * 2 = 30
+    print "Multiply by 2 then add 5: " + multiplyThenAdd(10);  // (10 * 2) + 5 = 25
+    
+    // Currying
+    print "\n--- Currying ---";
+    let addFive = add(5);
+    let addTen = add(10);
+    let double = multiply(2);
+    let triple = multiply(3);
+    
+    print "Add 5 to 3: " + addFive(3);
+    print "Add 10 to 7: " + addTen(7);
+    print "Double 15: " + double(15);
+    print "Triple 8: " + triple(8);
+    
+    // Memoization
+    print "\n--- Memoization ---";
+    let slowFibonacci = fn(n) {
+        if (n <= 1) return n;
+        return slowFibonacci(n - 1) + slowFibonacci(n - 2);
+    };
+    
+    let fastFibonacci = memoize(slowFibonacci);
+    
+    print "Calculating Fibonacci numbers...";
+    print "Fib(10): " + fastFibonacci(10);
+    print "Fib(15): " + fastFibonacci(15);
+    
+    // Lazy evaluation
+    print "\n--- Lazy Evaluation ---";
+    let expensiveComputation = lazy(fn() {
+        print "Expensive computation running...";
+        let sum = 0;
+        for (let i = 0; i < 1000000; i = i + 1) {
+            sum = sum + i;
+        }
+        return sum;
+    });
+    
+    print "Lazy value created (not computed yet)";
+    print "Getting lazy value: " + expensiveComputation();
+    print "Getting lazy value again: " + expensiveComputation();
+    
+    // Functional data structures
+    print "\n--- Functional Data Structures ---";
+    let stack = createStack();
+    let queue = createQueue();
+    
+    // Stack operations
+    stack.push(1);
+    stack.push(2);
+    stack.push(3);
+    
+    print "Stack size: " + stack.size();
+    print "Pop from stack: " + stack.pop();
+    print "Stack size after pop: " + stack.size();
+    
+    // Queue operations
+    queue.enqueue("first");
+    queue.enqueue("second");
+    queue.enqueue("third");
+    
+    print "Queue size: " + queue.size();
+    print "Dequeue from queue: " + queue.dequeue();
+    print "Queue size after dequeue: " + queue.size();
+    
+    // Functional array operations
+    print "\n--- Functional Array Operations ---";
+    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    
+    print "Original: " + numbers;
+    print "Take first 3: " + take(numbers, 3);
+    print "Drop first 3: " + drop(numbers, 3);
+    
+    let numbers2 = [10, 20, 30, 40, 50];
+    print "Arrays to zip: " + numbers + " and " + numbers2;
+    print "Zipped: " + zip(numbers, numbers2);
+    
+    let nested = [1, [2, 3], [4, [5, 6]], 7];
+    print "Nested: " + nested;
+    print "Flattened: " + flatten(nested);
+    
+    // Functional predicates
+    print "\n--- Functional Predicates ---";
+    let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    
+    let isEven = fn(x) { return x % 2 === 0; };
+    let isOdd = not(isEven);
+    let isGreaterThan5 = fn(x) { return x > 5; };
+    let isEvenAndGreaterThan5 = and(isEven, isGreaterThan5);
+    
+    print "Original data: " + data;
+    print "Even numbers: " + data.filter(isEven);
+    print "Odd numbers: " + data.filter(isOdd);
+    print "Greater than 5: " + data.filter(isGreaterThan5);
+    print "Even and greater than 5: " + data.filter(isEvenAndGreaterThan5);
+    
+    // Stream processing
+    print "\n--- Stream Processing ---";
+    let streamData = [1, 2, 3, 4, 5];
+    let stream = createStream(streamData);
+    
+    let doubledStream = stream.map(fn(x) { return x * 2; });
+    let evenStream = doubledStream.filter(fn(x) { return x % 2 === 0; });
+    
+    print "Original stream: " + streamData;
+    print "After map (double): " + doubledStream;
+    print "After filter (even): " + evenStream;
+    
+    // Functional patterns
+    print "\n--- Functional Patterns ---";
+    
+    // Pipeline pattern
+    let pipeline = pipe(
+        fn(arr) { return arr.filter(fn(x) { return x % 2 === 0; }); },  // Filter evens
+        fn(arr) { return arr.map(fn(x) { return x * 2; }); }         // Double
+    );
+    
+    let pipelineResult = pipeline([1, 2, 3, 4, 5, 6]);
+    print "Pipeline result: " + pipelineResult;
+    
+    print "\n=== Functional Programming Benefits ===";
+    print "1. Immutability - Data structures don't change";
+    print "2. Pure functions - No side effects";
+    print "3. Composability - Functions can be combined";
+    print "4. Testability - Easy to unit test";
+    print "5. Concurrency - Safe for parallel execution";
+}
+
+main();

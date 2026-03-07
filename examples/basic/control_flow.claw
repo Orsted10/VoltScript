@@ -1,0 +1,217 @@
+// control_flow.claw
+// Description: Demonstrates control flow statements in ClawScript
+// Purpose: Shows if/else, loops, and control structures
+
+fn main() {
+    print "=== Control Flow Demo ===";
+    
+    // If/Else statements
+    print "\n--- If/Else Statements ---";
+    let age = 25;
+    
+    if (age < 18) {
+        print "Minor";
+    } else if (age < 65) {
+        print "Adult";
+    } else {
+        print "Senior";
+    }
+    
+    // Ternary operator
+    let status = (age >= 18) ? "Can vote" : "Cannot vote";
+    print "Voting status: " + status;
+    
+    // While loop
+    print "\n--- While Loop ---";
+    let count = 0;
+    while (count < 5) {
+        print "While count: " + count;
+        count = count + 1;
+    }
+    
+    // For loop
+    print "\n--- For Loop ---";
+    for (let i = 0; i < 5; i = i + 1) {
+        print "For iteration: " + i;
+    }
+    
+    // Run-until loop (executes at least once)
+    print "\n--- Run-Until Loop ---";
+    let countdown = 3;
+    run {
+        print "Countdown: " + countdown;
+        countdown = countdown - 1;
+    } until (countdown <= 0);
+    print "Liftoff!";
+    
+    // Break and continue
+    print "\n--- Break and Continue ---";
+    for (let i = 0; i < 10; i = i + 1) {
+        if (i === 3) {
+            print "Skipping 3 (continue)";
+            continue;
+        }
+        if (i === 7) {
+            print "Breaking at 7";
+            break;
+        }
+        print "Processing: " + i;
+    }
+    
+    // Nested loops
+    print "\n--- Nested Loops ---";
+    for (let i = 0; i < 3; i = i + 1) {
+        for (let j = 0; j < 3; j = j + 1) {
+            print "Position: [" + i + "][" + j + "]";
+        }
+    }
+    
+    // Compound operators
+    print "\n--- Compound Operators ---";
+    let x = 10;
+    print "Initial x: " + x;
+    
+    x += 5;   // x = x + 5
+    print "After x += 5: " + x;
+    
+    x *= 2;   // x = x * 2
+    print "After x *= 2: " + x;
+    
+    x -= 10;  // x = x - 10
+    print "After x -= 10: " + x;
+    
+    x /= 4;   // x = x / 4
+    print "After x /= 4: " + x;
+    
+    // Increment and decrement
+    print "\n--- Increment/Decrement ---";
+    let a = 5;
+    let b = 10;
+    
+    print "Before increment - a: " + a;
+    a++;  // Post-increment
+    print "After a++: " + a;
+    
+    print "Before decrement - b: " + b;
+    b--;  // Post-decrement
+    print "After b--: " + b;
+    
+    // Logical expressions
+    print "\n--- Logical Expressions ---";
+    let sunny = true;
+    let warm = false;
+    let weekend = true;
+    
+    if (sunny && warm) {
+        print "Perfect day for beach!";
+    } else if (sunny || weekend) {
+        print "Good day for outdoor activities";
+    } else {
+        print "Stay indoors";
+    }
+    
+    // Complex conditions
+    let score = 85;
+    let passed = true;
+    
+    if (score >= 90 && passed) {
+        print "Excellent grade!";
+    } else if (score >= 80 && passed) {
+        print "Good grade!";
+    } else if (score >= 70 && passed) {
+        print "Average grade!";
+    } else {
+        print "Needs improvement";
+    }
+    
+    // Switch-like behavior using if/else
+    print "\n--- Switch-like Behavior ---";
+    let day = 3;
+    let dayName;
+    
+    if (day === 1) {
+        dayName = "Monday";
+    } else if (day === 2) {
+        dayName = "Tuesday";
+    } else if (day === 3) {
+        dayName = "Wednesday";
+    } else if (day === 4) {
+        dayName = "Thursday";
+    } else if (day === 5) {
+        dayName = "Friday";
+    } else if (day === 6) {
+        dayName = "Saturday";
+    } else if (day === 7) {
+        dayName = "Sunday";
+    } else {
+        dayName = "Invalid day";
+    }
+    
+    print "Day " + day + " is " + dayName;
+    
+    // Control flow with functions
+    print "\n--- Control Flow in Functions ---";
+    
+    fn findMax(numbers) {
+        if (numbers.length === 0) {
+            return nil;
+        }
+        
+        let max = numbers[0];
+        for (let i = 1; i < numbers.length; i = i + 1) {
+            if (numbers[i] > max) {
+                max = numbers[i];
+            }
+        }
+        return max;
+    }
+    
+    fn factorial(n) {
+        if (n <= 1) {
+            return 1;
+        } else {
+            return n * factorial(n - 1);
+        }
+    }
+    
+    let numbers = [3, 7, 2, 9, 1, 5];
+    let max = findMax(numbers);
+    print "Maximum of " + numbers + " is " + max;
+    
+    let fact5 = factorial(5);
+    print "5! = " + fact5;
+    
+    // Error handling with control flow
+    print "\n--- Error Handling ---";
+    
+    fn safeDivide(a, b) {
+        if (b === 0) {
+            print "Error: Division by zero";
+            return nil;
+        }
+        return a / b;
+    }
+    
+    fn safeArrayAccess(arr, index) {
+        if (index < 0 || index >= arr.length) {
+            print "Error: Array index out of bounds";
+            return nil;
+        }
+        return arr[index];
+    }
+    
+    let result1 = safeDivide(10, 2);
+    print "10 / 2 = " + result1;
+    
+    let result2 = safeDivide(10, 0);
+    print "10 / 0 = " + result2;
+    
+    let arr = [10, 20, 30];
+    let item1 = safeArrayAccess(arr, 1);
+    print "arr[1] = " + item1;
+    
+    let item2 = safeArrayAccess(arr, 5);
+    print "arr[5] = " + item2;
+}
+
+main();

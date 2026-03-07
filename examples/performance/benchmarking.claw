@@ -1,0 +1,205 @@
+// benchmarking.claw
+// Description: Demonstrates performance measurement and benchmarking in ClawScript
+// Purpose: Shows how to measure execution time and compare algorithms
+
+// Simple benchmarking function
+fn benchmark(name, func, iterations) {
+    print "Benchmarking " + name + "...";
+    
+    let startTime = clock();
+    
+    // Run the function multiple times
+    for (let i = 0; i < iterations; i = i + 1) {
+        func();
+    }
+    
+    let endTime = clock();
+    let totalTime = endTime - startTime;
+    let averageTime = totalTime / iterations;
+    
+    print name + " completed " + iterations + " iterations";
+    print "Total time: " + totalTime + " ms";
+    print "Average time per iteration: " + averageTime + " ms";
+    print "---";
+}
+
+// Test functions to benchmark
+fn linearSearch(arr, target) {
+    for (let i = 0; i < arr.length; i = i + 1) {
+        if (arr[i] === target) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+fn binarySearch(arr, target) {
+    let left = 0;
+    let right = arr.length - 1;
+    
+    while (left <= right) {
+        let mid = (left + right) / 2;
+        if (arr[mid] === target) {
+            return mid;
+        } else if (arr[mid] < target) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    return -1;
+}
+
+fn bubbleSort(arr) {
+    let n = arr.length;
+    for (let i = 0; i < n - 1; i = i + 1) {
+        for (let j = 0; j < n - i - 1; j = j + 1) {
+            if (arr[j] > arr[j + 1]) {
+                let temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+    return arr;
+}
+
+fn quickSort(arr) {
+    if (arr.length <= 1) {
+        return arr;
+    }
+    
+    let pivot = arr[0];
+    let left = [];
+    let right = [];
+    
+    for (let i = 1; i < arr.length; i = i + 1) {
+        if (arr[i] < pivot) {
+            left.push(arr[i]);
+        } else {
+            right.push(arr[i]);
+        }
+    }
+    
+    return quickSort(left).concat([pivot]).concat(quickSort(right));
+}
+
+fn arraySum(arr) {
+    let sum = 0;
+    for (let i = 0; i < arr.length; i = i + 1) {
+        sum = sum + arr[i];
+    }
+    return sum;
+}
+
+fn arraySumFunctional(arr) {
+    return arr.reduce(fn(acc, x) { return acc + x; }, 0);
+}
+
+fn stringConcatenation(arr) {
+    let result = "";
+    for (let i = 0; i < arr.length; i = i + 1) {
+        result = result + arr[i];
+    }
+    return result;
+}
+
+fn stringJoin(arr) {
+    return arr.join("");
+}
+
+fn generateTestData(size) {
+    let data = [];
+    for (let i = 0; i < size; i = i + 1) {
+        data.push(random() * 1000);  // Random numbers 0-1000
+    }
+    return data;
+}
+
+fn main() {
+    print "=== Performance Benchmarking Demo ===";
+    
+    let testSize = 1000;
+    let iterations = 100;
+    let testData = generateTestData(testSize);
+    
+    print "Test data size: " + testSize + " elements";
+    print "Iterations per test: " + iterations;
+    print "---";
+    
+    // Benchmark search algorithms
+    let target = testData[testSize / 2];  // Middle element
+    
+    benchmark("Linear Search", fn() {
+        linearSearch(testData, target);
+    }, iterations);
+    
+    benchmark("Binary Search", fn() {
+        binarySearch(testData, target);
+    }, iterations);
+    
+    // Benchmark sorting algorithms
+    let unsortedData = generateTestData(100);  // Smaller for sorting
+    
+    benchmark("Bubble Sort", fn() {
+        bubbleSort(unsortedData.slice());
+    }, 50);  // Fewer iterations for slow algorithm
+    
+    benchmark("Quick Sort", fn() {
+        quickSort(unsortedData.slice());
+    }, 100);
+    
+    // Benchmark array operations
+    let arrayData = generateTestData(10000);
+    
+    benchmark("Array Sum (Loop)", fn() {
+        arraySum(arrayData);
+    }, 100);
+    
+    benchmark("Array Sum (Functional)", fn() {
+        arraySumFunctional(arrayData);
+    }, 100);
+    
+    // Benchmark string operations
+    let stringData = [];
+    for (let i = 0; i < 1000; i = i + 1) {
+        stringData.push("item_" + i);
+    }
+    
+    benchmark("String Concatenation", fn() {
+        stringConcatenation(stringData);
+    }, 50);
+    
+    benchmark("String Join", fn() {
+        stringJoin(stringData);
+    }, 50);
+    
+    // Memory usage estimation
+    print "\n=== Memory Usage Estimation ===";
+    
+    let smallArray = [1, 2, 3];
+    let largeArray = generateTestData(10000);
+    let smallObject = {"key1": "value1", "key2": "value2"};
+    
+    print "Small array memory: ~" + (smallArray.length * 8) + " bytes";
+    print "Large array memory: ~" + (largeArray.length * 8) + " bytes";
+    print "Small object memory: ~64 bytes";
+    
+    // Performance tips
+    print "\n=== Performance Tips ===";
+    print "1. Use built-in methods when possible (reduce, map, filter)";
+    print "2. Avoid repeated property access in loops";
+    print "3. Choose appropriate algorithms for data size";
+    print "4. Consider JIT compilation for hot code paths";
+    print "5. Profile before optimizing";
+    
+    // Comparative results
+    print "\n=== Summary ===";
+    print "Benchmarking helps identify:";
+    print "- Algorithm efficiency differences";
+    print "- Memory usage patterns";
+    print "- Best practices for specific use cases";
+    print "- Areas for optimization opportunities";
+}
+
+main();

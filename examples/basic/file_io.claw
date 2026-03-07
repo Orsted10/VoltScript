@@ -1,0 +1,358 @@
+// file_io.claw
+// Description: Demonstrates file input/output operations in ClawScript
+// Purpose: Shows reading, writing, and managing files
+
+fn main() {
+    print "=== File I/O Demo ===";
+    
+    // File existence check
+    print "\n--- File Existence ---";
+    let testFile = "test_data.txt";
+    let exists = fileExists(testFile);
+    print "Does '" + testFile + "' exist? " + exists;
+    
+    // Writing to files
+    print "\n--- Writing Files ---";
+    
+    // Basic write
+    let content = "Hello, ClawScript File I/O!\nThis is line 2.\nThis is line 3.";
+    writeFile(testFile, content);
+    print "Wrote content to " + testFile;
+    
+    // Verify file exists now
+    exists = fileExists(testFile);
+    print "Does '" + testFile + "' exist now? " + exists;
+    
+    // Reading files
+    print "\n--- Reading Files ---";
+    let readContent = readFile(testFile);
+    print "Content read from " + testFile + ":";
+    print "--- File Content Start ---";
+    print readContent;
+    print "--- File Content End ---";
+    
+    // File size
+    let size = fileSize(testFile);
+    print "File size: " + size + " bytes";
+    
+    // Appending to files (simulated)
+    print "\n--- Appending to Files ---";
+    let originalContent = readFile(testFile);
+    let appendContent = "\nThis line was appended.";
+    let newContent = originalContent + appendContent;
+    writeFile(testFile, newContent);
+    
+    print "Original content length: " + originalContent.length;
+    print "Appended content length: " + newContent.length;
+    
+    // Read updated file
+    let updatedContent = readFile(testFile);
+    print "Updated file content:";
+    print updatedContent;
+    
+    // Working with different file types
+    print "\n--- Different File Types ---";
+    
+    // JSON file
+    let jsonData = {
+        "users": [
+            {"name": "Alice", "age": 25, "active": true},
+            {"name": "Bob", "age": 30, "active": false},
+            {"name": "Charlie", "age": 35, "active": true}
+        ],
+        "settings": {
+            "theme": "dark",
+            "notifications": true,
+            "autoSave": true
+        }
+    };
+    
+    let jsonFile = "data.json";
+    let jsonString = stringifyJSON(jsonData);
+    writeFile(jsonFile, jsonString);
+    print "Wrote JSON data to " + jsonFile;
+    
+    // CSV file
+    let csvData = "Name,Age,Active\nAlice,25,true\nBob,30,false\nCharlie,35,true";
+    let csvFile = "data.csv";
+    writeFile(csvFile, csvData);
+    print "Wrote CSV data to " + csvFile;
+    
+    // Configuration file
+    let configData = "# ClawScript Configuration\n";
+    configData = configData + "server.port=8080\n";
+    configData = configData + "server.host=localhost\n";
+    configData = configData + "database.url=postgresql://localhost/mydb\n";
+    configData = configData + "logging.level=info\n";
+    configData = configData + "logging.file=app.log";
+    
+    let configFile = "config.conf";
+    writeFile(configFile, configData);
+    print "Wrote configuration to " + configFile;
+    
+    // File processing
+    print "\n--- File Processing ---";
+    
+    // Process text file line by line
+    fn processTextFile(filename) {
+        if (!fileExists(filename)) {
+            print "Error: File " + filename + " does not exist";
+            return [];
+        }
+        
+        let content = readFile(filename);
+        let lines = split(content, "\n");
+        let processedLines = [];
+        
+        print "Processing " + lines.length + " lines...";
+        
+        for (let i = 0; i < lines.length; i = i + 1) {
+            let line = trim(lines[i]);
+            
+            // Skip empty lines
+            if (line.length === 0) {
+                continue;
+            }
+            
+            // Skip comment lines
+            if (startsWith(line, "#")) {
+                continue;
+            }
+            
+            // Process configuration lines
+            if (indexOf(line, "=") > 0) {
+                let parts = split(line, "=");
+                let key = trim(parts[0]);
+                let value = trim(parts[1]);
+                processedLines.push({"key": key, "value": value});
+                print "  Config: " + key + " = " + value);
+            }
+        }
+        
+        return processedLines;
+    }
+    
+    let config = processTextFile(configFile);
+    
+    // File backup
+    print "\n--- File Backup ---";
+    
+    fn backupFile(originalFile, backupSuffix) {
+        if (!fileExists(originalFile)) {
+            print "Error: Original file does not exist";
+            return false;
+        }
+        
+        let content = readFile(originalFile);
+        let backupFile = originalFile + backupSuffix;
+        writeFile(backupFile, content);
+        
+        print "Created backup: " + backupFile;
+        return true;
+    }
+    
+    backupFile(testFile, ".backup");
+    backupFile(configFile, ".bak");
+    
+    // File comparison
+    print "\n--- File Comparison ---";
+    
+    fn compareFiles(file1, file2) {
+        if (!fileExists(file1) || !fileExists(file2)) {
+            print "Error: One or both files do not exist";
+            return false;
+        }
+        
+        let content1 = readFile(file1);
+        let content2 = readFile(file2);
+        
+        if (content1.length !== content2.length) {
+            print "Files differ in size: " + content1.length + " vs " + content2.length;
+            return false;
+        }
+        
+        if (content1 === content2) {
+            print "Files are identical";
+            return true;
+        } else {
+            print "Files differ in content");
+            return false;
+        }
+    }
+    
+    // Create a test file for comparison
+    writeFile("test_copy.txt", content);
+    compareFiles(testFile, "test_copy.txt");
+    
+    // File utilities
+    print "\n--- File Utilities ---";
+    
+    // Count lines in file
+    fn countLines(filename) {
+        if (!fileExists(filename)) {
+            return 0;
+        }
+        
+        let content = readFile(filename);
+        let lines = split(content, "\n");
+        return lines.length;
+    }
+    
+    // Count words in file
+    fn countWords(filename) {
+        if (!fileExists(filename)) {
+            return 0;
+        }
+        
+        let content = readFile(filename);
+        let words = split(content, " ");
+        let wordCount = 0;
+        
+        for (let i = 0; i < words.length; i = i + 1) {
+            if (trim(words[i]).length > 0) {
+                wordCount = wordCount + 1;
+            }
+        }
+        
+        return wordCount;
+    }
+    
+    print "Lines in " + testFile + ": " + countLines(testFile));
+    print "Words in " + testFile + ": " + countWords(testFile));
+    
+    // Directory operations (simulated)
+    print "\n--- Directory Operations ---";
+    
+    fn listFiles(directory) {
+        // This is a simulation - in a real implementation,
+        // you would use system calls to list directory contents
+        let simulatedFiles = [
+            directory + "/file1.txt",
+            directory + "/file2.txt",
+            directory + "/subdir/file3.txt"
+        ];
+        return simulatedFiles;
+    }
+    
+    fn findFiles(directory, extension) {
+        let files = listFiles(directory);
+        let matchingFiles = [];
+        
+        for (let i = 0; i < files.length; i = i + 1) {
+            if (endsWith(files[i], extension)) {
+                matchingFiles.push(files[i]);
+            }
+        }
+        
+        return matchingFiles;
+    }
+    
+    // Simulate directory listing
+    let currentDir = ".";
+    print "Files in " + currentDir + ":";
+    let allFiles = listFiles(currentDir);
+    for (let i = 0; i < allFiles.length; i = i + 1) {
+        print "  " + allFiles[i]);
+    }
+    
+    // Find specific file types
+    print "\n.txt files:";
+    let txtFiles = findFiles(currentDir, ".txt");
+    for (let i = 0; i < txtFiles.length; i = i + 1) {
+        print "  " + txtFiles[i]);
+    }
+    
+    // Error handling
+    print "\n--- Error Handling ---";
+    
+    fn safeReadFile(filename) {
+        if (!fileExists(filename)) {
+            print "Error: File " + filename + " not found";
+            return nil;
+        }
+        
+        let size = fileSize(filename);
+        if (size > 1000000) {  // 1MB limit
+            print "Error: File too large (" + size + " bytes)";
+            return nil;
+        }
+        
+        try {
+            return readFile(filename);
+        } catch (error) {
+            print "Error reading file: " + error;
+            return nil;
+        }
+    }
+    
+    fn safeWriteFile(filename, content) {
+        // Validate filename
+        if (filename.length === 0) {
+            print "Error: Empty filename";
+            return false;
+        }
+        
+        // Check for dangerous paths
+        if (indexOf(filename, "..") >= 0) {
+            print "Error: Dangerous path detected";
+            return false;
+        }
+        
+        // Check content size
+        if (content.length > 10000000) {  // 10MB limit
+            print "Error: Content too large";
+            return false;
+        }
+        
+        try {
+            writeFile(filename, content);
+            return true;
+        } catch (error) {
+            print "Error writing file: " + error;
+            return false;
+        }
+    }
+    
+    // Test safe operations
+    let nonExistentFile = "non_existent.txt";
+    let safeContent = safeReadFile(nonExistentFile);
+    print "Safe read of non-existent file: " + safeContent;
+    
+    let writeSuccess = safeWriteFile("safe_test.txt", "Safe content");
+    print "Safe write success: " + writeSuccess;
+    
+    // Cleanup
+    print "\n--- Cleanup ---";
+    
+    fn cleanupFiles(files) {
+        for (let i = 0; i < files.length; i = i + 1) {
+            if (fileExists(files[i])) {
+                deleteFile(files[i]);
+                print "Deleted: " + files[i];
+            }
+        }
+    }
+    
+    let filesToCleanup = [
+        testFile,
+        jsonFile,
+        csvFile,
+        configFile,
+        "test_copy.txt",
+        "safe_test.txt",
+        "test_data.txt.backup",
+        "config.conf.bak"
+    ];
+    
+    cleanupFiles(filesToCleanup);
+    
+    print "\n=== File I/O Demo Complete ===";
+    print "Key takeaways:";
+    print "1. Always check file existence before operations";
+    print "2. Handle errors gracefully with try-catch";
+    print "3. Validate inputs (filenames, content size)";
+    print "4. Use appropriate file formats for your data";
+    print "5. Implement proper cleanup procedures";
+}
+
+main();

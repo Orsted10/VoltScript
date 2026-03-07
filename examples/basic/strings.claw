@@ -1,0 +1,292 @@
+// strings.claw
+// Description: Demonstrates string manipulation and operations in ClawScript
+// Purpose: Shows various string methods and text processing
+
+fn main() {
+    print "=== Strings Demo ===";
+    
+    // String creation
+    print "\n--- String Creation ---";
+    let text1 = "Hello, World!";
+    let text2 = 'Single quotes work too';
+    let empty = "";
+    let multiline = "This is a\nmultiline string\nwith multiple lines";
+    
+    print "Text1: " + text1;
+    print "Text2: " + text2;
+    print "Empty: '" + empty + "'";
+    print "Multiline:\n" + multiline;
+    
+    // String properties
+    print "\n--- String Properties ---";
+    print "Length of '" + text1 + "': " + text1.length;
+    print "Length of empty string: " + empty.length;
+    
+    // String concatenation
+    print "\n--- String Concatenation ---";
+    let firstName = "Alice";
+    let lastName = "Johnson";
+    let fullName = firstName + " " + lastName;
+    print "Full name: " + fullName;
+    
+    // String methods
+    print "\n--- String Methods ---";
+    let sample = "Hello, ClawScript Programming!";
+    
+    // substring()
+    let sub1 = substring(sample, 0, 5);
+    let sub2 = substring(sample, 7, 17);
+    print "Original: " + sample;
+    print "substring(0, 5): " + sub1;
+    print "substring(7, 17): " + sub2;
+    
+    // indexOf()
+    let index1 = indexOf(sample, "ClawScript");
+    let index2 = indexOf(sample, "XYZ");
+    print "indexOf('ClawScript'): " + index1;
+    print "indexOf('XYZ'): " + index2;
+    
+    // toUpper() and toLower()
+    let upper = toUpper(sample);
+    let lower = toLower(sample);
+    print "toUpper(): " + upper;
+    print "toLower(): " + lower;
+    
+    // trim()
+    let padded = "   Trim me!   ";
+    let trimmed = trim(padded);
+    print "Original: '" + padded + "'";
+    print "trim(): '" + trimmed + "'";
+    
+    // split()
+    let sentence = "This,is,a,sentence,with,commas";
+    let words = split(sentence, ",");
+    print "Original: " + sentence;
+    print "split(','): " + words;
+    
+    // join()
+    let joined = join(words, " ");
+    print "join(' '): " + joined;
+    
+    // replace()
+    let original = "Hello, World! Hello, Universe!";
+    let replaced = replace(original, "Hello", "Hi");
+    print "Original: " + original;
+    print "replace('Hello', 'Hi'): " + replaced;
+    
+    // startsWith() and endsWith()
+    let filename = "document.txt";
+    print "Filename: " + filename;
+    print "startsWith('document'): " + filename.startsWith("document"));
+    print "endsWith('.txt'): " + filename.endsWith(".txt"));
+    
+    // Advanced string operations
+    print "\n--- Advanced String Operations ---";
+    
+    // Word count
+    fn wordCount(text) {
+        if (text.length === 0) return 0;
+        let words = split(trim(text), " ");
+        let count = 0;
+        for (let i = 0; i < words.length; i = i + 1) {
+            if (words[i].length > 0) {
+                count = count + 1;
+            }
+        }
+        return count;
+    }
+    
+    let paragraph = "This is a sample paragraph with several words.";
+    print "Paragraph: " + paragraph;
+    print "Word count: " + wordCount(paragraph);
+    
+    // Character count
+    fn charCount(text, char) {
+        let count = 0;
+        for (let i = 0; i < text.length; i = i + 1) {
+            if (text[i] === char) {
+                count = count + 1;
+            }
+        }
+        return count;
+    }
+    
+    let text = "banana";
+    print "Text: " + text;
+    print "Count of 'a': " + charCount(text, "a"));
+    print "Count of 'n': " + charCount(text, "n"));
+    
+    // Reverse string
+    fn reverseString(text) {
+        let reversed = "";
+        for (let i = text.length - 1; i >= 0; i = i - 1) {
+            reversed = reversed + text[i];
+        }
+        return reversed;
+    }
+    
+    let original = "ClawScript";
+    let reversed = reverseString(original);
+    print "Original: " + original;
+    print "Reversed: " + reversed;
+    
+    // Palindrome check
+    fn isPalindrome(text) {
+        let clean = toLower(trim(text));
+        let reversed = reverseString(clean);
+        return clean === reversed;
+    }
+    
+    print "Is 'racecar' a palindrome: " + isPalindrome("racecar"));
+    print "Is 'hello' a palindrome: " + isPalindrome("hello"));
+    
+    // String formatting
+    print "\n--- String Formatting ---";
+    
+    fn padLeft(text, width, char) {
+        let padded = text;
+        while (padded.length < width) {
+            padded = char + padded;
+        }
+        return padded;
+    }
+    
+    fn padRight(text, width, char) {
+        let padded = text;
+        while (padded.length < width) {
+            padded = padded + char;
+        }
+        return padded;
+    }
+    
+    let name = "Alice";
+    let paddedLeft = padLeft(name, 10, "*");
+    let paddedRight = padRight(name, 10, "*");
+    
+    print "Original: '" + name + "'";
+    print "Padded left: '" + paddedLeft + "'";
+    print "Padded right: '" + paddedRight + "'";
+    
+    // String validation
+    print "\n--- String Validation ---";
+    
+    fn isNumeric(text) {
+        if (text.length === 0) return false;
+        for (let i = 0; i < text.length; i = i + 1) {
+            let char = text[i];
+            if (char < "0" || char > "9") {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    fn isEmail(text) {
+        let atSymbol = indexOf(text, "@");
+        let dotSymbol = indexOf(text, ".", atSymbol);
+        
+        return atSymbol > 0 && dotSymbol > atSymbol;
+    }
+    
+    print "Is '12345' numeric: " + isNumeric("12345"));
+    print "Is 'abc123' numeric: " + isNumeric("abc123"));
+    print "Is 'user@example.com' email: " + isEmail("user@example.com"));
+    print "Is 'invalid.email' email: " + isEmail("invalid.email"));
+    
+    // String processing examples
+    print "\n--- Practical Examples ---";
+    
+    // Extract file extension
+    fn getFileExtension(filename) {
+        let lastDot = indexOf(filename, ".");
+        if (lastDot < 0) return "";
+        return substring(filename, lastDot + 1);
+    }
+    
+    let file1 = "document.pdf";
+    let file2 = "image.jpg";
+    let file3 = "archive";
+    
+    print "File: " + file1 + " -> Extension: " + getFileExtension(file1));
+    print "File: " + file2 + " -> Extension: " + getFileExtension(file2));
+    print "File: " + file3 + " -> Extension: " + getFileExtension(file3));
+    
+    // Capitalize words
+    fn capitalizeWords(text) {
+        let words = split(text, " ");
+        let result = [];
+        
+        for (let i = 0; i < words.length; i = i + 1) {
+            let word = words[i];
+            if (word.length > 0) {
+                let firstChar = toUpper(word[0]);
+                let rest = substring(word, 1);
+                result.push(firstChar + rest);
+            } else {
+                result.push("");
+            }
+        }
+        
+        return join(result, " ");
+    }
+    
+    let title = "the quick brown fox";
+    let capitalized = capitalizeWords(title);
+    print "Original: " + title;
+    print "Title case: " + capitalized;
+    
+    // String escaping
+    print "\n--- String Escaping ---";
+    
+    fn escapeHtml(text) {
+        let escaped = text;
+        escaped = replace(escaped, "&", "&amp;");
+        escaped = replace(escaped, "<", "&lt;");
+        escaped = replace(escaped, ">", "&gt;");
+        escaped = replace(escaped, "\"", "&quot;");
+        escaped = replace(escaped, "'", "&#39;");
+        return escaped;
+    }
+    
+    let html = "<script>alert('hello')</script>";
+    let escapedHtml = escapeHtml(html);
+    print "Original HTML: " + html;
+    print "Escaped HTML: " + escapedHtml;
+    
+    // Performance considerations
+    print "\n--- Performance Tips ---";
+    print "1. Use join() instead of repeated concatenation for large strings";
+    print "2. Cache string lengths in loops";
+    print "3. Use built-in methods when possible";
+    print "4. Avoid creating many temporary strings";
+    
+    // Performance demonstration
+    print "\n--- Performance Demo ---";
+    
+    let startTime = clock();
+    
+    // Inefficient way
+    let inefficient = "";
+    for (let i = 0; i < 1000; i = i + 1) {
+        inefficient = inefficient + "x";
+    }
+    
+    let inefficientTime = clock() - startTime;
+    
+    startTime = clock();
+    
+    // Efficient way
+    let parts = [];
+    for (let i = 0; i < 1000; i = i + 1) {
+        parts.push("x");
+    }
+    let efficient = join(parts, "");
+    
+    let efficientTime = clock() - startTime;
+    
+    print "Inefficient concatenation: " + inefficientTime + " ms";
+    print "Efficient join(): " + efficientTime + " ms";
+    print "Speedup: " + (inefficientTime / efficientTime) + "x";
+}
+
+main();

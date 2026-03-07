@@ -1,0 +1,243 @@
+// classes.claw
+// Description: Demonstrates object-oriented programming in ClawScript
+// Purpose: Shows class definitions, inheritance, and polymorphism
+
+// Base class
+class Animal {
+    init(name, species) {
+        this.name = name;
+        this.species = species;
+        this.age = 0;
+    }
+    
+    speak() {
+        return this.name + " the " + this.species + " makes a sound";
+    }
+    
+    celebrateBirthday() {
+        this.age = this.age + 1;
+        return "Happy " + this.age + "th birthday, " + this.name + "!";
+    }
+    
+    getInfo() {
+        return {
+            "name": this.name,
+            "species": this.species,
+            "age": this.age
+        };
+    }
+}
+
+// Derived class
+class Dog extends Animal {
+    init(name, breed) {
+        super.init(name, "dog");
+        this.breed = breed;
+    }
+    
+    speak() {
+        return this.name + " the " + this.breed + " dog barks loudly!";
+    }
+    
+    fetch() {
+        return this.name + " runs to fetch the ball";
+    }
+    
+    getInfo() {
+        let baseInfo = super.getInfo();
+        baseInfo["breed"] = this.breed;
+        return baseInfo;
+    }
+}
+
+// Another derived class
+class Cat extends Animal {
+    init(name, color) {
+        super.init(name, "cat");
+        this.color = color;
+    }
+    
+    speak() {
+        return this.name + " the " + this.color + " cat meows softly";
+    }
+    
+    purr() {
+        return this.name + " purrs contentedly";
+    }
+    
+    getInfo() {
+        let baseInfo = super.getInfo();
+        baseInfo["color"] = this.color;
+        return baseInfo;
+    }
+}
+
+// Class with static-like behavior
+class MathUtils {
+    // Static-like method (class function)
+    static pi() {
+        return 3.141592653589793;
+    }
+    
+    // Static-like method for calculations
+    static circleArea(radius) {
+        return MathUtils.pi() * radius * radius;
+    }
+    
+    // Static-like method for unit conversion
+    static celsiusToFahrenheit(celsius) {
+        return (celsius * 9/5) + 32;
+    }
+}
+
+// Class demonstrating composition
+class Engine {
+    init(horsepower) {
+        this.horsepower = horsepower;
+        this.isRunning = false;
+    }
+    
+    start() {
+        this.isRunning = true;
+        return "Engine started with " + this.horsepower + " HP";
+    }
+    
+    stop() {
+        this.isRunning = false;
+        return "Engine stopped";
+    }
+}
+
+class Car {
+    init(make, model, year, engine) {
+        this.make = make;
+        this.model = model;
+        this.year = year;
+        this.engine = engine;
+        this.odometer = 0;
+    }
+    
+    start() {
+        return this.engine.start();
+    }
+    
+    drive(miles) {
+        if (this.engine.isRunning) {
+            this.odometer = this.odometer + miles;
+            return "Drove " + miles + " miles";
+        } else {
+            return "Cannot drive - engine is off";
+        }
+    }
+    
+    getInfo() {
+        return {
+            "make": this.make,
+            "model": this.model,
+            "year": this.year,
+            "mileage": this.odometer,
+            "engine": this.engine.getInfo()
+        };
+    }
+}
+
+// Demonstrating polymorphism
+class Shape {
+    init(name) {
+        this.name = name;
+    }
+    
+    area() {
+        return "Area calculation not implemented for " + this.name;
+    }
+    
+    perimeter() {
+        return "Perimeter calculation not implemented for " + this.name;
+    }
+    
+    describe() {
+        return this.name + ": Area = " + this.area() + ", Perimeter = " + this.perimeter();
+    }
+}
+
+class Rectangle extends Shape {
+    init(width, height) {
+        super.init("Rectangle");
+        this.width = width;
+        this.height = height;
+    }
+    
+    area() {
+        return this.width * this.height;
+    }
+    
+    perimeter() {
+        return 2 * (this.width + this.height);
+    }
+}
+
+class Circle extends Shape {
+    init(radius) {
+        super.init("Circle");
+        this.radius = radius;
+    }
+    
+    area() {
+        return MathUtils.pi() * this.radius * this.radius;
+    }
+    
+    perimeter() {
+        return 2 * MathUtils.pi() * this.radius;
+    }
+}
+
+fn main() {
+    print "=== Classes Demo ===";
+    
+    // Basic class usage
+    let buddy = Dog("Buddy", "Golden Retriever");
+    let whiskers = Cat("Whiskers", "gray");
+    
+    print buddy.speak();
+    print whiskers.speak();
+    print whiskers.purr();
+    
+    // Method overriding demonstration
+    print "\n=== Method Overriding ===";
+    print buddy.celebrateBirthday();
+    print whiskers.celebrateBirthday();
+    
+    // Inheritance chain
+    print "\n=== Inheritance Chain ===";
+    print "Buddy info: " + buddy.getInfo();
+    print "Whiskers info: " + whiskers.getInfo();
+    
+    // Static-like methods
+    print "\n=== Static-like Methods ===";
+    print "Value of PI: " + MathUtils.pi();
+    print "Circle area (radius 5): " + MathUtils.circleArea(5));
+    print "20°C in Fahrenheit: " + MathUtils.celsiusToFahrenheit(20);
+    
+    // Composition
+    print "\n=== Composition ===";
+    let carEngine = Engine(200);
+    let myCar = Car("Toyota", "Camry", 2022, carEngine);
+    
+    print myCar.start();
+    print myCar.drive(100);
+    print "Car info: " + myCar.getInfo();
+    
+    // Polymorphism
+    print "\n=== Polymorphism ===";
+    let shapes = [
+        Rectangle(5, 3),
+        Circle(4),
+        Shape("Triangle")
+    ];
+    
+    for (let i = 0; i < shapes.length; i = i + 1) {
+        print shapes[i].describe();
+    }
+}
+
+main();

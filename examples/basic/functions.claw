@@ -1,0 +1,109 @@
+// functions.claw
+// Description: Demonstrates function definition and calling in ClawScript
+// Purpose: Shows different function types and usage patterns
+
+// Simple function with parameters
+fn add(a, b) {
+    return a + b;
+}
+
+// Function with no parameters
+fn getGreeting() {
+    return "Hello, ClawScript!";
+}
+
+// Function with default-like behavior
+fn greet(name, greeting) {
+    if (greeting === nil) {
+        greeting = "Hello";
+    }
+    return greeting + ", " + name + "!";
+}
+
+// Recursive function
+fn factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+// Higher-order function (function that returns a function)
+fn createMultiplier(factor) {
+    return fn(x) {
+        return x * factor;
+    };
+}
+
+// Function that takes another function as parameter
+fn applyOperation(a, b, operation) {
+    return operation(a, b);
+}
+
+// Function with multiple return points
+fn analyzeNumber(num) {
+    if (num > 0) {
+        return "positive";
+    } else if (num < 0) {
+        return "negative";
+    } else {
+        return "zero";
+    }
+}
+
+// Closure example
+fn makeCounter() {
+    let count = 0;
+    return fn() {
+        count = count + 1;
+        return count;
+    };
+}
+
+fn main() {
+    print "=== Functions Demo ===";
+    
+    // Simple function calls
+    let sum = add(5, 3);
+    print "5 + 3 = " + sum;
+    
+    let greeting = getGreeting();
+    print greeting;
+    
+    // Function with parameters
+    let personalized = greet("Alice", "Welcome");
+    print personalized;
+    
+    // Recursive function
+    let fact5 = factorial(5);
+    print "5! = " + fact5;
+    
+    // Higher-order functions
+    let double = createMultiplier(2);
+    let triple = createMultiplier(3);
+    print "Double 10: " + double(10);
+    print "Triple 10: " + triple(10);
+    
+    // Function as parameter
+    let difference = applyOperation(10, 3, fn(a, b) { return a - b; });
+    print "10 - 3 = " + difference;
+    
+    // Multiple return points
+    print "Number 7 is: " + analyzeNumber(7);
+    print "Number 0 is: " + analyzeNumber(0);
+    print "Number -5 is: " + analyzeNumber(-5);
+    
+    // Closure demonstration
+    let counter1 = makeCounter();
+    let counter2 = makeCounter();
+    print "Counter 1: " + counter1();
+    print "Counter 1: " + counter1();
+    print "Counter 2: " + counter2();
+    print "Counter 2: " + counter2();
+    
+    // Function composition
+    let addAndDouble = fn(x) { return double(add(5, x)); };
+    print "Add 5 to 3 then double: " + addAndDouble(3);
+}
+
+main();

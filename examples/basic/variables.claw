@@ -1,0 +1,62 @@
+// variables.claw
+// Description: Demonstrates variable declarations and basic data types
+// Purpose: Shows how to work with different data types in ClawScript
+
+fn main() {
+    // Number types
+    let integer = 42;
+    let floating = 3.14159;
+    let negative = -100;
+    
+    // String type
+    let text = "ClawScript";
+    let multiline = "This is a\nmultiline string";
+    
+    // Boolean type
+    let isTrue = true;
+    let isFalse = false;
+    
+    // Null type
+    let empty = nil;
+    
+    // Array type
+    let numbers = [1, 2, 3, 4, 5];
+    let mixed = [42, "hello", true, nil];
+    
+    // Object type
+    let person = {
+        "name": "Alice",
+        "age": 25,
+        "active": true
+    };
+    
+    // Display all variables
+    print "=== Variables Demo ===";
+    print "Integer: " + integer;
+    print "Float: " + floating;
+    print "Negative: " + negative;
+    print "String: " + text;
+    print "Multiline: " + multiline;
+    print "Boolean (true): " + isTrue;
+    print "Boolean (false): " + isFalse;
+    print "Null: " + empty;
+    print "Array: " + numbers;
+    print "Mixed array: " + mixed;
+    print "Object: " + person;
+    
+    // Type checking
+    print "\n=== Type Checking ===";
+    print "Type of integer: " + type(integer);
+    print "Type of text: " + type(text);
+    print "Type of numbers: " + type(numbers);
+    print "Type of person: " + type(person);
+    
+    // Type conversion
+    print "\n=== Type Conversion ===";
+    let numberFromString = num("123");
+    let stringFromNumber = str(456);
+    print "Number from string: " + numberFromString;
+    print "String from number: " + stringFromNumber;
+}
+
+main();

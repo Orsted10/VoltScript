@@ -1,0 +1,12 @@
+// hello.claw
+// Description: Classic "Hello, World!" program
+// Purpose: Demonstrates basic output and string handling
+
+fn main() {
+    print "Hello, World!";
+    print "Welcome to ClawScript v3.0.0!";
+    print "This is a basic example program.";
+}
+
+// Execute the main function
+main();
